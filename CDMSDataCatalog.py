@@ -1,5 +1,6 @@
 import datacat
 from datacat import client_from_config_file
+from datacat.model import Metadata
 
 def corrPathCDMS(path):
     if(path[0] != '/'):
@@ -22,6 +23,8 @@ class CDMSDataCatalog:
                 print child.path
         except TypeError:
             print "Cannot ls, "+path+" is a dataset"
+        except:
+            print "Path does not exist"
 
     def rm(self,path,recursive=False,verbose=True):
         path=corrPathCDMS(path)
@@ -77,3 +80,68 @@ class CDMSDataCatalog:
                     path=path+group+"/"
         print path
         return self.client.search(path+'**',site=site,query=query)
+
+    def add(self,CDMSds):
+        try:
+            self.client.mkds(CDMSds.relativePath,
+                             CDMSds.datasetName,
+                             CDMSds.fileType,
+                             CDMSds.fileFormat,
+                             versionMetadata=CDMSds.metadata,
+                             resource=CDMSds.filePath,
+                             site=CDMSds.site)
+        except:
+            print "Could not create dataset"
+
+def class CDMSDataset:
+    
+    def __init__(self,name,filePath,dataGroup,dataType,site,fileFormat=None,fileType=None,DMCType=None):
+        self.metadata = Metadata()
+        self.datasetName=name
+        self.dataType=dataType
+        self.site=site
+        self.fileFormat=fileFormat
+        self.fileType=fileType
+        self.filePath=filePath
+
+        if(dataType='TF'):
+            self.metadata["fridgeName"]="doughtyFridge"
+            self.metadata["Temp"]=0.07
+
+            self.relativePath='/CDMS/TF/'+site+'/'+dataGroup
+        elif(dataType='DMC'):
+
+            DMCTypes=['Cf','Ba','WIMP']
+            if(DMCType in DMCTypes):
+                self.DMCType=DMCType
+            else:
+                raise ValueError("Please specify DMC Type: "+str(DMCTypes))
+
+            dataGroups=['RQdata','RRQdata']
+            if (dataGroup in dataGroups):
+                self.group=dataGroup
+            else:
+                raise ValueError("Please specify DMC data group: "+str(dataGroups))
+
+            self.relativePath='/CDMS/DMC_dataRelease/'+DMCType+'/'+dataGroup
+
+            self.metadata["analysis"]='NA'
+            self.metadata["analysisVersion"]='NA'
+            self.metadata["COMSOLVersion"]='X.X'
+            self.metadata["dataType"]='CDMSROOT'
+            self.metadata["detectors"]='TXZY'
+            self.metadata["detectorType"]='iZIPX'
+            self.metadata["DMCversion"]='5-3'
+            self.metadata["energyMax"]='-1'
+            self.metadata["energyMin"]='-1'
+            self.metadata["noiseProfile"]='NA'
+            self.metadata["simulationSubType"]='vac'
+            self.metadata["WIMPmass"]="-1"
+        elif(dataType='Soudan'):
+            self.metadata["run"]='NA'
+        elif(dataType='SNOLAB'):
+            self.metadata["run"]='NA'
+            
+        self.metadata["processProg"]="NA"
+        self.metadata["processProgVersion"]="-1"
+        self.metadata["processParadigm"]="-1"
