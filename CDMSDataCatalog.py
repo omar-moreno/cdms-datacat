@@ -90,10 +90,11 @@ class CDMSDataCatalog:
                              versionMetadata=CDMSds.metadata,
                              resource=CDMSds.filePath,
                              site=CDMSds.site)
-        except:
+        except Exception as e:
+            print e
             print "Could not create dataset"
 
-def class CDMSDataset:
+class CDMSDataset:
     
     def __init__(self,name,filePath,dataGroup,dataType,site,fileFormat=None,fileType=None,DMCType=None):
         self.metadata = Metadata()
@@ -104,12 +105,16 @@ def class CDMSDataset:
         self.fileType=fileType
         self.filePath=filePath
 
-        if(dataType='TF'):
+        dataTypes=['TF','DMC','Soudan','SNOLAB']
+        if not (dataType in dataTypes):
+            raise ValueError("Please choose one of the following Data Types:"+str(dataTypes))
+
+        if(dataType=='TF'):
             self.metadata["fridgeName"]="doughtyFridge"
             self.metadata["Temp"]=0.07
 
-            self.relativePath='/CDMS/TF/'+site+'/'+dataGroup
-        elif(dataType='DMC'):
+            self.relativePath='/CDMS/TF/'+site+'/'+dataGroup+'/'
+        elif(dataType=='DMC'):
 
             DMCTypes=['Cf','Ba','WIMP']
             if(DMCType in DMCTypes):
@@ -123,7 +128,7 @@ def class CDMSDataset:
             else:
                 raise ValueError("Please specify DMC data group: "+str(dataGroups))
 
-            self.relativePath='/CDMS/DMC_dataRelease/'+DMCType+'/'+dataGroup
+            self.relativePath='/CDMS/DMC_dataRelease/'+DMCType+'/'+dataGroup+'/'
 
             self.metadata["analysis"]='NA'
             self.metadata["analysisVersion"]='NA'
@@ -137,9 +142,9 @@ def class CDMSDataset:
             self.metadata["noiseProfile"]='NA'
             self.metadata["simulationSubType"]='vac'
             self.metadata["WIMPmass"]="-1"
-        elif(dataType='Soudan'):
+        elif(dataType=='Soudan'):
             self.metadata["run"]='NA'
-        elif(dataType='SNOLAB'):
+        elif(dataType=='SNOLAB'):
             self.metadata["run"]='NA'
             
         self.metadata["processProg"]="NA"
