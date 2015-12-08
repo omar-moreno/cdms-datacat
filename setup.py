@@ -7,4 +7,5 @@ setup(name='CDMSDataCatalog',
       py_modules=['CDMSDataCatalog'],
       author='Noah Kurinsky',
       author_email='kurinsky@slac.stanford.edu',
-      url='http://titus.stanford.edu:8080/git/summary/?r=DataHandling/DataCat.git')
+      url='http://titus.stanford.edu:8080/git/summary/?r=DataHandling/DataCat.git',
+      scripts=['bin/dc-ls','bin/dc-rm','bin/dc-mkdir'])
