@@ -70,19 +70,17 @@ class CDMSDataCatalog:
         self.client.mkdir(path)
         return
 
-    def search(self,dtype='',subDtype='',group='',site=None,query=None):
-        path="/CDMS/"
-        if(dtype != ''):
-            path=path+dtype+"/"
-            if(subDtype != ''):
-                path=path+subDtype+"/"
-                if(group != ''):
-                    path=path+group+"/"
+    def search(self,dtype='**',subDtype='**',group='**',site=None,query=None):
+        path="/CDMS/"+dtype+'/'+subDtype+'/'+group
         print path
-        return self.client.search(path+'**',site=site,query=query)
+        return self.client.search(path,site=site,query=query)
 
     def add(self,CDMSds):
         try:
+            print "Committing "+CDMSds.datasetName
+            print CDMSds.relativePath
+            print CDMSds.fileType
+            print CDMSds.fileFormat
             self.client.mkds(CDMSds.relativePath,
                              CDMSds.datasetName,
                              CDMSds.fileType,
@@ -113,7 +111,7 @@ class CDMSDataset:
             self.metadata["fridgeName"]="doughtyFridge"
             self.metadata["Temp"]=0.07
 
-            self.relativePath='/CDMS/TF/'+site+'/'+dataGroup+'/'
+            self.relativePath='/CDMS/TF/'+site+'/'+dataGroup
         elif(dataType=='DMC'):
 
             DMCTypes=['Cf','Ba','WIMP']
@@ -128,7 +126,7 @@ class CDMSDataset:
             else:
                 raise ValueError("Please specify DMC data group: "+str(dataGroups))
 
-            self.relativePath='/CDMS/DMC_dataRelease/'+DMCType+'/'+dataGroup+'/'
+            self.relativePath='/CDMS/DMC_dataRelease/'+DMCType+'/'+dataGroup
 
             self.metadata["analysis"]='NA'
             self.metadata["analysisVersion"]='NA'
@@ -140,7 +138,7 @@ class CDMSDataset:
             self.metadata["energyMax"]='-1'
             self.metadata["energyMin"]='-1'
             self.metadata["noiseProfile"]='NA'
-            self.metadata["simulationSubType"]='vac'
+            self.metadata["simulationSubType"]='-1'
             self.metadata["WIMPmass"]="-1"
         elif(dataType=='Soudan'):
             self.metadata["run"]='NA'
