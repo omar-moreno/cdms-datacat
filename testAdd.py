@@ -2,6 +2,10 @@ from CDMSDataCatalog import *
 dc=CDMSDataCatalog()
 ds=CDMSDataset('newDS',
                '/u/ki/kurinsky/DataCat/testdata.mat',
-               'RQdata','DMC','SLAC',fileType='CDMSROOT',fileFormat='root',DMCType='WIMP')
-print ds.relativePath
+               'RQdata',
+               'DMC',
+               'SLAC',
+               'CDMSROOT',
+               'root',
+               DMCType='WIMP')
 dc.add(ds)

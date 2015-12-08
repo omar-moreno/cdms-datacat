@@ -16,7 +16,7 @@ class CDMSDataCatalog:
     def __init__(self):
         self.client = client_from_config_file()
 
-    def ls(self,path):
+    def ls(self,path='/'):
         path=corrPathCDMS(path)
         try:
             for child in self.client.children(path):
@@ -94,14 +94,48 @@ class CDMSDataCatalog:
 
 class CDMSDataset:
     
-    def __init__(self,name,filePath,dataGroup,dataType,site,fileFormat=None,fileType=None,DMCType=None):
-        self.metadata = Metadata()
+    def __init__(self,
+                 name, 
+                 filePath,
+                 dataGroup,
+                 dataType,
+                 site,
+                 fileFormat,
+                 fileType,
+                 DMCType=None,
+                 release=None,
+                 run=None,
+                 runData=None,
+                 runType=None):
+        """Constructor for the CDMS specific datset class
+        
+        All of these are mandatory; the optional metadata can be specified after construction
+        name - dataset name
+        filePath - physical path to file
+        dataGroup - e.g. 'RQdata' or 'RRQdata' (last organization level)
+        dataType - ('TF', 'DMC', 'Soudan', 'SNOLAB')
+        site -  e.g. 'SLAC'
+        fileFormat - e.g. 'root', 'mat', 'txt' 
+        fileType - e.g. 'CDMSROOT', 'CDMSMAT', 'CDMSRAW'
+
+        Mandatory for Soudan Data:
+        release - 'Prodv5-3_June2013'
+        run - 'R133','R134'
+        runData - 'all','merged','cuts',...
+        runType - 'cf','ba','bg_permitted_Sept2013'
+
+        Mandatory for DMC Data:
+        DMCType - 'Cf','Ba','WIMP',...
+        """
         self.datasetName=name
+        self.filePath=filePath
+
         self.dataType=dataType
         self.site=site
         self.fileFormat=fileFormat
         self.fileType=fileType
-        self.filePath=filePath
+        
+        self.metadata = Metadata()
 
         dataTypes=['TF','DMC','Soudan','SNOLAB']
         if not (dataType in dataTypes):
@@ -110,6 +144,10 @@ class CDMSDataset:
         if(dataType=='TF'):
             self.metadata["fridgeName"]="doughtyFridge"
             self.metadata["Temp"]=0.07
+
+            sites=['UCB','UMN','SLAC','TAMU','CUTE']
+            if not (site in sites):
+                raise ValueError("The following test fridge sites are currently supported: "+str(sites))
 
             self.relativePath='/CDMS/TF/'+site+'/'+dataGroup
         elif(dataType=='DMC'):
@@ -141,9 +179,32 @@ class CDMSDataset:
             self.metadata["simulationSubType"]='-1'
             self.metadata["WIMPmass"]="-1"
         elif(dataType=='Soudan'):
-            self.metadata["run"]='NA'
+            self.metadata["analysis"]='NA'
+            self.metadata["analysisVersion"]='NA'
+
+            runs=['R133','R134','R135']
+            if not (run in runs):
+                raise ValueError("Please specify Soudan run: "+str(runs))
+            self.metadata["run"]=run
+
+            releases=['Prodv5-3_June2013','Prodv5-3-5']
+            if not (release in releases):
+                raise ValueError("Please specify Soudan release: "+str(releases))
+
+            runDatas=['all','byseries','cuts','cuts_HT']
+            if not (runData in runDatas):
+                raise ValueError("Please specify run data type: "+str(runDatas))
+
+            runTypes=['bg_permitted_Sept2013','ba','cf']
+            if not (runType in runTypes):
+                raise ValueError("Please specify run type: "+str(runTypes))
+
+            self.relativePath='/CDMS/Soudan/'+run+'/'+release+'/'+runData+'/'+runType+'/'+dataGroup
         elif(dataType=='SNOLAB'):
             self.metadata["run"]='NA'
+            self.metadata["analysis"]='NA'
+            self.metadata["analysisVersion"]='NA'
+            self.relativePath='/CDMS/SNOLAB/'
             
         self.metadata["processProg"]="NA"
         self.metadata["processProgVersion"]="-1"
