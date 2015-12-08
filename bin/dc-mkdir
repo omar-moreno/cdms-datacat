@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+from CDMSDataCatalog import *
+import sys
+
+
+dc=CDMSDataCatalog()
+if(len(sys.argv) > 1):
+    dc.mkdir(sys.argv[1])	
+else:
+    print 'Enter directory to construct'
