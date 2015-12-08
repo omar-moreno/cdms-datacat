@@ -1,11 +1,11 @@
 from CDMSDataCatalog import *
 dc=CDMSDataCatalog()
-ds=CDMSDataset('newDS',
-               '/u/ki/kurinsky/DataCat/testdata.mat',
+ds=CDMSDataset('newDS2',
+               '/u/ki/kurinsky/DataCat/testdata2.mat',
                'RQdata',
                'DMC',
                'SLAC',
-               'CDMSROOT',
-               'root',
+               'CDMSMAT',
+               'mat',
                DMCType='WIMP')
 dc.add(ds)
