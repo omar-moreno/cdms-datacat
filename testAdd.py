@@ -5,7 +5,7 @@ ds=CDMSDataset('newDS2',
                'RQdata',
                'DMC',
                'SLAC',
-               'CDMSMAT',
                'mat',
+               'CDMSMAT',
                DMCType='WIMP')
 dc.add(ds)
