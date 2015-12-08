@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+
+from CDMSDataCatalog import *
+import sys
+
+if(len(sys.argv) > 1):
+    dc=CDMSDataCatalog()
+    dc.rm(sys.argv[1])	
+else:
+    print "Enter file to remove from data catalog"

@@ -6,6 +6,6 @@ ds=CDMSDataset('newDS2',
                'DMC',
                'SLAC',
                'mat',
-               'CDMSMAT',
+               'CDMSMATLAB',
                DMCType='WIMP')
 dc.add(ds)
