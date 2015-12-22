@@ -16,7 +16,7 @@ ds=CDMSDataset('newDS2',
 ds.info()
 
 #example of how to add more metadata
-#ds.metadata['newItem']='newValue'
+ds.metadata['newItem']='newValue'
 
 #add to the data catalog
-#dc.add(ds)
+dc.add(ds)
