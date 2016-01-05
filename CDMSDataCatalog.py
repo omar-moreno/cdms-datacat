@@ -70,18 +70,20 @@ class CDMSDataCatalog:
         self.client.mkdir(path)
         return
 
-    def search(self,dtype='**',subDtype='**',group='**',site=None,query=None):
-        path="/CDMS/"+dtype+'/'+subDtype+'/'+group
+    def search(self,path,group='**',site=None,query=None,show=None):
+        path=corrPathCDMS(path)
+        path=path+group
         print path
-        return self.client.search(path,site=site,query=query)
+        return self.client.search(path,site=site,query=query,show=show)
 
     def add(self,CDMSds):
         try:
+            path=corrPathCDMS(CDMSds.relativePath)
             print "Committing "+CDMSds.datasetName
-            print CDMSds.relativePath
+            print path
             print CDMSds.fileType
             print CDMSds.fileFormat
-            self.client.mkds(CDMSds.relativePath,
+            self.client.mkds(path,
                              CDMSds.datasetName,
                              CDMSds.fileType,
                              CDMSds.fileFormat,
@@ -209,3 +211,16 @@ class CDMSDataset:
         self.metadata["processProg"]="NA"
         self.metadata["processProgVersion"]="-1"
         self.metadata["processParadigm"]="-1"
+
+    
+    def info(self):
+        """Neatly output all information in dataset structure"""
+        print "Name: "+self.datasetName
+        print "System Path: "+self.filePath
+        print "Site: "+self.site
+        print "Data Type "+self.dataType
+        print "File Format: "+self.fileFormat
+        print "File Type: "+self.fileType
+        print "Metadata:"
+        for k,v in self.metadata.iteritems():
+            print "  "+k+": "+str(v)
