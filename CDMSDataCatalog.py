@@ -97,7 +97,8 @@ class CDMSDataCatalog:
 class CDMSDataset:
     """Base class for CDMS datasets"""
     
-    fileTypes={'mat':'CDMSMAT','root':'CDMSROOT','txt':'CDMSRAW'}
+    fileTypes={'m':'M','mat':'CDMSMATLAB','root':'CDMSROOT','txt':'CDMSTXT','epot':'CDMSEPOT','supersim':'CDMSHISTOGRAMS'}
+    fileFormats={'m':'m','mat':'mat','root':'root','txt':'txt','epot':'mat','supersim':'root'}
 
     def __init__(self,
                  name, 
@@ -112,19 +113,30 @@ class CDMSDataset:
         filePath - physical path to file
         dataType - 'DMC', 'Soudan', 'SNOLAB', 'TF', etc
         site -  e.g. 'SLAC'
-        fileFormat - e.g. 'root', 'mat', 'txt' 
+        fileFormat - e.g. 'root', 'mat', 'txt', 'm', 'epot'
         
         """
         self.datasetName=name
         self.filePath=filePath
-        self.dataType=dataType
-        self.site=site
-        self.fileFormat=fileFormat
-        self.fileType=CDMSDataset.fileTypes[fileFormat]
-
+        self.setDataType(dataType)
+        self.setSite(site)
+        self.setFileFormat(fileFormat)
         self.relativePath='/CDMS/'+self.dataType
         
         self.metadata = Metadata()
+
+    def setFileFormat(self,fileFormat):
+        try:
+            self.fileFormat=CDMSDataset.fileFormats[fileFormat]
+            self.fileType=CDMSDataset.fileTypes[fileFormat]
+        except KeyError:
+            raise ValueError('Unknown file format, known types are '+str(CDMSDataset.fileFormats.keys()))
+
+    def setSite(self,site):
+        self.site=site
+
+    def setDataType(self,dataType):
+        self.dataType=dataType
     
     def info(self):
         """Neatly output all information in dataset structure"""
@@ -138,6 +150,18 @@ class CDMSDataset:
         print "Metadata:"
         for k,v in self.metadata.iteritems():
             print "  - "+k+": "+str(v)
+
+    def __str__(self):
+        return '<Name: '+self.datasetName+ ', Path: '+self.relativePath+', File: '+self.filePath+'>'
+
+    def keys(self):
+        return self.metadata.keys()
+
+    def __getitem__(self,key):
+        return self.metadata[key]
+
+    def __setitem__(self,key,value):
+        self.metadata[key]=value
 
 class DMCData(CDMSDataset):
 
