@@ -76,20 +76,27 @@ class CDMSDataCatalog:
         print path
         return self.client.search(path,site=site,query=query,show=show)
 
-    def add(self,CDMSds):
+    def add(self,CDMSds,replace=True):
         try:
             path=corrPathCDMS(CDMSds.relativePath)
-            print "Committing "+CDMSds.datasetName
-            print path
-            print CDMSds.fileType
-            print CDMSds.fileFormat
-            self.client.mkds(path,
-                             CDMSds.datasetName,
-                             CDMSds.fileType,
-                             CDMSds.fileFormat,
-                             versionMetadata=CDMSds.metadata,
-                             resource=CDMSds.filePath,
-                             site=CDMSds.site)
+            if(not self.client.exists(path)):
+                self.mkdir(path,parents=True)
+            DSexists = self.client.exists(path+'/'+CDMSds.datasetName)
+            if(DSexists):
+                if(replace):
+                    print 'Replacing existing dataset: '+path+'/'+CDMSds.datasetName
+                    self.rm(path+'/'+CDMSds.datasetName)
+                else:
+                    print 'Skipping existing dataset: '+path+'/'+CDMSds.datasetName
+
+            if(not DSexists or replace):
+                self.client.mkds(path,
+                                 CDMSds.datasetName,
+                                 CDMSds.fileType,
+                                 CDMSds.fileFormat,
+                                 versionMetadata=CDMSds.metadata,
+                                 resource=CDMSds.filePath,
+                                 site=CDMSds.site)
         except Exception as e:
             print e
             print "Could not create dataset"
@@ -204,7 +211,7 @@ class DMCData(CDMSDataset):
         if(processStep in processSteps):
             self.processStep=processStep
         else:
-            raise ValueError("Please specify DMC process level (processType), options are "+str(processTypes))
+            raise ValueError("Please specify DMC process level (processStep), options are "+str(processSteps))
 
         #add implementation to path
         self.implement=implement
