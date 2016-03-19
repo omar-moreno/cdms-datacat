@@ -65,9 +65,9 @@ class CDMSDataCatalog:
                 print e
                 raise IOError("Couldn't delete "+path)
 
-    def mkdir(self,path):
+    def mkdir(self,path,parents=False):
         path=corrPathCDMS(path)
-        self.client.mkdir(path)
+        self.client.mkdir(path,parents=parents)
         return
 
     def search(self,path,group='**',site=None,query=None,show=None):
