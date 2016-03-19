@@ -206,6 +206,7 @@ class DMCData(CDMSDataset):
         self.metadata["DMCImpl"]=implement
         self.metadata["DMCversion"]=DMCVersion
         self.metadata["Source"]=DMCType
+        self.metadata["SourceLoc"]='None'
         self.metadata["EnergyMax"]='-1'
         self.metadata["EnergyMin"]='-1'
         self.metadata["NoiseProfile"]='NA'
