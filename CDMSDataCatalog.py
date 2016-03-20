@@ -70,10 +70,8 @@ class CDMSDataCatalog:
         self.client.mkdir(path,parents=parents)
         return
 
-    def search(self,path,group='**',site=None,query=None,show=None):
+    def search(self,path,site=None,query=None,show=None):
         path=corrPathCDMS(path)
-        path=path+group
-        print path
         return self.client.search(path,site=site,query=query,show=show)
 
     def add(self,CDMSds,replace=True):
