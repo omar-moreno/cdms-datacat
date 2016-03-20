@@ -16,7 +16,8 @@ class CDMSDataCatalog:
     def __init__(self):
         self.client = client_from_config_file()
 
-    def ls(self,path='/'):
+    def ls(self,path='/CDMS/'):
+        """ Return contents of a datacat path, by default look in /CDMS/ """
         path=corrPathCDMS(path)
         try:
             for child in self.client.children(path):
@@ -72,9 +73,19 @@ class CDMSDataCatalog:
 
     def search(self,path,site=None,query=None,show=None):
         path=corrPathCDMS(path)
-        return self.client.search(path,site=site,query=query,show=show)
+        results=self.client.search(path,site=site,query=query,show=show)
+        convResults=list()
+        for result in results:
+            convResults.append(CDMSDataset.fromSearchDataset(result))
+        return convResults
+
+    def get(self,path,site='All'):
+        path=corrPathCDMS(path)
+        return CDMSDataset.fromDataset(self.client.path(path,site=site))
 
     def add(self,CDMSds,replace=True):
+        if(CDMSds.dataType == 'DatacatQuery'):
+            raise ValueError('Cannot commit dataset with type "DatacatQuery", invalid type')
         try:
             path=corrPathCDMS(CDMSds.relativePath)
             if(not self.client.exists(path)):
@@ -129,6 +140,26 @@ class CDMSDataset:
         self.relativePath='/CDMS/'+self.dataType
         
         self.metadata = Metadata()
+
+    @classmethod
+    def fromDataset(cls,ds):
+        nds = cls(str(ds.name),str(ds.resource),
+                  dataType='DatacatQuery',
+                  site=str(ds.site),
+                  fileFormat=str(ds.fileFormat))
+        nds.relativePath=str(ds.path)
+        for k,v in ds.versionMetadata.iteritems():
+            nds.metadata[k]=v
+        return nds
+
+    @classmethod
+    def fromSearchDataset(cls,ds):
+        nds = cls(str(ds.name),str(ds.locations[0].resource),
+                  dataType='DatacatQuery',
+                  site=str(ds.locations[0].site),
+                  fileFormat=str(ds.fileFormat))
+        nds.relativePath=str(ds.path)
+        return nds
 
     def setFileFormat(self,fileFormat):
         try:
