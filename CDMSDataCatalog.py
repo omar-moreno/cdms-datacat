@@ -11,6 +11,20 @@ def corrPathCDMS(path):
         
     return path
 
+def getFileFormat(filePath):
+    #determine file format                                                                                                                                                                               
+    if 'EPot' in filePath:
+        fileFormat='epot'
+    elif '.mat' in filePath:
+        fileFormat='mat'
+    elif '.m' in filePath:
+        fileFormat='m'
+    elif '.root' in filePath:
+        fileFormat='root'
+    else:
+        fileFormat='txt'
+    return fileFormat
+
 class CDMSDataCatalog:
     
     def __init__(self):
@@ -271,3 +285,35 @@ class DMCData(CDMSDataset):
         self.metadata["EnergyMin"]='-1'
         self.metadata["NoiseProfile"]='NA'
         self.metadata["WIMPmass"]="-1"
+
+class SuperSimData(CDMSDataset):
+
+    def __init__(self,
+                 name, 
+                 filePath,
+                 SuperSimType,
+                 SuperSimVersion,
+                 experiment='Soudan',
+                 site='SLAC',
+                 fileFormat='root'):
+        """Constructor for the CDMS DMC dataset class
+        
+        All of these are mandatory; the optional metadata can be specified after construction
+        name     - dataset name
+        filePath - physical path to file
+        SuperSimType  - e.g. 'Backgrounds'
+        SuperSimVersion - e.g. 1.0
+
+        Optional Inputs
+        experiment  - 'Soudan' (default), 'SNOLAB', 'TestDevices', 'TF/UMN', 'TF/UCB'
+        site        - e.g. 'SLAC' (default)
+        fileFormat  - 'root' (default), 'mat', 'txt' 
+        SuperSimVersion - e.g. 1.0 (default)
+        """
+        CDMSDataset.__init__(self,name,filePath,experiment+'/SuperSim',site,fileFormat)
+
+        #add simulation type to path
+        self.relativePath+='/'+SuperSimType+'/'+SuperSimVersion
+
+        self.metadata["SuperSimType"]=SuperSimType
+        self.metadata["SuperSimVersion"]=SuperSimVersion
