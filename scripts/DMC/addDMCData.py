@@ -5,6 +5,23 @@ import os
 import numpy
 import glob
 from CDMSDataCatalog import *
+import sys
+
+if len(sys.argv) < 4:
+    print sys.argv
+    exit(1)
+else:
+    argv=sys.argv
+    dataset=argv[1]
+    simSource=argv[2]
+    subdir=argv[3]
+
+if len(sys.argv) > 4:
+    simSourceLoc=sys.argv[4]
+else:
+    simSourceLoc='NA'
+
+print dataset,simSource,subdir,simSourceLoc
 
 #create Data catalog object
 dc=CDMSDataCatalog()
@@ -14,13 +31,13 @@ baseDir='/nfs/slac/g/cdms/u05/'
 outputDir=baseDir+'DetMC_data/CDMS_DMC_v4-1-4_20120604_v02/R133_LT_DMC_COMSOL5_Epot/'
 procDir=baseDir+'DMC_dataRelease/CDMS_DMC_v4-1-4_20120604_v02/LT-R133_DMC-4-Prodv5-3-6/'
 
-#dataset specifics (these could be looped over)
-dataset='Cf_cryo'   #dataset name
-simSource='Cf'      #calibration source
-subdir='cf'         #processed data subdirectory (after merged/all)
-simSourceLoc='cryo' #info about source location or varied DMC input
-bulldozed='1'       #0 for false, 1 for true
+if('bull' in dataset):
+    bulldozed='1'       #0 for false, 1 for true
+else:
+    bulldozed='0'
 analysis='LT'       #analysis DMC run made for
+
+print dataset,simSource,subdir,simSourceLoc,bulldozed,analysis
 
 #this function is used to create and add dataset objects independent of the file exploration below
 def makeDS(filePath,processStep,detector):
@@ -34,6 +51,8 @@ def makeDS(filePath,processStep,detector):
         fileFormat='m'
     elif '.root' in filePath:
         fileFormat='root'
+    elif '.png' in filePath:
+        fileFormat='png'
     else:
         fileFormat='txt'
 
@@ -63,7 +82,6 @@ def makeDS(filePath,processStep,detector):
     print ds.relativePath, ds.datasetName, ds.fileType, ds['DataLevel']
     # add to catalog
     dc.add(ds,replace=False)
-
 
 ########################
 #End user modifications#
@@ -115,18 +133,53 @@ for det in dets:
                 #find input files
                 files=sorted(glob.glob(tmpDir+'*1.mat'))
                 if(len(files) > 0):
-                    makeDS(files[0],'Raw',detStr)
+                    makeDS(files[0],'Raw',detStr+'/Results'+directory)
 
-            #add one each of text_files_DMCtemplate
-            for directory in ['_DMCtemplate']:
+            #add one each of text_files_*
+            for directory in ['','_DMCtemplate','_bin_fit_cal','_qmean']:
                 tmpDir=d+'/text_files'+directory+'/'
                 #find input files
-                files=sorted(glob.glob(tmpDir+'*1.txt'))
-                if(len(files) > 0):
-                    makeDS(files[0],'Preprocessed',detStr)
+                files=sorted(glob.glob(tmpDir+'*_1.txt'))
+                for f in files:
+                    makeDS(f,'Preprocessed',detStr+'/text_files'+directory)
 
-            #add lines here to commit any other data from the DMC folder
+            #add one example of calib_files
+            tmpDir=d+'/calib_files/'
+            files=glob.glob(tmpDir+'*_0*.mat')
+            for f in files:
+                makeDS(f,'Preprocessed',detStr+'/calib_files')
+            outFiles=glob.glob(tmpDir+'out*.mat')
+            for f in outFiles:
+                makeDS(f,'Preprocessed',detStr+'/calib_files')
 
+            #add validTool
+            tmpDir=d+'/validTool/'
+            files=glob.glob(tmpDir+'*')
+            for f in files:
+                if('plots' in f):
+                    plots=glob.glob(f+'/*.png')
+                    for plot in plots:
+                        makeDS(plot,'Preprocessed',detStr+'/validTool/plots')
+                else:
+                    makeDS(f,'Preprocessed',detStr+'/validTool')
+
+#find combined files
+# find subdirectories                                                                                                                                                                                
+ROOTDirs=glob.glob(DMCDir+'ROOT*')
+for d in ROOTDirs:
+    dirName='combined_ROOT_files'
+    files=glob.glob(d+'/*.root')
+    if (len(files) == 0):
+        files=glob.glob(d+'/*/combined_ROOT_files/*.root')
+    if (len(files) > 0):    
+        makeDS(files[0],'Preprocessed','combined_ROOT_files')
+    else:
+        dirs=glob.glob(d+'/*')
+        for dd in dirs:
+            files=glob.glob(dd+'/*_0.root')
+            dirName=os.path.basename(dd)
+            if(len(files) > 0):
+                makeDS(files[0],'Preprocessed',dirName)
 
 #commit processed DMC data
 BatsDir=procDir+dataset+'/merged/'

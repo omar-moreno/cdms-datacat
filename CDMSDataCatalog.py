@@ -127,8 +127,8 @@ class CDMSDataCatalog:
 class CDMSDataset:
     """Base class for CDMS datasets"""
     
-    fileTypes={'m':'M','mat':'CDMSMATLAB','root':'CDMSROOT','txt':'CDMSTXT','epot':'CDMSEPOT','supersim':'CDMSHISTOGRAMS'}
-    fileFormats={'m':'m','mat':'mat','root':'root','txt':'txt','epot':'mat','supersim':'root'}
+    fileTypes={'m':'M','mat':'CDMSMATLAB','root':'CDMSROOT','txt':'CDMSTXT','png':'CDMSDMCPNG','epot':'CDMSEPOT','supersim':'CDMSHISTOGRAMS'}
+    fileFormats={'m':'m','mat':'mat','root':'root','txt':'txt','epot':'mat','supersim':'root','png':'png'}
 
     def __init__(self,
                  name, 
@@ -270,7 +270,7 @@ class DMCData(CDMSDataset):
             self.relativePath+='/Production/'+self.processStep
         
         #add detector if necessary
-        if(self.processStep in ['Constants','Raw']):
+        if(self.processStep in ['Constants','Raw','Preprocessed']):
             self.relativePath+='/'+detector
 
         self.metadata["Analysis"]=analysis
