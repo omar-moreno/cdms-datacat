@@ -202,7 +202,10 @@ class CDMSDataset:
             print "  - "+k+": "+str(v)
 
     def __str__(self):
-        return '<Name: '+self.datasetName+ ', Path: '+self.relativePath+', File: '+self.filePath+'>'
+        return self.datasetName
+
+    def __repr__(self):
+        return '<CDMSDataset Class, Name: '+self.datasetName+'>'
 
     def keys(self):
         return self.metadata.keys()
