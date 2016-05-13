@@ -10,7 +10,10 @@ dc=CDMSDataCatalog()
 ds=CDMSDataset('newDS3',path+'/testdata.mat',fileFormat='mat')
 
 #example of how to add more metadata
-ds.metadata['newItem']='newValue'
+ds['newItem']='newValue'
+
+#output name of dataset
+print ds # or print ds.datasetName
 
 #see existing metadata
 ds.info()
