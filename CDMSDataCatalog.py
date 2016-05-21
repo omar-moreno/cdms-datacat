@@ -342,7 +342,7 @@ class TestFridgeData(CDMSDataset):
         """
         CDMSDataset.__init__(self,name,filePath,'TF/'+fridge,site,fileFormat)
 
-#NOT FINISHED
+
 class SoudanData(CDMSDataset):
 
     def __init__(self,
