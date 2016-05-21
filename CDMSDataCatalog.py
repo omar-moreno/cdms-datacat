@@ -12,7 +12,7 @@ def corrPathCDMS(path):
     return path
 
 def getFileFormat(filePath):
-    #determine file format                                                                                                                                                                               
+    #determine file format 
     if 'EPot' in filePath:
         fileFormat='epot'
     elif '.mat' in filePath:
@@ -299,7 +299,7 @@ class SuperSimData(CDMSDataset):
                  experiment='Soudan',
                  site='SLAC',
                  fileFormat='root'):
-        """Constructor for the CDMS DMC dataset class
+        """Constructor for the CDMS SuperSim dataset class
         
         All of these are mandatory; the optional metadata can be specified after construction
         name     - dataset name
@@ -320,3 +320,86 @@ class SuperSimData(CDMSDataset):
 
         self.metadata["SuperSimType"]=SuperSimType
         self.metadata["SuperSimVersion"]=SuperSimVersion
+
+class TestFridgeData(CDMSDataset):
+
+    def __init__(self,
+                 name, 
+                 filePath,
+                 fridge,
+                 site='SLAC',
+                 fileFormat='root'):
+        """Constructor for the CDMS Test Fridge dataset class
+        
+        All of these are mandatory; the optional metadata can be specified after construction
+        name     - dataset name
+        filePath - physical path to file
+        fridge - e.g. Stanford/KO15 
+
+        Optional Inputs
+        site        - e.g. 'SLAC' (default)
+        fileFormat  - 'root' (default), 'mat', 'txt' 
+        """
+        CDMSDataset.__init__(self,name,filePath,'TF/'+fridge,site,fileFormat)
+
+#NOT FINISHED
+class SoudanData(CDMSDataset):
+
+    def __init__(self,
+                 name, 
+                 filePath,
+                 Run,
+                 RunType,
+                 processStep,
+                 cutName=None,
+                 cutDate=None,
+                 site='SLAC',
+                 fileFormat='root',
+                 analysis='All',
+                 prodVersion='53',
+                 detectors='All'):
+        """Constructor for the CDMS Soudan dataset class
+        
+        All of these are mandatory; the optional metadata can be specified after construction
+        name     - dataset name
+        filePath - physical path to file
+        Run      - '133', '134', etc
+        RunType  - 'Cf','Ba','Bg',...
+        processStep - 'Raw', 'RQ', 'RRQ', 'Cut'
+
+        Mandatory Cut Arguments, if processLevel is 'Cut'
+        cutName - name of the cut
+        cutDate - date cuts were produced
+        analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133' (mandatory for cuts)
+
+        Optional Inputs
+        site        - e.g. 'SLAC' (default)
+        fileFormat  - 'root' (default), 'mat', 'txt' 
+        analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133' (optional if not cuts)
+        prodVersion - e.g. '53' (default)
+        """
+        CDMSDataset.__init__(self,name,filePath,'Soudan/Data/'+Run,site,fileFormat)
+
+        processSteps=['Raw','RQ','RRQ','Cut']
+        if(processStep in processSteps):
+            self.processStep=processStep
+        else:
+            raise ValueError("Please specify data process level (processStep), options are "+str(processSteps))
+
+        #add run to path
+        self.run=Run
+        self.relativePath+='/'+self.run+'/'+RunType
+
+        #add category to path
+        if(self.processStep in ['Raw']):
+            self.relativePath+=self.processStep
+        elif(self.processStep in ['Cut']):
+            self.relativePath+='/PostProcessed/cuts/'+analysis
+        else:
+            self.relativePath+='/PostProcessed/all'
+
+        self.metadata["Analysis"]=analysis
+        self.metadata["AnalysisVersion"]=analysisVersion
+        self.metadata["Run"]=Run
+        self.metadata["Source"]=RunType
+        self.metadata["DataLevel"]=processStep
