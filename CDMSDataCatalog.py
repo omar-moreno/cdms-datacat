@@ -378,7 +378,7 @@ class SoudanData(CDMSDataset):
         analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133' (optional if not cuts)
         prodVersion - e.g. '53' (default)
         """
-        CDMSDataset.__init__(self,name,filePath,'Soudan/Data/'+Run,site,fileFormat)
+        CDMSDataset.__init__(self,name,filePath,'Soudan/Data',site,fileFormat)
 
         processSteps=['Raw','RQ','RRQ','Cut']
         if(processStep in processSteps):
@@ -395,11 +395,24 @@ class SoudanData(CDMSDataset):
             self.relativePath+=self.processStep
         elif(self.processStep in ['Cut']):
             self.relativePath+='/PostProcessed/cuts/'+analysis
+
+            if(cutDate != None):
+                self.metadata['CutDate']=cutDate
+                self.relativePath+='/'+cutDate
+            else:
+                raise ValueError('Please specify cut generation date (or current)')
+            
+            if(cutName != None):
+                self.metadata['CutName']=cutName
+                self.relativePath+='/'+cutName
+            else:
+                raise ValueError('Please specify cut name')
+
         else:
             self.relativePath+='/PostProcessed/all'
 
         self.metadata["Analysis"]=analysis
-        self.metadata["AnalysisVersion"]=analysisVersion
+        self.metadata["AnalysisVersion"]=prodVersion
         self.metadata["Run"]=Run
         self.metadata["Source"]=RunType
         self.metadata["DataLevel"]=processStep
