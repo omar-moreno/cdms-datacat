@@ -1,27 +1,31 @@
 #!/bin/bash
 
-python addDMCData.py Barium Ba ba
-python addDMCData.py Barium_bulldozer Ba ba
-python addDMCData.py Barium_bulldozer_1 Ba ba
-python addDMCData.py Barium_bulldozer_2 Ba ba
-python addDMCData.py Barium_bulldozer_3 Ba ba
+DMCGen=/nfs/slac/g/cdms/u05/DMCProduction/V1-4/Raw
+DMCProd=/nfs/slac/g/cdms/u05/DMCProduction/V1-4/Processed
 
-python addDMCData.py 1keVline 1keVline 1keVline
+# 'CDMSlite' 'LT' 'HT' 'Photoneutron'
 
-isotopes="Pb206 Pb210 Bi210"
-locations="sidewall surface"
-for iso in $isotopes
-do
-    for loc in $locations
-    do
-	python addDMCData.py ${iso}_$loc $iso bg $loc
-	python addDMCData.py ${iso}_${loc}_bulldozer $iso bg $loc
-	python addDMCData.py ${iso}_${loc}_fixedAvgZ $iso bg $loc
-    done
-done
+for AN in 'CDMSlite' ; do 
+    echo "$AN"
+#    for sample in $(ls ${DMCGen}/${AN}); do	
+    for sample in germanium ; do	
+	echo "    $sample"
+	#mergname=$(ls ${DMCProd}/${AN} | grep ${sample} ) 
+	mergname=$(ls ${DMCProd}/${AN} | grep ${sample} | grep t5z2_wRC ) 
+	proctype=$(ls ${DMCProd}/${AN}/${mergname}/merged/all )
+	sampleshort=$(echo $sample | cut -d _ -f 1 )
+	echo "        $mergname | $proctype | $sampleshort"
+	if [[ "$mergname" == "" ]]  || [[ "$proctype" == "" ]] || [[ "$sampleshort" == "" ]] ; then
+	    echo "               Something is missing. Skipping sample"
+	    continue
+	else
+	    echo "               Adding to Catalog..."
+            python addDMCData.py $AN $sample $sampleshort $mergname $proctype
 
-python addDMCData.py WIMPS Wimp bg
-python addDMCData.py WIMPS_15 Wimp bg 15
+	fi
+    done;
+done;
 
-python addDMCData.py Cf_cryo Cf cf cryo
-python addDMCData.py Cf_vacuum Cf cf vacuum
+echo "DONE!"
+
+exit 0 

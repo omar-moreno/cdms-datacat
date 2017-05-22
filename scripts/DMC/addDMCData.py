@@ -5,94 +5,54 @@ import os
 import numpy
 import glob
 from CDMSDataCatalog import *
+from DMCCatTools import *
 import sys
 
-if len(sys.argv) < 4:
+if len(sys.argv) < 5:
     print sys.argv
+    print "Usage:  python addDMCdata.py analysis dataset simSource mergedir mergedsubdir [simSourceLoc]"
     exit(1)
 else:
     argv=sys.argv
-    dataset=argv[1]
-    simSource=argv[2]
-    subdir=argv[3]
+    analysis=argv[1]
+    dataset=argv[2]
+    simSource=argv[3]
+    mergedir=argv[4]
+    subdir=argv[5]
 
-if len(sys.argv) > 4:
-    simSourceLoc=sys.argv[4]
+if len(sys.argv) > 6:
+    simSourceLoc=sys.argv[6]
 else:
-    simSourceLoc='NA'
+    for thloc in ['cryo','vacuum','sidewall','surface']:
+        if thloc in dataset : 
+            simSourceLoc=thloc
+            break;
+        else : simSourceLoc='NA'
 
-print dataset,simSource,subdir,simSourceLoc
+
+print "Setting up:"
+print analysis,dataset,simSource,mergedir,subdir,simSourceLoc
+print "______"
 
 #create Data catalog object
 dc=CDMSDataCatalog()
 
 #file paths for DMC/Processed Data
-baseDir='/nfs/slac/g/cdms/u05/'
-outputDir=baseDir+'DetMC_data/CDMS_DMC_v4-1-4_20120604_v02/R133_LT_DMC_COMSOL5_Epot/'
-procDir=baseDir+'DMC_dataRelease/CDMS_DMC_v4-1-4_20120604_v02/LT-R133_DMC-4-Prodv5-3-6/'
+baseDir='/nfs/slac/g/cdms/u05/DMCProduction/V1-4/'
+outputDir=baseDir+'Raw/'+analysis+'/'
+procDir=baseDir+'Processed/'+analysis+'/'
+BatsDir=procDir+'/'+mergedir+'/merged/'
 
-if('bull' in dataset):
-    bulldozed='1'       #0 for false, 1 for true
-else:
-    bulldozed='0'
-analysis='LT'       #analysis DMC run made for
 
+bulldozed='Not Used'       #0 for false, 1 for true
+ProdVer='MATLAB_V1-4'
+tesode='TES_ODE_v1.2'
+PreProcVer='DMCPreBats_v2.1'
+ProcVer='cdmsbats_5.5.2'
+
+print "This has been selected for pushing into the catalog:"
 print dataset,simSource,subdir,simSourceLoc,bulldozed,analysis
 
-#this function is used to create and add dataset objects independent of the file exploration below
-def makeDS(filePath,processStep,detector):
-
-    #determine file format
-    if 'EPot' in filePath:
-        fileFormat='epot'
-    elif '.mat' in filePath:
-        fileFormat='mat'
-    elif '.m' in filePath:
-        fileFormat='m'
-    elif '.root' in filePath:
-        fileFormat='root'
-    elif '.png' in filePath:
-        fileFormat='png'
-    else:
-        fileFormat='txt'
-
-    # use file name as dataset name
-    dsName=os.path.split(filePath)[1]
-    # create DMC data structure (from CDMSDataCatalog package)
-    ds = DMCData(dsName,
-                 filePath,
-                 dataset,
-                 processStep=processStep,
-                 site='SLAC',
-                 fileFormat=fileFormat,
-                 analysis=analysis,
-                 analysisVersion='53',
-                 detector=detector)
-    # add custom metadata
-    ds['Bulldozed']=bulldozed
-    ds['Source']=simSource
-    ds['DataLevel']=processStep
-    ds['SourceLoc']=simSourceLoc
-    if(processStep == 'Postprocessed'):
-        if('calib' in dsName):
-            ds['DataLevel']='RRQ'
-        elif('merge' in dsName):
-            ds['DataLevel']='RQ'
-    # output dataset info
-    print ds.relativePath, ds.datasetName, ds.fileType, ds['DataLevel']
-    # add to catalog
-    dc.add(ds,replace=False)
-
-########################
-#End user modifications#
-########################
-
-def GetDetStr(detnum):
-    dn=int(detnum-1100)
-    t= (dn+2)/3
-    z= (dn-1)%3+1
-    detector="T"+str(t)+"Z"+str(z)
-    return detector
 
 #######################
 ## commit DMC output ##
@@ -101,10 +61,14 @@ def GetDetStr(detnum):
 # get DMC directory
 DMCDir=outputDir+dataset+'/'
 # find subdirectories
-DMCDirs=glob.glob(DMCDir+'*DMC*')
+DMCDirs=glob.glob(DMCDir+'*Soudan*')
+
+print "Looking for Sample in Directory:",DMCDir
+
 dets=numpy.arange(1101,1116)
 #loop over SCDMS detectors
 for det in dets:
+    print det
     #get TXZY string
     detStr = GetDetStr(det)
     #loop over subdirectories
@@ -117,7 +81,7 @@ for det in dets:
             files=glob.glob(tmpDir+'*.m*')
             #for each file, make dataset, and add
             for f in files:
-                makeDS(f,'Constants',detStr)
+                makeDS(f,dataset,'Constants',detStr,analysis,simSource,simSourceLoc,bulldozed=bulldozed,DMCVersion=ProdVer,TESODE=tesode,PreProcVer=PreProcVer,ProcVer=ProcVer)
 
             #get input directory
             tmpDir=d+'/Input/'
@@ -125,32 +89,33 @@ for det in dets:
             files=glob.glob(tmpDir+'*.mat')
             #loop over files, make dataset, add
             for f in files:
-                makeDS(f,'SuperSim',detStr)
+                makeDS(f,dataset,'SuperSim',detStr,analysis,simSource,simSourceLoc,bulldozed=bulldozed,DMCVersion=ProdVer,TESODE=tesode,PreProcVer=PreProcVer,ProcVer=ProcVer)
 
             #add one each of ResultsPhonon, ResultsTES, ResultsFET
-            for directory in ['Phonon','TES','FET']:
+            for directory in ['Phonon','PhononBull','TES','FET']:
                 tmpDir=d+'/Results'+directory+'/'
                 #find input files
                 files=sorted(glob.glob(tmpDir+'*1.mat'))
                 if(len(files) > 0):
-                    makeDS(files[0],'Raw',detStr+'/Results'+directory)
+                    makeDS(files[0],dataset,'Raw',detStr+'/Results'+directory,analysis,simSource,simSourceLoc,bulldozed=bulldozed,DMCVersion=ProdVer,TESODE=tesode,PreProcVer=PreProcVer,ProcVer=ProcVer)
 
             #add one each of text_files_*
-            for directory in ['','_DMCtemplate','_bin_fit_cal','_qmean']:
-                tmpDir=d+'/text_files'+directory+'/'
-                #find input files
-                files=sorted(glob.glob(tmpDir+'*_1.txt'))
-                for f in files:
-                    makeDS(f,'Preprocessed',detStr+'/text_files'+directory)
+            #for directory in ['','_DMCtemplate','_gamma_fit_cal','_qmean']:
+            #    tmpDir=d+'/text_files'+directory+'/'
+            #    #find input files
+            #    files=sorted(glob.glob(tmpDir+'*_1.txt'))
+            #    for f in files:
+            #        makeDS(f,'Preprocessed',detStr+'/text_files'+directory)
 
             #add one example of calib_files
             tmpDir=d+'/calib_files/'
-            files=glob.glob(tmpDir+'*_0*.mat')
+            files=glob.glob(tmpDir+'*fit_calibration*.mat')
             for f in files:
-                makeDS(f,'Preprocessed',detStr+'/calib_files')
+                makeDS(f,dataset,'Preprocessed',detStr+'/calib_files',analysis,simSource,simSourceLoc,bulldozed=bulldozed,DMCVersion=ProdVer,TESODE=tesode,PreProcVer=PreProcVer,ProcVer=ProcVer)
+
             outFiles=glob.glob(tmpDir+'out*.mat')
             for f in outFiles:
-                makeDS(f,'Preprocessed',detStr+'/calib_files')
+                makeDS(f,dataset,'Preprocessed',detStr+'/calib_files',analysis,simSource,simSourceLoc,bulldozed=bulldozed,DMCVersion=ProdVer,TESODE=tesode,PreProcVer=PreProcVer,ProcVer=ProcVer)
 
             #add validTool
             tmpDir=d+'/validTool/'
@@ -159,33 +124,39 @@ for det in dets:
                 if('plots' in f):
                     plots=glob.glob(f+'/*.png')
                     for plot in plots:
-                        makeDS(plot,'Preprocessed',detStr+'/validTool/plots')
+                        makeDS(plot,dataset,'Preprocessed',detStr+'/validTool/plots',analysis,simSource,simSourceLoc,bulldozed=bulldozed,DMCVersion=ProdVer,TESODE=tesode,PreProcVer=PreProcVer,ProcVer=ProcVer)
                 else:
-                    makeDS(f,'Preprocessed',detStr+'/validTool')
+                    makeDS(f,dataset,'Preprocessed',detStr+'/validTool',analysis,simSource,simSourceLoc,bulldozed=bulldozed,DMCVersion=ProdVer,TESODE=tesode,PreProcVer=PreProcVer,ProcVer=ProcVer)
+
 
 #find combined files
-# find subdirectories                                                                                                                                                                                
+# find subdirectories                                                                                                                                                           
+print " finding ROOT files"                     
 ROOTDirs=glob.glob(DMCDir+'ROOT*')
 for d in ROOTDirs:
-    dirName='combined_ROOT_files'
+    dirName='combined_ROOT_files_T2Z1only'
     files=glob.glob(d+'/*.root')
     if (len(files) == 0):
-        files=glob.glob(d+'/*/combined_ROOT_files/*.root')
+        files=glob.glob(d+'/*/combined_ROOT_files_T2Z1only/*.root')
     if (len(files) > 0):    
-        makeDS(files[0],'Preprocessed','combined_ROOT_files')
+        makeDS(files[0],dataset,'Preprocessed',dirName,analysis,simSource,simSourceLoc,bulldozed=bulldozed,DMCVersion=ProdVer,TESODE=tesode,PreProcVer=PreProcVer,ProcVer=ProcVer)
     else:
         dirs=glob.glob(d+'/*')
         for dd in dirs:
             files=glob.glob(dd+'/*_0.root')
             dirName=os.path.basename(dd)
             if(len(files) > 0):
-                makeDS(files[0],'Preprocessed',dirName)
+                makeDS(files[0],dataset,'Preprocessed',dirName,analysis,simSource,simSourceLoc,bulldozed=bulldozed,DMCVersion=ProdVer,TESODE=tesode,PreProcVer=PreProcVer,ProcVer=ProcVer)
 
 #commit processed DMC data
-BatsDir=procDir+dataset+'/merged/'
+print "Looking for postprocessed files:"
+print BatsDir
+
 files=glob.glob(BatsDir+'*.root')
 if(len(files) < 1):
-    BatsDir=procDir+dataset+'/merged/all/'+subdir+'/'
+    BatsDir=procDir+'/'+mergedir+'/merged/all/'+subdir+'/'
+    print BatsDir
     files=glob.glob(BatsDir+'*.root')
 for f in files:
-    makeDS(f,'Postprocessed','All')
+    makeDS(f,dataset,'Postprocessed',mergedir,analysis,simSource,simSourceLoc,bulldozed=bulldozed,DMCVersion=ProdVer,TESODE=tesode,PreProcVer=PreProcVer,ProcVer=ProcVer)
+
