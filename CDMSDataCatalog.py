@@ -35,24 +35,24 @@ class CDMSDataCatalog:
         path=corrPathCDMS(path)
         try:
             for child in self.client.children(path):
-                print child.path
+                print(child.path)
         except TypeError:
-            print "Cannot ls, "+path+" is a dataset"
+            print("Cannot ls, %s is a dataset" % path)
         except:
-            print "Path does not exist"
+            print("Path does not exist")
 
     def rm(self,path,recursive=False,verbose=True):
         path=corrPathCDMS(path)
         
         if(verbose):
-            print path
+            print(path)
         if(recursive):
             try:
                 if(type(self.client.path(path)) == datacat.model.Dataset):
                     self.client.rmds(path)
                     return
             except Exception as e:
-                print "Couldn't delete "+path
+                print("Couldn't delete %s" % path)
                 return
 
             else:
@@ -64,11 +64,11 @@ class CDMSDataCatalog:
                     ctype='group'
                 
                 if(verbose):
-                    print path
+                    print(path)
                 try:
                     self.client.rmdir(path,type=ctype)
                 except Exception as e:
-                    print "Couldn't delete "+path
+                    print("Couldn't delete %s" % path)
                 return
         else:
             try:
@@ -77,7 +77,7 @@ class CDMSDataCatalog:
                 else:
                     self.client.rmdir(path)
             except Exception as e:
-                print e
+                print(e)
                 raise IOError("Couldn't delete "+path)
 
     def mkdir(self,path,parents=False):
@@ -107,10 +107,10 @@ class CDMSDataCatalog:
             DSexists = self.client.exists(path+'/'+CDMSds.datasetName)
             if(DSexists):
                 if(replace):
-                    print 'Replacing existing dataset: '+path+'/'+CDMSds.datasetName
+                    print('Replacing existing dataset: %s/%s' % (path, CDMSds.datasetName))
                     self.rm(path+'/'+CDMSds.datasetName)
                 else:
-                    print 'Skipping existing dataset: '+path+'/'+CDMSds.datasetName
+                    print('Skipping existing dataset: %s/%s' % (path, CDMSds.datasetName))
 
             if(not DSexists or replace):
                 self.client.mkds(path,
@@ -121,8 +121,8 @@ class CDMSDataCatalog:
                                  resource=CDMSds.filePath,
                                  site=CDMSds.site)
         except Exception as e:
-            print e
-            print "Could not create dataset"
+            print(e)
+            print("Could not create dataset")
                  
 class CDMSDataset:
     """Base class for CDMS datasets"""
@@ -190,16 +190,16 @@ class CDMSDataset:
     
     def info(self):
         """Neatly output all information in dataset structure"""
-        print "Name:         "+self.datasetName
-        print "System Path:  "+self.filePath
-        print "Catalog Path: "+self.relativePath 
-        print "Site:         "+self.site
-        print "Data Type:    "+self.dataType
-        print "File Format:  "+self.fileFormat
-        print "File Type:    "+self.fileType
-        print "Metadata:"
+        print("Name:         " % self.datasetName)
+        print("System Path:  " % self.filePath)
+        print("Catalog Path: " % self.relativePath) 
+        print("Site:         " % self.site)
+        print("Data Type:    " % self.dataType)
+        print("File Format:  " % self.fileFormat)
+        print("File Type:    " % self.fileType)
+        print("Metadata:")
         for k,v in self.metadata.iteritems():
-            print "  - "+k+": "+str(v)
+            print("  - %s: %s" % (k,v))
 
     def __str__(self):
         return self.datasetName
