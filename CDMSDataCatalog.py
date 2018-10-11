@@ -162,7 +162,7 @@ class CDMSDataset:
                   site=str(ds.site),
                   fileFormat=str(ds.fileFormat))
         nds.relativePath=str(ds.path)
-        for k,v in ds.versionMetadata.iteritems():
+        for k,v in ds.versionMetadata.items():
             nds.metadata[k]=v
         return nds
 
@@ -198,7 +198,7 @@ class CDMSDataset:
         print("File Format:  " % self.fileFormat)
         print("File Type:    " % self.fileType)
         print("Metadata:")
-        for k,v in self.metadata.iteritems():
+        for k,v in self.metadata.items():
             print("  - %s: %s" % (k,v))
 
     def __str__(self):
