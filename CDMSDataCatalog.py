@@ -349,7 +349,7 @@ class RawData(CDMSDataset):
         """
         CDMSDataset.__init__(self,name,filePath,facility+'/Data',site,fileFormat)
 
-        self.relativePath += '/R'+str(run)+'/Raw'
+        self.relativePath += '/R'+str(run)+'/Raw/'+str(series)
 
         self.metadata["Facility"]=facility
         self.metadata["Detectors"]=detectors
@@ -372,7 +372,6 @@ class ProcessedData(CDMSDataset):
                  detectors,
                  run,
                  runType,
-                 series,
                  processStep,
                  cutName=None,
                  cutDate=None,
@@ -390,7 +389,6 @@ class ProcessedData(CDMSDataset):
         detectors    - detectors in the setup
         run      - '133', '134', etc
         runType  - 'Cf','Ba','Bg',...
-        series   - series
         processStep - 'RQ', 'RRQ', 'Cut'
 
         Mandatory Cut Arguments, if processLevel is 'Cut'
@@ -437,5 +435,4 @@ class ProcessedData(CDMSDataset):
         self.metadata["Run"]=run
         self.metadata["Detectors"]=detectors
         self.metadata["RunType"]=runType
-        self.metadata["Series"]=series
         self.metadata["DataLevel"]=processStep
