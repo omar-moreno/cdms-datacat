@@ -1,6 +1,8 @@
 import datacat
 from datacat import client_from_config_file
 from datacat.model import Metadata
+import pathlib
+
 
 def corrPathCDMS(path):
     if(path[0] != '/'):
@@ -12,23 +14,12 @@ def corrPathCDMS(path):
     return path
 
 def getFileFormat(filePath):
-    #determine file format 
-    if 'EPot' in filePath:
-        fileFormat='epot'
-    elif '.mat' in filePath:
-        fileFormat='mat'
-    elif '.m' in filePath:
-        fileFormat='m'
-    elif '.root' in filePath:
-        fileFormat='root'
-    else:
-        fileFormat='txt'
-    return fileFormat
+    return ''.join(pathlib.Path(filePath).suffixes).strip('.')
 
 class CDMSDataCatalog:
     
-    def __init__(self):
-        self.client = client_from_config_file()
+    def __init__(self,config_file=None):
+        self.client = client_from_config_file(config_file) if config_file else client_from_config_file()
 
     def ls(self,path='/CDMS/'):
         """ Return contents of a datacat path, by default look in /CDMS/ """
@@ -127,15 +118,15 @@ class CDMSDataCatalog:
 class CDMSDataset:
     """Base class for CDMS datasets"""
     
-    fileTypes={'m':'M','mat':'CDMSMATLAB','root':'CDMSROOT','txt':'CDMSTXT','png':'CDMSDMCPNG','epot':'CDMSEPOT','supersim':'CDMSHISTOGRAMS'}
-    fileFormats={'m':'m','mat':'mat','root':'root','txt':'txt','epot':'mat','supersim':'root','png':'png'}
+    fileTypes={'m':'M','mat':'CDMSMATLAB','root':'CDMSROOT','txt':'CDMSTXT','png':'CDMSDMCPNG','epot':'CDMSEPOT','supersim':'CDMSHISTOGRAMS','midas':'CDMSMIDAS','numpy':'CDMSNUMPY'}
+    fileFormats={'m':'m','mat':'mat','root':'root','txt':'txt','epot':'mat','supersim':'root','png':'png','pdf':'pdf','midas':'mid.gz','numpy':'npz'}
 
     def __init__(self,
                  name, 
                  filePath,
-                 dataType='Test',
+                 dataType,
                  site='SLAC',
-                 fileFormat='txt'):
+                 fileFormat):
         """Constructor for the CDMS dataset base class
         
         All of these are mandatory; the optional metadata can be specified after construction
@@ -321,51 +312,86 @@ class SuperSimData(CDMSDataset):
         self.metadata["SuperSimType"]=SuperSimType
         self.metadata["SuperSimVersion"]=SuperSimVersion
 
-class TestFridgeData(CDMSDataset):
+class RawData(CDMSDataset):
 
     def __init__(self,
                  name, 
                  filePath,
-                 fridge,
+                 facility,
+                 detectors,
+                 run,
+                 runType,
+                 series,
+                 nDump,
+                 nTriggerType,
+                 nEvents,
+                 IsGood,
                  site='SLAC',
-                 fileFormat='root'):
-        """Constructor for the CDMS Test Fridge dataset class
+                 fileFormat='midas'):
+        """Constructor for the CDMS RawData dataset class
         
         All of these are mandatory; the optional metadata can be specified after construction
-        name     - dataset name
-        filePath - physical path to file
-        fridge - e.g. Stanford/KO15 
+        name         - dataset name
+        filePath     - physical path to file
+        facility     - physical location where the data is taken, e.g. Soudan,SNOLAB,SLAC,Stanford
+        detectors    - detectors in the setup
+        run          - '133', '134', etc
+        runType      - 'Cf','Ba','Bg',...
+        series       - data series
+        nDump        - number of dumps
+        nTriggerType - e.g. 2 = beginning of run randoms, 1= threshold, 6 =  beginning of run test signal...
+        nEvents      - number of events
+        IsGood       - DQ tag
 
         Optional Inputs
         site        - e.g. 'SLAC' (default)
-        fileFormat  - 'root' (default), 'mat', 'txt' 
+        fileFormat  - 'midas' (default), 'mat', 'numpy' 
         """
-        CDMSDataset.__init__(self,name,filePath,'TF/'+fridge,site,fileFormat)
+        CDMSDataset.__init__(self,name,filePath,facility+'/Data',site,fileFormat)
+
+        self.relativePath += '/R'+str(run)+'/Raw'
+
+        self.metadata["Facility"]=facility
+        self.metadata["Detectors"]=detectors
+        self.metadata["Run"]=run
+        self.metadata["RunType"]=runType
+        self.metadata["Series"]=series
+        self.metadata["nDump"]=nDump
+        self.metadata["nTriggerType"]=nTriggerType
+        self.metadata["nEvents"]=nEvents
+        self.metadata["IsGood"]=IsGood
 
 
-class SoudanData(CDMSDataset):
+
+class ProcessedData(CDMSDataset):
 
     def __init__(self,
                  name, 
                  filePath,
-                 Run,
-                 RunType,
+                 facility,
+                 detectors,
+                 run,
+                 runType,
+                 series,
                  processStep,
                  cutName=None,
                  cutDate=None,
                  site='SLAC',
                  fileFormat='root',
                  analysis='All',
-                 prodVersion='53',
-                 detectors='All'):
-        """Constructor for the CDMS Soudan dataset class
+                 prodVersion='0',
+                 ):
+        """Constructor for the CDMS processed dataset class
         
         All of these are mandatory; the optional metadata can be specified after construction
         name     - dataset name
         filePath - physical path to file
-        Run      - '133', '134', etc
-        RunType  - 'Cf','Ba','Bg',...
-        processStep - 'Raw', 'RQ', 'RRQ', 'Cut'
+        facility     - physical location where the data is taken, e.g. Soudan,SNOLAB,SLAC,Stanford
+        detectors    - detectors in the setup
+        run      - '133', '134', etc
+        runType  - 'Cf','Ba','Bg',...
+        series   - series
+        processStep - 'RQ', 'RRQ', 'Cut'
 
         Mandatory Cut Arguments, if processLevel is 'Cut'
         cutName - name of the cut
@@ -376,25 +402,20 @@ class SoudanData(CDMSDataset):
         site        - e.g. 'SLAC' (default)
         fileFormat  - 'root' (default), 'mat', 'txt' 
         analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133' (optional if not cuts)
-        prodVersion - e.g. '53' (default)
+        prodVersion - e.g. '0' (default)
         """
-        CDMSDataset.__init__(self,name,filePath,'Soudan/Data',site,fileFormat)
+        CDMSDataset.__init__(self,name,filePath,facility+'/Data',site,fileFormat)
 
-        processSteps=['Raw','RQ','RRQ','Cut']
-        if(processStep in processSteps):
-            self.processStep=processStep
-        else:
+        processSteps=['RQ','RRQ','Cut']
+        if(not processStep in processSteps):
             raise ValueError("Please specify data process level (processStep), options are "+str(processSteps))
 
         #add run to path
-        self.run=Run
-        self.relativePath+='/'+self.run+'/'+RunType
+        self.relativePath+='/R'+str(run)
 
         #add category to path
-        if(self.processStep in ['Raw']):
-            self.relativePath+=self.processStep
-        elif(self.processStep in ['Cut']):
-            self.relativePath+='/PostProcessed/cuts/'+analysis
+        if(processStep == 'Cut'):
+            self.relativePath+='/Processed/cuts/'+analysis
 
             if(cutDate != None):
                 self.metadata['CutDate']=cutDate
@@ -409,10 +430,12 @@ class SoudanData(CDMSDataset):
                 raise ValueError('Please specify cut name')
 
         else:
-            self.relativePath+='/PostProcessed/all'
+            self.relativePath+='/Processed/all'
 
         self.metadata["Analysis"]=analysis
-        self.metadata["AnalysisVersion"]=prodVersion
-        self.metadata["Run"]=Run
-        self.metadata["Source"]=RunType
+        self.metadata["GlobalReleaseVersion"]=prodVersion
+        self.metadata["Run"]=run
+        self.metadata["Detectors"]=detectors
+        self.metadata["RunType"]=runType
+        self.metadata["Series"]=series
         self.metadata["DataLevel"]=processStep
