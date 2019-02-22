@@ -98,10 +98,10 @@ class CDMSDataCatalog:
             DSexists = self.client.exists(path+'/'+CDMSds.datasetName)
             if(DSexists):
                 if(replace):
-                    print('Replacing existing dataset: %s/%s' % (path, CDMSds.datasetName))
+                    print('Replacing existing dataset: {0}/{1}'.format(path, CDMSds.datasetName))
                     self.rm(path+'/'+CDMSds.datasetName)
                 else:
-                    print('Skipping existing dataset: %s/%s' % (path, CDMSds.datasetName))
+                    print('Skipping existing dataset: {0}/{1}'.format(path, CDMSds.datasetName))
 
             if(not DSexists or replace):
                 self.client.mkds(path,
@@ -118,23 +118,23 @@ class CDMSDataCatalog:
 class CDMSDataset:
     """Base class for CDMS datasets"""
     
-    fileTypes={'m':'M','mat':'CDMSMATLAB','root':'CDMSROOT','txt':'CDMSTXT','png':'CDMSDMCPNG','epot':'CDMSEPOT','supersim':'CDMSHISTOGRAMS','midas':'CDMSMIDAS','numpy':'CDMSNUMPY'}
-    fileFormats={'m':'m','mat':'mat','root':'root','txt':'txt','epot':'mat','supersim':'root','png':'png','pdf':'pdf','midas':'mid.gz','numpy':'npz'}
+    fileTypes={'m':'M','mat':'CDMSMATLAB','root':'CDMSROOT','txt':'CDMSTXT','png':'CDMSDMCPNG','epot':'CDMSEPOT','supersim':'CDMSHISTOGRAMS','midas':'CDMSMIDAS','soudanraw':'CDMSSOUDANRAW','numpy':'CDMSNUMPY'}
+    fileFormats={'m':'m','mat':'mat','root':'root','txt':'txt','epot':'mat','supersim':'root','png':'png','pdf':'pdf','midas':'mid.gz','soudanraw':'gz','numpy':'npz'}
 
     def __init__(self,
                  name, 
                  filePath,
                  dataType,
-                 site='SLAC',
+                 site,
                  fileFormat):
         """Constructor for the CDMS dataset base class
         
         All of these are mandatory; the optional metadata can be specified after construction
         name - dataset name
         filePath - physical path to file
-        dataType - 'DMC', 'Soudan', 'SNOLAB', 'TF', etc
+        dataType/Facility- 'DMC', 'Soudan', 'SNOLAB', 'UCB', etc
         site -  e.g. 'SLAC'
-        fileFormat - e.g. 'root', 'mat', 'txt', 'm', 'epot'
+        fileFormat - e.g. 'root', 'mat', 'txt', 'm', 'epot','midas'
         
         """
         self.datasetName=name
@@ -181,16 +181,16 @@ class CDMSDataset:
     
     def info(self):
         """Neatly output all information in dataset structure"""
-        print("Name:         " % self.datasetName)
-        print("System Path:  " % self.filePath)
-        print("Catalog Path: " % self.relativePath) 
-        print("Site:         " % self.site)
-        print("Data Type:    " % self.dataType)
-        print("File Format:  " % self.fileFormat)
-        print("File Type:    " % self.fileType)
+        print("Name:        {}".format(self.datasetName))
+        print("System Path: {}".format(self.filePath))
+        print("Catalog Path:{}".format(self.relativePath)) 
+        print("Site:        {}".format(self.site))
+        print("Data Type:   {}".format(self.dataType))
+        print("File Format: {}".format(self.fileFormat))
+        print("File Type:   {}".format(self.fileType))
         print("Metadata:")
         for k,v in self.metadata.items():
-            print("  - %s: %s" % (k,v))
+            print("  - {0}: {1}".format(k,v))
 
     def __str__(self):
         return self.datasetName
@@ -299,7 +299,7 @@ class SuperSimData(CDMSDataset):
         SuperSimVersion - e.g. 1.0
 
         Optional Inputs
-        experiment  - 'Soudan' (default), 'SNOLAB', 'TestDevices', 'TF/UMN', 'TF/UCB'
+        experiment  - 'Soudan' (default), 'SNOLAB', 'TestDevices', 'UMN', 'UCB'
         site        - e.g. 'SLAC' (default)
         fileFormat  - 'root' (default), 'mat', 'txt' 
         SuperSimVersion - e.g. 1.0 (default)
@@ -318,15 +318,15 @@ class RawData(CDMSDataset):
                  name, 
                  filePath,
                  facility,
-                 detectors,
-                 run,
-                 runType,
+                 nFridgeRun,
+                 nDataType,
                  series,
                  nDump,
                  nTriggerType,
-                 nEvents,
-                 IsGood,
-                 site='SLAC',
+                 nEventsAll,
+                 nEventsNotEmpty,
+                 nIsGood,
+                 dataLocation='SLAC',
                  fileFormat='midas'):
         """Constructor for the CDMS RawData dataset class
         
@@ -335,31 +335,32 @@ class RawData(CDMSDataset):
         filePath     - physical path to file
         facility     - physical location where the data is taken, e.g. Soudan,SNOLAB,SLAC,Stanford
         detectors    - detectors in the setup
-        run          - '133', '134', etc
+        nFridgeRun   - 133, 134, 135
         runType      - 'Cf','Ba','Bg',...
         series       - data series
-        nDump        - number of dumps
+        nDump        - dump number
         nTriggerType - e.g. 2 = beginning of run randoms, 1= threshold, 6 =  beginning of run test signal...
         nEvents      - number of events
-        IsGood       - DQ tag
+        IsGood       - Can be porcessed or not
 
         Optional Inputs
         site        - e.g. 'SLAC' (default)
         fileFormat  - 'midas' (default), 'mat', 'numpy' 
         """
-        CDMSDataset.__init__(self,name,filePath,facility+'/Data',site,fileFormat)
+        print(name)
+        CDMSDataset.__init__(self,name,filePath,facility+'/Data',dataLocation,fileFormat)
 
-        self.relativePath += '/R'+str(run)+'/Raw/'+str(series)
+        self.relativePath += '/R'+str(nFridgeRun)+'/Raw/'+str(series)
 
         self.metadata["Facility"]=facility
-        self.metadata["Detectors"]=detectors
-        self.metadata["Run"]=run
-        self.metadata["RunType"]=runType
+        self.metadata["nFridgeRun"]=nFridgeRun
+        self.metadata["nDataType"]=nDataType
         self.metadata["Series"]=series
         self.metadata["nDump"]=nDump
         self.metadata["nTriggerType"]=nTriggerType
-        self.metadata["nEvents"]=nEvents
-        self.metadata["IsGood"]=IsGood
+        self.metadata["nEventsAll"]=nEventsAll
+        self.metadata["nEventsNotEmpty"]=nEventsNotEmpty
+        self.metadata["nIsGood"]=nIsGood
 
 
 
