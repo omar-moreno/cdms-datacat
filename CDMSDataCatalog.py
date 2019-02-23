@@ -76,9 +76,9 @@ class CDMSDataCatalog:
         self.client.mkdir(path,parents=parents)
         return
 
-    def search(self,path,site=None,query=None,show=None):
+    def search(self,path,site=None,query=None, sort=None, show=None):
         path=corrPathCDMS(path)
-        results=self.client.search(path,site=site,query=query,show=show)
+        results=self.client.search(path,site=site,query=query, sort=sort,show=show)
         convResults=list()
         for result in results:
             convResults.append(CDMSDataset.fromSearchDataset(result))
@@ -118,9 +118,9 @@ class CDMSDataCatalog:
 class CDMSDataset:
     """Base class for CDMS datasets"""
     
-    fileTypes={'m':'M','mat':'CDMSMATLAB','root':'CDMSROOT','txt':'CDMSTXT','png':'CDMSDMCPNG','epot':'CDMSEPOT','supersim':'CDMSHISTOGRAMS','midas':'CDMSMIDAS','soudanraw':'CDMSSOUDANRAW','numpy':'CDMSNUMPY'}
-    fileFormats={'m':'m','mat':'mat','root':'root','txt':'txt','epot':'mat','supersim':'root','png':'png','pdf':'pdf','midas':'mid.gz','soudanraw':'gz','numpy':'npz'}
-
+    fileTypes={'m':'M','mat':'CDMSMATLAB','root':'CDMSROOT','txt':'CDMSTXT','png':'CDMSDMCPNG','epot':'CDMSEPOT','supersim':'CDMSHISTOGRAMS','midas':'CDMSMIDAS','cdmsraw':'CDMSSOUDANRAW','numpy':'CDMSNUMPY'}
+    fileFormats={'m':'m','mat':'mat','root':'root','txt':'txt','epot':'mat','supersim':'root','png':'png','pdf':'pdf','midas':'midas','cdmsraw':'cdmsraw','numpy':'npz'}
+    
     def __init__(self,
                  name, 
                  filePath,
@@ -164,6 +164,8 @@ class CDMSDataset:
                   site=str(ds.locations[0].site),
                   fileFormat=str(ds.fileFormat))
         nds.relativePath=str(ds.path)
+        for key,value in ds.metadata.items():
+            nds.metadata[key]=value
         return nds
 
     def setFileFormat(self,fileFormat):
