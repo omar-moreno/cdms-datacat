@@ -32,6 +32,11 @@ class CDMSDataCatalog:
         except:
             print("Path does not exist")
 
+    def exist(self,path,versionId=None,site=None):
+        path=corrPathCDMS(path)
+        do_exist = self.client.exists(path, versionId, site)
+        return do_exist
+
     def rm(self,path,recursive=False,verbose=True):
         path=corrPathCDMS(path)
         
@@ -164,8 +169,9 @@ class CDMSDataset:
                   site=str(ds.locations[0].site),
                   fileFormat=str(ds.fileFormat))
         nds.relativePath=str(ds.path)
-        for key,value in ds.metadata.items():
-            nds.metadata[key]=value
+        if hasattr(ds,'metadata'):
+            for key,value in ds.metadata.items():
+                nds.metadata[key]=value
         return nds
 
     def setFileFormat(self,fileFormat):
@@ -317,125 +323,137 @@ class SuperSimData(CDMSDataset):
 class RawData(CDMSDataset):
 
     def __init__(self,
-                 name, 
+                 fileName, 
                  filePath,
                  facility,
                  nFridgeRun,
                  nDataType,
                  series,
                  nDump,
-                 nTriggerType,
                  nEventsAll,
-                 nEventsNotEmpty,
-                 nIsGood,
+                 nEventsBORR,
+                 nEventsEORR,
+                 nEventsBORTS,
+                 nEventsEORTS,
+                 nIsJunk,
                  dataLocation='SLAC',
-                 fileFormat='midas'):
-        """Constructor for the CDMS RawData dataset class
+                 fileFormat='midas',
+                 comments = 'None'):
+        '''
+        Constructor for the CDMS RawData dataset class
+        '''
         
-        All of these are mandatory; the optional metadata can be specified after construction
-        name         - dataset name
-        filePath     - physical path to file
-        facility     - physical location where the data is taken, e.g. Soudan,SNOLAB,SLAC,Stanford
-        detectors    - detectors in the setup
-        nFridgeRun   - 133, 134, 135
-        runType      - 'Cf','Ba','Bg',...
-        series       - data series
-        nDump        - dump number
-        nTriggerType - e.g. 2 = beginning of run randoms, 1= threshold, 6 =  beginning of run test signal...
-        nEvents      - number of events
-        IsGood       - Can be porcessed or not
 
-        Optional Inputs
-        site        - e.g. 'SLAC' (default)
-        fileFormat  - 'midas' (default), 'mat', 'numpy' 
-        """
-        print(name)
-        CDMSDataset.__init__(self,name,filePath,facility+'/Data',dataLocation,fileFormat)
-
+        # instantiate CDMSDataset base object
+        CDMSDataset.__init__(self,fileName,filePath,facility,dataLocation,fileFormat)
         self.relativePath += '/R'+str(nFridgeRun)+'/Raw/'+str(series)
 
         self.metadata["Facility"]=facility
-        self.metadata["nFridgeRun"]=nFridgeRun
-        self.metadata["nDataType"]=nDataType
+        self.metadata["nFridgeRun"]=int(nFridgeRun)
+        self.metadata["nDataType"]=int(nDataType)
         self.metadata["Series"]=series
-        self.metadata["nDump"]=nDump
-        self.metadata["nTriggerType"]=nTriggerType
-        self.metadata["nEventsAll"]=nEventsAll
-        self.metadata["nEventsNotEmpty"]=nEventsNotEmpty
-        self.metadata["nIsGood"]=nIsGood
+        self.metadata["nDump"]=int(nDump)
+        self.metadata["nEvAll"]=int(nEventsAll)
+        self.metadata["nEvBORR"] = int(nEventsBORR)
+        self.metadata["nEvEORR"] = int(nEventsEORR)
+        self.metadata["nEvBORTS"] =int(nEventsBORTS)
+        self.metadata["nEvEORTS"] = int(nEventsEORTS)
+        #self.metadata["nEvL1Trigger"] = nEventsL1Trigger
+        #self.metadata["nEvEmpty"] = nEventsEmpty
+        self.metadata["Comments"] = comments
+        self.metadata["nIsJunk"]=int(nIsJunk)
 
 
 
 class ProcessedData(CDMSDataset):
 
     def __init__(self,
-                 name, 
+                 fileName, 
                  filePath,
                  facility,
-                 detectors,
-                 run,
-                 runType,
+                 nFridgeRun,
+                 nDataType,
+                 series,
                  processStep,
-                 cutName=None,
-                 cutDate=None,
-                 site='SLAC',
+                 prodVersion='Test',
+                 dataLocation='SLAC',
                  fileFormat='root',
-                 analysis='All',
-                 prodVersion='0',
-                 ):
-        """Constructor for the CDMS processed dataset class
+                 comments = 'None',
+                 nIsJunk=0,
+                 nDump = 0,
+                 noiseDumps = '0',
+                 nEventsAll = 0,
+                 nEventsBORR = 0,
+                 nEventsEORR=0,
+                 nEventsBORTS=0,
+                 nEventsEORTS=0,
+                 nIsSubMerged=0,
+                 nIsMerged=0,
+                 analysis = 'All',
+                 cutName ='cGood',
+                 cutVersion ='0'):
         
-        All of these are mandatory; the optional metadata can be specified after construction
-        name     - dataset name
-        filePath - physical path to file
-        facility     - physical location where the data is taken, e.g. Soudan,SNOLAB,SLAC,Stanford
-        detectors    - detectors in the setup
-        run      - '133', '134', etc
-        runType  - 'Cf','Ba','Bg',...
-        processStep - 'RQ', 'RRQ', 'Cut'
-
-        Mandatory Cut Arguments, if processLevel is 'Cut'
-        cutName - name of the cut
-        cutDate - date cuts were produced
-        analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133' (mandatory for cuts)
-
-        Optional Inputs
-        site        - e.g. 'SLAC' (default)
-        fileFormat  - 'root' (default), 'mat', 'txt' 
-        analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133' (optional if not cuts)
-        prodVersion - e.g. '0' (default)
         """
-        CDMSDataset.__init__(self,name,filePath,facility+'/Data',site,fileFormat)
-
-        processSteps=['RQ','RRQ','Cut']
+        Constructor for the CDMS processed dataset class
+        """
+        # Some checks
+        processSteps=['Noise','RQ','RRQ','Cut']
         if(not processStep in processSteps):
             raise ValueError("Please specify data process level (processStep), options are "+str(processSteps))
+ 
+        if nIsSubMerged==1 and nIsMerged==1:
+            raise ValueError('Data can not be submerged and merged in the same time. Please check your code')
 
-        #add run to path
-        self.relativePath+='/R'+str(run)
 
-        #add category to path
-        if(processStep == 'Cut'):
-            self.relativePath+='/Processed/cuts/'+analysis
-
-            if(cutDate != None):
-                self.metadata['CutDate']=cutDate
-                self.relativePath+='/'+cutDate
-            else:
-                raise ValueError('Please specify cut generation date (or current)')
-            
-            if(cutName != None):
-                self.metadata['CutName']=cutName
-                self.relativePath+='/'+cutName
-            else:
-                raise ValueError('Please specify cut name')
-
+        # instantiate CDMSDataset base object
+        CDMSDataset.__init__(self,fileName,filePath,facility,dataLocation,fileFormat)
+   
+      
+        # Build Data catalog path
+        if prodVersion[0:4]=='Prod':
+            self.relativePath += '/R'+str(nFridgeRun)+'/Processed/Releases/'+prodVersion
         else:
-            self.relativePath+='/Processed/all'
+            self.relativePath += '/R'+str(nFridgeRun)+'/Processed/Tests/'+prodVersion
 
-        self.metadata["Analysis"]=analysis
-        self.metadata["GlobalReleaseVersion"]=prodVersion
-        self.metadata["Run"]=run
-        self.metadata["Detectors"]=detectors
-        self.metadata["RunType"]=runType
-        self.metadata["DataLevel"]=processStep
+      
+        #add category to path
+        if (processStep == 'Noise'):
+            self.relativePath+='/Noise'
+        elif (processStep == 'Cut'):
+            self.relativePath+='/Cuts'
+        else:
+            if nIsSubMerged==1:
+                self.relativePath+='/Submerged'
+            elif  nIsSubMerged==1:
+                self.relativePath+='/Merged'
+            else:
+                self.relativePath+='/Unmerged/' + series
+                
+
+        # metadata
+        self.metadata["Facility"]=facility
+        self.metadata["nFridgeRun"]=int(nFridgeRun)
+        self.metadata["nDataType"]=int(nDataType)
+        self.metadata["Series"]=series
+        self.metadata["Comments"] = comments
+        self.metadata["nIsJunk"]=int(nIsJunk)
+        self.metadata["ProdStep"] = processStep
+        self.metadata["ProdVersion"] = prodVersion
+
+        if processStep=='Noise':
+            self.metadata["DumpsNoise"] = str(noiseDumps)
+                  
+        if processStep=='RQ' or processStep=='RRQ':
+            self.metadata["nEvAll"]=int(nEventsAll)
+            self.metadata["nEvBORR"] = int(nEventsBORR)
+            self.metadata["nEvEORR"] = int(nEventsEORR)
+            self.metadata["nEvBORTS"] =int(nEventsBORTS)
+            self.metadata["nEvEORTS"] = int(nEventsEORTS)
+               
+            if nIsSubMerged==0 and nIsMerged==0:
+                self.metadata["nDump"]=int(nDump)
+
+        if processStep=='Cut':
+            self.metadata["Analysis"] = analysis
+            self.metadata["CutName"] = cutName
+            self.metadata["CutVersion"] = CutVersion
