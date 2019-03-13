@@ -93,7 +93,7 @@ class CDMSDataCatalog:
         path=corrPathCDMS(path)
         return CDMSDataset.fromDataset(self.client.path(path,site=site))
 
-    def add(self,CDMSds,replace=True):
+    def add(self,CDMSds,replace=True,catch_errors=True):
         if(CDMSds.dataType == 'DatacatQuery'):
             raise ValueError('Cannot commit dataset with type "DatacatQuery", invalid type')
         try:
@@ -117,8 +117,11 @@ class CDMSDataCatalog:
                                  resource=CDMSds.filePath,
                                  site=CDMSds.site)
         except Exception as e:
-            print(e)
-            print("Could not create dataset")
+            if catch_errors:
+                print(e)
+                print("Could not create dataset")
+            else:
+                raise
                  
 class CDMSDataset:
     """Base class for CDMS datasets"""
