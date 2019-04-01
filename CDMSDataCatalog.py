@@ -148,7 +148,6 @@ class CDMSDataset:
         self.setSite(site)
         self.setFileFormat(fileFormat)
         self.relativePath='/CDMS/'+self.dataType
-        
         self.metadata = Metadata()
 
     @classmethod
@@ -338,7 +337,8 @@ class RawData(CDMSDataset):
                  nIsJunk,
                  dataLocation='SLAC',
                  fileFormat='midas',
-                 comments = 'None'):
+                 commentStart = 'None',
+                 commentEnd = 'None'):
         '''
         Constructor for the CDMS RawData dataset class
         '''
@@ -358,9 +358,8 @@ class RawData(CDMSDataset):
         self.metadata["nEvEORR"] = int(nEventsEORR)
         self.metadata["nEvBORTS"] =int(nEventsBORTS)
         self.metadata["nEvEORTS"] = int(nEventsEORTS)
-        #self.metadata["nEvL1Trigger"] = nEventsL1Trigger
-        #self.metadata["nEvEmpty"] = nEventsEmpty
-        self.metadata["Comments"] = comments
+        self.metadata["CommentStart"] = commentStart
+        self.metadata["CommentEnd"] = commentEnd
         self.metadata["nIsJunk"]=int(nIsJunk)
 
 
@@ -378,7 +377,8 @@ class ProcessedData(CDMSDataset):
                  prodVersion='Test',
                  dataLocation='SLAC',
                  fileFormat='root',
-                 comments = 'None',
+                 commentStart = 'None',
+                 commentEnd = 'None',
                  nIsJunk=0,
                  nDump = 0,
                  noiseDumps = '0',
@@ -435,7 +435,8 @@ class ProcessedData(CDMSDataset):
         self.metadata["nFridgeRun"]=int(nFridgeRun)
         self.metadata["nDataType"]=int(nDataType)
         self.metadata["Series"]=series
-        self.metadata["Comments"] = comments
+        self.metadata["CommentStart"] = commentStart
+        self.metadata["CommentEnd"] = commentEnd
         self.metadata["nIsJunk"]=int(nIsJunk)
         self.metadata["ProdStep"] = processStep
         self.metadata["ProdVersion"] = prodVersion
