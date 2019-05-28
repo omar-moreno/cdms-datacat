@@ -155,6 +155,7 @@ class CDMSDataset:
 
     @classmethod
     def fromDataset(cls,ds):
+        print(ds.resource)
         nds = cls(str(ds.name),str(ds.resource),
                   dataType='DatacatQuery',
                   site=str(ds.site),
@@ -376,7 +377,7 @@ class ProcessedData(CDMSDataset):
                  nFridgeRun,
                  nDataType,
                  series,
-                 processStep,
+                 prodStep,
                  prodVersion='Test',
                  dataLocation='SLAC',
                  fileFormat='root',
@@ -385,6 +386,10 @@ class ProcessedData(CDMSDataset):
                  nIsJunk=0,
                  nDump = 0,
                  noiseDumps = '0',
+                 processing_config = 'None',
+                 analysis_config = 'None',
+                 calib_processing_config = 'None',
+                 calibration_config = 'None',
                  nEventsAll = 0,
                  nEventsBORR = 0,
                  nEventsEORR=0,
@@ -400,9 +405,9 @@ class ProcessedData(CDMSDataset):
         Constructor for the CDMS processed dataset class
         """
         # Some checks
-        processSteps=['Noise','RQ','RRQ','Cut']
-        if(not processStep in processSteps):
-            raise ValueError("Please specify data process level (processStep), options are "+str(processSteps))
+        prodSteps=['Noise','RQ','RRQ','Cut']
+        if(not prodStep in prodSteps):
+            raise ValueError("Please specify data process level (prodStep), options are "+str(prodSteps))
  
         if nIsSubMerged==1 and nIsMerged==1:
             raise ValueError('Data can not be submerged and merged in the same time. Please check your code')
@@ -420,9 +425,9 @@ class ProcessedData(CDMSDataset):
 
       
         #add category to path
-        if (processStep == 'Noise'):
+        if (prodStep == 'Noise'):
             self.relativePath+='/Noise'
-        elif (processStep == 'Cut'):
+        elif (prodStep == 'Cut'):
             self.relativePath+='/Cuts'
         else:
             if nIsSubMerged==1:
@@ -441,13 +446,13 @@ class ProcessedData(CDMSDataset):
         self.metadata["CommentStart"] = commentStart
         self.metadata["CommentEnd"] = commentEnd
         self.metadata["nIsJunk"]=int(nIsJunk)
-        self.metadata["ProdStep"] = processStep
+        self.metadata["ProdStep"] = prodStep
         self.metadata["ProdVersion"] = prodVersion
 
-        if processStep=='Noise':
+        if prodStep=='Noise':
             self.metadata["DumpsNoise"] = str(noiseDumps)
                   
-        if processStep=='RQ' or processStep=='RRQ':
+        if prodStep=='RQ' or prodStep=='RRQ':
             self.metadata["nEvAll"]=int(nEventsAll)
             self.metadata["nEvBORR"] = int(nEventsBORR)
             self.metadata["nEvEORR"] = int(nEventsEORR)
@@ -456,8 +461,18 @@ class ProcessedData(CDMSDataset):
                
             if nIsSubMerged==0 and nIsMerged==0:
                 self.metadata["nDump"]=int(nDump)
+            else:
+                self.metadata["Dumps"] = str(nDump)
 
-        if processStep=='Cut':
+        self.metadata["Processing_config"] = processing_config
+        self.metadata["Analysis_config"] = analysis_config
+        if prodStep=='RRQ':
+            self.metadata["Calib_processing_config"] = calib_processing_config
+            self.metadata["Calibration_config"] = calibration_config
+        
+
+
+        if prodStep=='Cut':
             self.metadata["Analysis"] = analysis
             self.metadata["CutName"] = cutName
             self.metadata["CutVersion"] = CutVersion
