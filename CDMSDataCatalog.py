@@ -157,6 +157,8 @@ class CDMSDataCatalog:
     def search(self,path,*args, **kwargs):
         path=corrPathCDMS(path)
         results=self.client.search(path,*args, **kwargs)
+        #results come back unsorted, which is not what we want
+        results.sort(key=lambda res: res.path)
         return list(CDMSDataset.fromSearchDataset(res) for res in results)
 
     def get(self,path,site='All'):
