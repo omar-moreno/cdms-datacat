@@ -8,11 +8,12 @@ class CDMSDataset:
     fileTypes = {'m': 'M', 'mat': 'CDMSMATLAB', 'root': 'CDMSROOT',
                  'txt': 'CDMSTXT', 'png': 'CDMSDMCPNG', 'epot': 'CDMSEPOT',
                  'supersim': 'CDMSHISTOGRAMS', 'midas': 'CDMSMIDAS',
-                 'cdmsraw': 'CDMSSOUDANRAW', 'numpy': 'CDMSNUMPY'}
+                 'cdmsraw': 'CDMSSOUDANRAW', 'numpy': 'CDMSNUMPY',
+                 'pickle': 'CDMSPICKLE'}
     fileFormats = {'m': 'm', 'mat': 'mat', 'root': 'root', 'txt': 'txt',
                    'epot': 'mat', 'supersim': 'root', 'png': 'png',
                    'pdf': 'pdf', 'midas': 'midas', 'cdmsraw': 'cdmsraw',
-                   'numpy': 'npz'}
+                   'numpy': 'npz', 'pickle': 'pickle'}
 
     def __init__(self,
                  name,
@@ -394,3 +395,53 @@ class ProcessedData(CDMSDataset):
             self.metadata["Analysis"] = analysis
             self.metadata["CutName"] = cutName
             self.metadata["CutVersion"] = cutVersion
+
+
+class ProcessedIVdIdVData(CDMSDataset):
+
+    def __init__(self,
+                 fileName,
+                 filePath,
+                 facility,
+                 nFridgeRun,
+                 nDataType,
+                 series,
+                 prodType,
+                 nStep,
+                 nTotalSteps,
+                 prodVersion='Test',
+                 dataLocation='SLAC',
+                 fileFormat='pickle',
+                 commentStart='None',
+                 commentEnd='None',
+                 nIsJunk=0):
+
+        """
+        Constructor for the CDMS processed dataset class
+        """
+        # Some checks
+        prodTypes = ['IV', 'dIdV']
+        if(prodType not in prodTypes):
+            raise ValueError("Please specify data process level (prodStep), "
+                             "options are "+str(prodTypes))
+
+        # instantiate CDMSDataset base object
+        CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation,
+                             fileFormat)
+
+        # Build Data catalog path
+        self.relativePath += ('/R' + str(nFridgeRun) +
+                              '/Processed/IV_dIdV_Sweeps/' + prodVersion)
+
+        # metadata
+        self.metadata["Facility"] = facility
+        self.metadata["nFridgeRun"] = int(nFridgeRun)
+        self.metadata["nDataType"] = int(nDataType)
+        self.metadata["Series"] = series
+        self.metadata["CommentStart"] = commentStart
+        self.metadata["CommentEnd"] = commentEnd
+        self.metadata["nIsJunk"] = int(nIsJunk)
+        self.metadata["ProdType"] = prodType
+        self.metadata["nStep"] = int(nStep)
+        self.metadata["nTotalSteps"] = int(nTotalSteps)
+        self.metadata["ProdVersion"] = prodVersion
