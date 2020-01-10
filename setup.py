@@ -9,7 +9,7 @@ cfgdir = os.path.expanduser('~/.datacat')
 
 setup(name='CDMSDataCatalog',
       version='0.9.1',
-      py_modules=['CDMSDataCatalog'],
+      packages=['CDMSDataCatalog'],
       install_requires=['datacat'],
       author='Noah Kurinsky',
       author_email='kurinsky@fnal.gov',
