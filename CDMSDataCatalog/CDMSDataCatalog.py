@@ -1,8 +1,9 @@
 import datacat
-from datacat import client_from_config_file
+from datacat import client_from_config, config_from_file
 import pathlib
+import pkg_resources
 
-from .fetch import fetchdata
+from .fetch import fetchdata, get_default_fetchdir
 from .CDMSDataset import CDMSDataset
 
 
@@ -21,12 +22,39 @@ def getFileFormat(filePath):
 
 
 class CDMSDataCatalog:
-    def __init__(self, config_file=None):
-        self.client = client_from_config_file(
-            config_file) if config_file else client_from_config_file()
-        # todo: get default location from config file
-        self.defaultDataRoot = 'datacat_data'
+    def __init__(self, config_file=None, default_fetchdir=None):
+        """ Create a new Data Catalog client.
+        The file specified by `config_file` can contain the following:
+        
+        url: base URL for accessing the catalog web interface
+        auth_type: web authentication standard
+        auth_key_id: authentication id
+        auth_secret_key: authentication public key
+        default_fetchdir: sroot directory for fetching (downloading) data
 
+        Args:
+            config_file (str): location of config file with client settings
+            default_fetchdir (str): same as default_fetchdir config variable
+        """
+        
+        # load the configuration file
+        if config_file is None:
+            config_file = pkg_resources.resource_filename(__name__,
+                                                          'cfg/default.cfg')
+        config = config_from_file(config_file)
+
+        # determine default data fetchdir
+        self.default_fetchdir = default_fetchdir
+        if default_fetchdir is None:
+            self.default_fetchdir = get_default_fetchdir()
+            # see if it was specified in the config file
+            try:
+                self.default_fetchdir = config['defaults']['default_fetchdir']
+            except KeyError: # this is not in the config file
+                pass
+        
+        self.client = client_from_config(config)
+        
     def ls(self, path='/CDMS/'):
         """ Return contents of a datacat path, by default look in /CDMS/ """
         path = corrPathCDMS(path)
@@ -87,16 +115,17 @@ class CDMSDataCatalog:
         self.client.mkdir(path, parents=parents)
         return
 
-    def search(self, path, *args, **kwargs):
+    def search(self, path, site='All',  **kwargs):
         path = corrPathCDMS(path)
-        results = self.client.search(path, *args, **kwargs)
+        results = self.client.search(path, site=site, **kwargs)
         # results come back unsorted, which is not what we want
         results.sort(key=lambda res: res.path)
-        return list(CDMSDataset.fromSearchDataset(res) for res in results)
+        return list(CDMSDataset.fromDataset(res) for res in results)
 
     def get(self, path, site='All'):
         """Convert a path (string) to a full CDMSDataset object"""
         path = corrPathCDMS(path)
+        rawds = self.client.path(path, site=site)
         return CDMSDataset.fromDataset(self.client.path(path, site=site))
 
     def add(self, CDMSds, replace=True, catch_errors=True):
@@ -140,4 +169,4 @@ class CDMSDataCatalog:
 
     def fetch(self, *args, **kwargs):
         """ fetch (download) data, see fetch.py for arguments"""
-        return fetchdata(self)
+        return fetchdata(self, *args, **kwargs)

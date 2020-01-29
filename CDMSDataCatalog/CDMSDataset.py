@@ -1,5 +1,7 @@
 """ Provides the base CDMSDataset class as well as some derived ones"""
+import os
 from datacat.model import Metadata
+from .fetch import get_default_fetchdir
 
 
 class CDMSDataset:
@@ -40,29 +42,40 @@ class CDMSDataset:
         self.relativePath = '/CDMS/' + self.dataType
         self.metadata = Metadata()
 
-    @classmethod
-    def fromDataset(cls, ds):
-        print(ds.resource)
-        nds = cls(str(ds.name), str(ds.resource),
-                  dataType='DatacatQuery',
-                  site=str(ds.site),
-                  fileFormat=str(ds.fileFormat))
-        nds.relativePath = str(ds.path)
-        for k, v in ds.versionMetadata.items():
-            nds.metadata[k] = v
-        nds.rawDataset = ds
-        return nds
+    @staticmethod
+    def findLocation(rawds, site=None):
+        """ Find the DatasetLocation for the specified site """
+        location = None
+        try:
+            for loc in rawds.locations:
+                if site == loc.site or site is None:
+                    location = loc
+                    break
+            if location is None:
+                location = rawds.locations[0]
+        except (KeyError, AttributeError):
+            pass
+        return location
 
     @classmethod
-    def fromSearchDataset(cls, ds):
-        nds = cls(str(ds.name), str(ds.locations[0].resource),
+    def fromDataset(cls, ds):
+        resource = None
+        site = None
+        try:
+            resource = ds.resource
+            site = ds.site
+        except AttributeError:
+            location = cls.findLocation(ds)
+            resource = location.resource
+            site = location.site
+
+        nds = cls(str(ds.name), str(resource),
                   dataType='DatacatQuery',
-                  site=str(ds.locations[0].site),
+                  site=str(site),
                   fileFormat=str(ds.fileFormat))
         nds.relativePath = str(ds.path)
-        if hasattr(ds, 'metadata'):
-            for key, value in ds.metadata.items():
-                nds.metadata[key] = value
+        for k, v in getattr(ds, 'versionMetadata', {}).items():
+            nds.metadata[k] = v
         nds.rawDataset = ds
         return nds
 
@@ -71,18 +84,20 @@ class CDMSDataset:
         """Get the Pk of the first location from the raw dataset"""
         try:
             return getattr(self.rawDataset, 'locationPk',
-                           self.rawDataset.locations[0].pk)
+                           self.findLocation(self.rawDataset, 'SLAC').pk)
         except BaseException:
             return None
 
     @property
     def size(self):
         """Get the file size from the raw dataset"""
+        size = None
         try:
-            return getattr(self.rawDataset, 'size',
-                           self.rawDataset.locations[0].size)
+            size = getattr(self.rawDataset, 'size',
+                           self.findLocation(self.rawDataset, 'SLAC').size)
         except BaseException:
-            return None
+            pass
+        return size
 
     def setFileFormat(self, fileFormat):
         try:
@@ -110,6 +125,17 @@ class CDMSDataset:
         print("Metadata:")
         for k, v in self.metadata.items():
             print("  - {0}: {1}".format(k, v))
+
+    def getSitePaths(self):
+        """ return a dict mapping site names to on-disk paths """
+        locs = {}
+        try:
+            locs = {loc.site: loc.resource
+                    for loc in self.rawDataset.locations}
+        except AttributeError:
+            pass
+        locs[self.site] = self.filePath
+        return locs
 
     def __str__(self):
         return self.datasetName
