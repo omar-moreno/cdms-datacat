@@ -4,7 +4,7 @@ from setuptools import setup
 
 
 setup(name='CDMSDataCatalog',
-      version='0.9.1',
+      version='0.9.2',
       packages=['CDMSDataCatalog'],
       install_requires=['datacat @ git+https://github.com/slaclab/datacat.git#subdirectory=client/python'],
       author='Noah Kurinsky',

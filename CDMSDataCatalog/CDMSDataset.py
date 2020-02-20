@@ -74,7 +74,13 @@ class CDMSDataset:
                   site=str(site),
                   fileFormat=str(ds.fileFormat))
         nds.relativePath = str(ds.path)
-        for k, v in getattr(ds, 'versionMetadata', {}).items():
+        
+        
+        metadata_dict_name = 'metadata'
+        if not hasattr(ds,'metadata'):
+            metadata_dict = 'versionMetadata'
+        
+        for k, v in getattr(ds,metadata_dict_name, {}).items():
             nds.metadata[k] = v
         nds.rawDataset = ds
         return nds
@@ -312,115 +318,120 @@ class RawData(CDMSDataset):
         self.metadata["CommentEnd"] = commentEnd
         self.metadata["nIsJunk"] = int(nIsJunk)
 
-
 class ProcessedData(CDMSDataset):
 
     def __init__(self,
-                 fileName,
+                 fileName, 
                  filePath,
+                 datacatPath,
                  facility,
                  nFridgeRun,
                  nDataType,
                  series,
                  prodStep,
-                 prodVersion='Test',
+                 prodTag='Test',
                  dataLocation='SLAC',
                  fileFormat='root',
-                 commentStart='None',
-                 commentEnd='None',
+                 commentStart = 'None',
+                 commentEnd = 'None',
                  nIsJunk=0,
-                 nDump=0,
-                 noiseDumps='0',
-                 processing_config='None',
-                 analysis_config='None',
-                 calib_processing_config='None',
-                 calibration_config='None',
-                 nEventsAll=0,
-                 nEventsBORR=0,
+                 nDump = 0,
+                 noiseDumps = '0',
+                 processing_config = 'None',
+                 analysis_config = 'None',
+                 calib_processing_config = 'None',
+                 calibration_config = 'None',
+                 nEventsAll = 0,
+                 nEventsBORR = 0,
                  nEventsEORR=0,
                  nEventsBORTS=0,
                  nEventsEORTS=0,
                  nIsSubMerged=0,
                  nIsMerged=0,
-                 analysis='All',
-                 cutName='cGood',
-                 cutVersion='0'):
+                 analysis = 'All',
+                 cutName ='cGood',
+                 cutVersion ='0'):
+        
         """
         Constructor for the CDMS processed dataset class
         """
         # Some checks
-        prodSteps = ['Noise', 'RQ', 'RRQ', 'Cut']
-        if(prodStep not in prodSteps):
-            raise ValueError(
-                "Please specify data process level (prodStep), options are " +
-                str(prodSteps))
+        prodSteps=['BatNoise','BatRoot','BatCalib','Cut']
+        if(not prodStep in prodSteps):
+            raise ValueError("Please specify data process level (prodStep), options are "+str(prodSteps))
+ 
+        if nIsSubMerged==1 and nIsMerged==1:
+            raise ValueError('Data can not be submerged and merged in the same time. Please check your code')
 
-        if nIsSubMerged == 1 and nIsMerged == 1:
-            raise ValueError(
-                "Data can not be submerged and merged in the same time. "
-                "Please check your code")
 
         # instantiate CDMSDataset base object
-        CDMSDataset.__init__(self, fileName, filePath,
-                             facility, dataLocation, fileFormat)
-
-        # Build Data catalog path
-        if prodVersion[0:4] == 'Prod':
-            self.relativePath += '/R' + \
-                str(nFridgeRun)+'/Processed/Releases/'+prodVersion
-        else:
-            self.relativePath += '/R' + \
-                str(nFridgeRun)+'/Processed/Tests/'+prodVersion
-
-        # add category to path
-        if (prodStep == 'Noise'):
-            self.relativePath += '/Noise'
+        CDMSDataset.__init__(self,fileName,filePath,facility,dataLocation,fileFormat)
+        self.relativePath = datacatPath
+      
+        #add category to path
+        if (prodStep == 'BatNoise'):
+            self.relativePath+='/Noise'
         elif (prodStep == 'Cut'):
-            self.relativePath += '/Cuts'
+            self.relativePath+='/Cuts'
         else:
-            if nIsSubMerged == 1:
-                self.relativePath += '/Submerged'
-            elif nIsSubMerged == 1:
-                self.relativePath += '/Merged'
+            if nIsSubMerged==1:
+                self.relativePath+='/Submerged'
+            elif  nIsMerged==1:
+                self.relativePath+='/Merged'
             else:
-                self.relativePath += '/Unmerged/' + series
+                self.relativePath+='/Unmerged/' + series
+                
+        # series data time
+        # remove underscore and facility ID (first 2 digit)
+        pos_underscore = series.find('_')
+        series_time = series[pos_underscore-6:]
+        series_time =  series_time.replace('_','')
+        if len(series_time)==10:
+            series_time += '00'
+
 
         # metadata
-        self.metadata["Facility"] = facility
-        self.metadata["nFridgeRun"] = int(nFridgeRun)
-        self.metadata["nDataType"] = int(nDataType)
-        self.metadata["Series"] = series
+        self.metadata["Facility"]=facility
+        self.metadata["nFridgeRun"]=int(nFridgeRun)
+        self.metadata["nDataType"]=int(nDataType)
+        self.metadata["nSeriesDateTime"]=int(series_time)
+        self.metadata["Series"]=series
         self.metadata["CommentStart"] = commentStart
         self.metadata["CommentEnd"] = commentEnd
-        self.metadata["nIsJunk"] = int(nIsJunk)
+        self.metadata["nIsJunk"]=int(nIsJunk)
         self.metadata["ProdStep"] = prodStep
-        self.metadata["ProdVersion"] = prodVersion
+        self.metadata["ProdTag"] = prodTag
 
-        if prodStep == 'Noise':
+        if prodStep=='BatNoise':
             self.metadata["DumpsNoise"] = str(noiseDumps)
-
-        if prodStep == 'RQ' or prodStep == 'RRQ':
-            self.metadata["nEvAll"] = int(nEventsAll)
+                  
+        if prodStep=='BatRoot' or prodStep=='BatCalib':
+            self.metadata["nEvAll"]=int(nEventsAll)
             self.metadata["nEvBORR"] = int(nEventsBORR)
             self.metadata["nEvEORR"] = int(nEventsEORR)
-            self.metadata["nEvBORTS"] = int(nEventsBORTS)
+            self.metadata["nEvBORTS"] =int(nEventsBORTS)
             self.metadata["nEvEORTS"] = int(nEventsEORTS)
-
-            if nIsSubMerged == 0 and nIsMerged == 0:
+               
+            if nIsSubMerged==0 and nIsMerged==0:
                 self.metadata["nDump"] = int(nDump)
             else:
-                self.metadata["Dumps"] = str(nDump)
+                self.metadata["Dumps"]=str(nDump)
+                
 
-        self.metadata["Processing_config"] = processing_config
-        self.metadata["Analysis_config"] = analysis_config
-        if prodStep == 'RRQ':
-            self.metadata["Calib_processing_config"] = calib_processing_config
-            self.metadata["Calibration_config"] = calibration_config
+        self.metadata["ProcessingConfig"] = processing_config
+        self.metadata["AnalysisConfig"] = analysis_config
+      
+        if prodStep=='BatCalib':
+            self.metadata["CalibProcessingConfig"] = calib_processing_config
+            self.metadata["CalibAnalysisConfig"] = calibration_config
+        
 
-        if prodStep == 'Cut':
+
+        if prodStep=='Cut':
             self.metadata["Analysis"] = analysis
             self.metadata["CutName"] = cutName
-            self.metadata["CutVersion"] = cutVersion
+            self.metadata["CutVersion"] = CutVersion
+
 
 
 class ProcessedIVdIdVData(CDMSDataset):
