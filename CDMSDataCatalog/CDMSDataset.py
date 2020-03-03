@@ -330,6 +330,8 @@ class ProcessedData(CDMSDataset):
                  series,
                  prodStep,
                  prodTag='Test',
+                 prodType='test',
+                 nMergeLevel = 0,
                  dataLocation='SLAC',
                  fileFormat='root',
                  commentStart = 'None',
@@ -346,8 +348,6 @@ class ProcessedData(CDMSDataset):
                  nEventsEORR=0,
                  nEventsBORTS=0,
                  nEventsEORTS=0,
-                 nIsSubMerged=0,
-                 nIsMerged=0,
                  analysis = 'All',
                  cutName ='cGood',
                  cutVersion ='0'):
@@ -360,9 +360,6 @@ class ProcessedData(CDMSDataset):
         if(not prodStep in prodSteps):
             raise ValueError("Please specify data process level (prodStep), options are "+str(prodSteps))
  
-        if nIsSubMerged==1 and nIsMerged==1:
-            raise ValueError('Data can not be submerged and merged in the same time. Please check your code')
-
 
         # instantiate CDMSDataset base object
         CDMSDataset.__init__(self,fileName,filePath,facility,dataLocation,fileFormat)
@@ -374,12 +371,13 @@ class ProcessedData(CDMSDataset):
         elif (prodStep == 'Cut'):
             self.relativePath+='/Cuts'
         else:
-            if nIsSubMerged==1:
-                self.relativePath+='/Submerged'
-            elif  nIsMerged==1:
-                self.relativePath+='/Merged'
-            else:
+            if int(nMergeLevel)==0:
                 self.relativePath+='/Unmerged/' + series
+            elif int(nMergeLevel)==1:
+                self.relativePath+='/Submerged'
+            elif int(nMergeLevel)==2:
+                self.relativePath+='/Merged'
+            
                 
         # series data time
         # remove underscore and facility ID (first 2 digit)
@@ -401,7 +399,8 @@ class ProcessedData(CDMSDataset):
         self.metadata["nIsJunk"]=int(nIsJunk)
         self.metadata["ProdStep"] = prodStep
         self.metadata["ProdTag"] = prodTag
-
+        self.metadata["ProdType"] = prodType
+        self.metadata["nMergeLevel"] = int(nMergeLevel)
         if prodStep=='BatNoise':
             self.metadata["DumpsNoise"] = str(noiseDumps)
                   
@@ -412,7 +411,7 @@ class ProcessedData(CDMSDataset):
             self.metadata["nEvBORTS"] =int(nEventsBORTS)
             self.metadata["nEvEORTS"] = int(nEventsEORTS)
                
-            if nIsSubMerged==0 and nIsMerged==0:
+            if int(nMergeLevel)==0:
                 self.metadata["nDump"] = int(nDump)
             else:
                 self.metadata["Dumps"]=str(nDump)
