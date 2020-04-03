@@ -61,7 +61,10 @@ class CDMSFetchResult(object):
 
     def __init__(self, request, success, filePath=None, error=None):
         self.request = request
-        self.filePath = os.path.abspath(filePath)
+        try:
+            self.filePath = os.path.abspath(filePath)
+        except TypeError:
+            self.filePath = filePath
         self.success = success
         self.error = error
 
@@ -92,20 +95,24 @@ class CDMSMultiFetchResult(CDMSFetchResult):
         self.request = [res.request for res in results]
         self.filePath = [res.filePath for res in results]
 
-    def summary(self):
+    def summary(self, verbose=True):
         if self.success:
             print("All", len(self.results), "fetches succeeded")
         else:
             succeeded = sum(1 for res in self.results if res)
             print(succeeded, "out of", len(self.results), "succeeded")
-            for res in self.results:
-                req.summary()
+            if verbose:
+                for res in self.results:
+                    res.summary()
 
     def __getitem__(self, key):
         return self.results[key]
 
     def __iter__(self):
         return self.results.__iter__()
+
+    def __len__(self):
+        return len(self.results)
 
     @property
     def success(self):
@@ -122,6 +129,10 @@ class CDMSMultiFetchResult(CDMSFetchResult):
     @error.setter
     def error(self, val):
         pass
+
+    def __repr__(self):
+        succeeded = sum(1 for res in self.results if res)
+        return f"CDMSMultFetchRequest({succeeded}/{len(self)} succeeded)"
 
 
 def download_web(dataset, target, baseurl):
@@ -199,6 +210,9 @@ def fetchdata(catalog, path, checkonly=False, dest=None, destRelative=True,
                        Else returns F, though in many cases an exception
                        will be raised first.
     """
+    if not path:
+        return CDMSFetchResult(path, success=False, error="Empty request")
+    
     # check destination
     if dest is None:
         dest = catalog.default_fetchdir
@@ -212,16 +226,26 @@ def fetchdata(catalog, path, checkonly=False, dest=None, destRelative=True,
             maxthreads = min(maxthreads, len(path))
         with ThreadPool(processes=maxthreads) as pool:
             try:
-                return CDMSMultiFetchResult(pool.map(dofetch, path))
+                results = pool.map(dofetch, path)
             except KeyboardInterrupt as e:
+                print("\n******** Canceling download ******** \n")
                 pool.terminate()
                 pool.join()
-                errors = [CDMSFetchResult(pth, success=False, error=str(e))
-                          for pth in path]
-                return CDMSMultiFetchResult(errors)
+                print("\nDownload cancelled")
+                results = [CDMSFetchResult(pth, success=False,
+                                           error='cancelled')
+                           for pth in path]
+            return CDMSMultiFetchResult(results)
 
     elif isinstance(path, str):
-        # convert to a Dataset
+        if path.find('*') != -1:
+            # this is a search string
+            try:
+                datasets = catalog.search(path)
+            except BaseException as e:
+                return CDMSFetchResult(path, success=False, error=str(e))
+            return fetchdata(catalog, datasets, checkonly, dest, destRelative)
+        # if we get here, it's a plain string, so convert to a Dataset
         try:
             path = catalog.get(path)
         except BaseException as e:
