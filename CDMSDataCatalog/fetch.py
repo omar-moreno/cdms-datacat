@@ -211,7 +211,14 @@ def fetchdata(catalog, path, checkonly=False, dest=None, destRelative=True,
         if maxthreads is not None:
             maxthreads = min(maxthreads, len(path))
         with ThreadPool(processes=maxthreads) as pool:
-            return CDMSMultiFetchResult(pool.map(dofetch, path))
+            try:
+                return CDMSMultiFetchResult(pool.map(dofetch, path))
+            except KeyboardInterrupt as e:
+                pool.terminate()
+                pool.join()
+                errors = [CDMSFetchResult(pth, success=False, error=str(e))
+                          for pth in path]
+                return CDMSMultiFetchResult(errors)
 
     elif isinstance(path, str):
         # convert to a Dataset
