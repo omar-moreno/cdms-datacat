@@ -2,10 +2,13 @@ import datacat
 from datacat import client_from_config, config_from_file
 import pathlib
 import pkg_resources
+import logging
 
 from .fetch import fetchdata, get_default_fetchdir
 from .CDMSDataset import CDMSDataset
+from . import paths
 
+log = logging.getLogger(__name__)
 
 def corrPathCDMS(path):
     if(path[0] != '/'):
@@ -116,6 +119,7 @@ class CDMSDataCatalog:
         return
 
     def search(self, path, site='All', **kwargs):
+        """ Call `client.search` and return sorted CDMSDatasets """
         path = corrPathCDMS(path)
         results = self.client.search(path, site=site, **kwargs)
         # results come back unsorted, which is not what we want
@@ -172,7 +176,84 @@ class CDMSDataCatalog:
         return fetchdata(self, *args, **kwargs)
 
 
+    def buildDataSearch(self, Facility='*', nFridgeRun='*', ProdType='*', 
+                        ProdTag='*', nMergeLevel=None, Series='*', 
+                        ProdStep=None, filename=None, query=None, **kwargs):
+        """ Construct the data catalog path and query string for CDMS
+        datasets. Arguments starting with a capital are generally directly
+        equivalent to metadata arguments. 
 
+        TODO: Convert data type string ('ba', cf', etc) to number
+        """
+        if query:
+            query = [query]
+        else:
+            query = []
+
+        # for each parameter, if it is a special query argument, replace
+        # with '*' in the path
+        def checksimple(param_, name_, query_):
+            if not paths.is_simple_arg(param_):
+                query.append(paths.build_query_phrase(name_, param_))
+                return '*'
+            return param_
+        
+        # handle special 'last' case for nFridgeRun
+        if nFridgeRun == 'last' or nFridgeRun == -1:
+            if not paths.is_simple_arg(Facility, allowstar=False,
+                                       allownone=False):
+                raise ValueError("Can't find last fridge run without facility")
+            nFridgeRun = self.getLastFridgeRunNumber(Facility)
+
+        Facility = checksimple(Facility, 'Facility', query)
+        nFridgeRun = checksimple(nFridgeRun, 'nFridgeRun', query)
+        ProdType = checksimple(ProdType, 'ProdType', query)
+        ProdTag = checksimple(ProdTag, 'ProdTag', query)
+        nMergeLevel = checksimple(nMergeLevel, 'nMergeLevel', query)
+        Series = checksimple(Series, 'Series', query)
+        ProdStep = checksimple(ProdStep, 'ProdStep', query)
+
+        path = paths.getpath_data(Facility, nFridgeRun, ProdType, ProdTag, 
+                                  nMergeLevel, Series, ProdStep, filename)
+        if path.endswith('*') and not path.endswith('**'):
+            path += '*'
+
+        # handle additional query args from kwargs, convert to string
+        # todo: handle nDataType here
+        for k, v in kwargs.items():
+            query.append(paths.build_query_phrase(k, v))
+        query = ' and '.join(query)
+        
+        return path, query
+        
+
+    def findData(self, query=None, dofetch=False, fetchcheckonly=False, **kwargs):
+        """ Run a query to find data against the data catalog
+        Args:
+          query (str):  The datacat client query (filter) to run. Can be blank,
+                        in which case it will be entirely built from kwargs. 
+          dofetch (bool): If True, call fetch on all the result data (i.e.,
+                          find the corresponding files on local disk)
+          fetchcheckonly (bool): If True, only check for local files, but
+                                 don't download if missing.  Ignored if
+                                 `dofetch` is False.
+          **kwargs:  Additional keyword arguments are interpreted as metadata
+                     query parameters
+
+        Output: data
+          if `dofetch` is False, data is a list of `CDMSDataset` objects.
+          Otherwise, data is a `CDMSMultiFetchRequest`. 
+          
+        """
+        site = kwargs.pop('site', 'All')
+        path, query = self.buildDataSearch(**kwargs)
+        # should we catch exceptions here, or let them bubble?
+        log.debug("Searching path %s with additional query '%s'", path, query)
+        datasets = self.search(path, site=site, query=query)
+        if dofetch:
+            datasets = self.fetch(datasets, checkonly=fetchcheckonly)
+        return datasets
+  
 
     def getProductionInfo(self,facility='',fridgeRun='', processingType = '', productionTagList=[],verbose=True):
         """ Get production tag list and metadata
@@ -719,7 +800,7 @@ class CDMSDataCatalog:
         return facility
 
         
-    def getLastFridgeRunNumber(self,facility='CUTE'):
+    def getLastFridgeRunNumber(self, facility='CUTE'):
 
         last_run = -999999
         
@@ -731,18 +812,19 @@ class CDMSDataCatalog:
         try:
             folder_list = self.client.children(base_path)
         except:
-            print('ERROR: Unable to read datacatalog path "' + base_path + '"!')
+            print(f'ERROR: Unable to read datacatalog path "{base_path}"!')
             return last_run
         
         if not folder_list:
-            print('ERROR: No fridge run found in ' +  datacat_path)
+            print(f'ERROR: No fridge run found in {datacat_path}')
             return last_run
 
         for datacat_folder in folder_list:
             run = datacat_folder.name
-            if run[1:].isnumeric():
-                run_number = int(run[1:])
-                if (run_number>last_run):
-                    last_run = run_number
+            try:
+                last_run = max(last_run, int(run[1:]))
+            except ValueError: #run is not a number?
+                pass
+
         return last_run
         
