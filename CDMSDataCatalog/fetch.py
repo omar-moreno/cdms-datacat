@@ -88,27 +88,28 @@ class CDMSFetchResult(object):
 class CDMSMultiFetchResult(CDMSFetchResult):
     """Container for multiple fetch requests"""
     def __init__(self, results):
-        self.request = results
-        self.filePath = [req.filePath for req in results]
+        self.results = results
+        self.request = [res.request for res in results]
+        self.filePath = [res.filePath for res in results]
 
     def summary(self):
         if self.success:
-            print("All", len(self.request), "fetches succeeded")
+            print("All", len(self.results), "fetches succeeded")
         else:
-            succeeded = sum(1 for req in self.request if req)
-            print(succeeded, "out of", len(self.request), "succeeded")
-            for req in self.request:
+            succeeded = sum(1 for res in self.results if res)
+            print(succeeded, "out of", len(self.results), "succeeded")
+            for res in self.results:
                 req.summary()
 
     def __getitem__(self, key):
-        return self.request[key]
+        return self.results[key]
 
     def __iter__(self):
-        return self.request.__iter__()
+        return self.results.__iter__()
 
     @property
     def success(self):
-        return all(self.request)
+        return all(self.results)
 
     @success.setter
     def success(self, val):
@@ -116,7 +117,7 @@ class CDMSMultiFetchResult(CDMSFetchResult):
 
     @property
     def error(self):
-        return {res.request: res.error for res in self.request if not res}
+        return {res.request: res.error for res in self.results if not res}
 
     @error.setter
     def error(self, val):
@@ -166,7 +167,8 @@ def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
     return subprocess.run(['rsync', '-a', sourceurl, target])
 
 
-def fetchdata(catalog, path, dest=None, destRelative=True, maxthreads=None):
+def fetchdata(catalog, path, checkonly=False, dest=None, destRelative=True, 
+              maxthreads=None):
     """Download a copy of the files pointed by path to the local system, only
     if it is not already found.
 
@@ -178,6 +180,9 @@ def fetchdata(catalog, path, dest=None, destRelative=True, maxthreads=None):
              - a CDMSDataGroup (or path pointing to): download all ref'd todo
              - a list/tuple of paths/Datasets
 
+      checkonly (bool): if True, look to see if data is already present on 
+                        disk and abort if not found
+    
       dest (str or Path): target directory to place the file in.
                           Missing directories will be created. File
                           will have same name as data catalog entry
@@ -201,11 +206,11 @@ def fetchdata(catalog, path, dest=None, destRelative=True, maxthreads=None):
     # first check the type of path
     if isinstance(path, (list, tuple)):
         # fetch each one individually (in multiple threads), return the set
+        def dofetch(apath):
+            return fetchdata(catalog, apath, checkonly, dest, destRelative)
         if maxthreads is not None:
             maxthreads = min(maxthreads, len(path))
         with ThreadPool(processes=maxthreads) as pool:
-            def dofetch(apath):
-                return fetchdata(catalog, apath, dest, destRelative)
             return CDMSMultiFetchResult(pool.map(dofetch, path))
 
     elif isinstance(path, str):
@@ -224,6 +229,11 @@ def fetchdata(catalog, path, dest=None, destRelative=True, maxthreads=None):
 
     targetexists = os.path.isfile(target)
     if not targetexists:
+        if checkonly: # nothing to do but fail here
+            return CDMSFetchResult(path, success=False,
+                                   error="Checked target does not exist")
+
+
         # we need to actually do the download
         targetDir = os.path.dirname(target)
         try:
