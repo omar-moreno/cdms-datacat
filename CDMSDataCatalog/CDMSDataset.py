@@ -83,25 +83,29 @@ class CDMSDataset:
         nds.rawDataset = ds
         return nds
 
+    def _test_location_attr(self, attr, locationattr=None):
+        """ Test for attributes in the raw dataset that may be attached to
+            the SLAC location instead
+        """
+        result = None
+        result = getattr(self.rawDataset, attr)
+        if not result:
+            location = self.findLocation(self.rawDataset, 'SLAC')
+            if location:
+                if not locationattr:
+                    locationattr = attr
+                result = getattr(location, locationattr)
+        return result
+
     @property
     def locationPk(self):
         """Get the Pk of the first location from the raw dataset"""
-        try:
-            return getattr(self.rawDataset, 'locationPk',
-                           self.findLocation(self.rawDataset, 'SLAC').pk)
-        except BaseException:
-            return None
+        return self._test_location_attr('locationPk', 'pk')
 
     @property
     def size(self):
         """Get the file size from the raw dataset"""
-        size = None
-        try:
-            size = getattr(self.rawDataset, 'size',
-                           self.findLocation(self.rawDataset, 'SLAC').size)
-        except BaseException:
-            pass
-        return size
+        return self._test_location_attr('size')
 
     def setFileFormat(self, fileFormat):
         try:
