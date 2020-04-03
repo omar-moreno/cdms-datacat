@@ -75,13 +75,11 @@ class CDMSDataset:
                   fileFormat=str(ds.fileFormat))
         nds.relativePath = str(ds.path)
         
-        
-        metadata_dict_name = 'metadata'
-        if not hasattr(ds,'metadata'):
-            metadata_dict = 'versionMetadata'
-        
-        for k, v in getattr(ds,metadata_dict_name, {}).items():
-            nds.metadata[k] = v
+        # metadata may be called metadata or versionMetadata, so check both
+        for metadata_name in ('metadata', 'versionMetadata'): 
+            for k, v in getattr(ds, metadata_name, {}).items():
+                nds.metadata[k] = v
+
         nds.rawDataset = ds
         return nds
 
