@@ -88,13 +88,13 @@ class CDMSDataset:
             the SLAC location instead
         """
         result = None
-        result = getattr(self.rawDataset, attr)
+        result = getattr(self.rawDataset, attr, None)
         if not result:
             location = self.findLocation(self.rawDataset, 'SLAC')
             if location:
                 if not locationattr:
                     locationattr = attr
-                result = getattr(location, locationattr)
+                result = getattr(location, locationattr, None)
         return result
 
     @property
