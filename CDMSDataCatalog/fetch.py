@@ -11,12 +11,16 @@ def get_default_fetchdir():
     """ Try to determine a default location for datacatalog data by inspecting
         paths that are present on the system.
     """
-    # first look for official tier 1 location
-    slacpath = '/nfs/slac/g/supercdms/data'
-    if os.path.isdir(slacpath):
-        return slacpath
+    # first look for official tier 1 locations
+    # todo: do this by hostname!
+    testpaths = ['/nfs/slac/g/supercdms/data', #SLAC
+                 '/data1/public_overflow/datacat-data', #cdmsz3.fnal.gov
+                ]
+    for path in testpaths:
+        if os.path.isdir(path):
+            return path
 
-    # see if there is a scratch directory
+    # see if there is a scratch directory, mostly for grid nodes
     if os.path.isdir('/scratch'):
         return '/scratch/CDMS/datacat-data'
 
@@ -30,8 +34,6 @@ def get_fetch_path(dataset, dest=None, destRelative=True):
         dest (str): top-level destination directory
         destRelative (bool): if True, recreate the datacat path below dest
     """
-    if dest is None:
-        dest = get_default_fetchdir()
     # first, see if it's sitting at one of the official paths
     target = None
     targetexists = False
@@ -43,7 +45,7 @@ def get_fetch_path(dataset, dest=None, destRelative=True):
 
     if not targetexists:
         # build the path for fetching relative to dest
-        target = dest
+        target = dest or get_default_fetchdir()
         if destRelative:
             relPath = dataset.relativePath
             if os.path.isabs(relPath):
