@@ -227,7 +227,7 @@ class CDMSDataCatalog:
         return path, query
         
 
-    def findData(self, query=None, dofetch=False, fetchcheckonly=False, **kwargs):
+    def findData(self, query=None, dofetch=False, fetchcheckonly=None, **kwargs):
         """ Run a query to find data against the data catalog
         Args:
           query (str):  The datacat client query (filter) to run. Can be blank,

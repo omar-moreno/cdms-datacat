@@ -1,10 +1,13 @@
 import pathlib
-from multiprocessing.pool import ThreadPool
+from concurrent.futures import ThreadPoolExecutor
 import urllib
 import shutil
 import os
 import requests
 import subprocess
+from tqdm.auto import tqdm
+from tqdm.utils import CallbackIOWrapper
+from .CDMSDataset import CDMSDataset
 
 
 def get_default_fetchdir():
@@ -61,18 +64,18 @@ class CDMSFetchResult(object):
     individual request are provided.
     """
 
-    def __init__(self, request, success, filePath=None, error=None):
+    def __init__(self, request, filepath=None, error=None):
         self.request = request
         try:
-            self.filePath = os.path.abspath(filePath)
+            self.filepath = os.path.abspath(filepath)
         except TypeError:
-            self.filePath = filePath
-        self.success = success
+            self.filepath = filepath
         self.error = error
+        self.success = (error is None)
 
     def summary(self):
         if self.success:
-            print("Fetch", self.request, "succeeded. File at", self.filePath)
+            print("Fetch", self.request, "succeeded. File at", self.filepath)
         else:
             print("\x1b[1;31mFetch", self.request, "failed\x1b[0m", self.error)
 
@@ -86,16 +89,24 @@ class CDMSFetchResult(object):
     def __str__(self):
         return repr(self)
 
+    # for easier compatibility with MultiFetchRequest:
     def __iter__(self):
         return [self].__iter__()
 
+    @property
+    def filepaths(self):
+        return [self.filepath]
 
-class CDMSMultiFetchResult(CDMSFetchResult):
+    @property
+    def valid_filepaths(self):
+        return self.filepaths
+
+
+class CDMSMultiFetchResult(object):
     """Container for multiple fetch requests"""
-    def __init__(self, results):
+    def __init__(self, request, results):
+        self.request = request
         self.results = results
-        self.request = [res.request for res in results]
-        self.filePath = [res.filePath for res in results]
 
     def summary(self, verbose=True):
         if self.success:
@@ -132,12 +143,40 @@ class CDMSMultiFetchResult(CDMSFetchResult):
     def error(self, val):
         pass
 
+    def __bool__(self):
+        return self.success
+
+    @property
+    def filepaths(self):
+        """ Return a list of local disk paths for this request.
+        Raises: ValueError if any request had an error
+        """
+        if not self.success:
+            raise ValueError("Some fetch results returned errors")
+        return [res.filepath for res in results]
+
+    @property
+    def valid_filepaths(self):
+        """ Return a list of all *valid* local disk paths for successful
+        requests. will not throw
+        """
+        return [res.filepath for res in results if res]
+
     def __repr__(self):
         succeeded = sum(1 for res in self.results if res)
-        return f"CDMSMultFetchRequest({succeeded}/{len(self)} succeeded)"
+        return f"CDMSMultFetchRequest({request}, {succeeded}/{len(self)} succeeded)"
 
+    def __str__(self):
+        return repr(self)
 
-def download_web(dataset, target, baseurl):
+def print_filesize(num, suffix='B'):
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
+
+def download_web(dataset, target, baseurl, progcallback=None):
     """ Download a file through the data catalog web interface
     Args:
         dataset (CDMSDataset): the datsaet to download
@@ -159,9 +198,16 @@ def download_web(dataset, target, baseurl):
     # finally we can download to file
     # from https://stackoverflow.com/questions/16694907/
     # what about auth?
-    with requests.get(url, params=params, stream=True) as req:
-        with open(target, 'wb') as f:
-            shutil.copyfileobj(req.raw, f)
+    with requests.get(url, params=params, stream=True) as req, \
+         open(target, 'wb') as fout, \
+         tqdm(total=dataset.size, unit='B', unit_scale=True, unit_divisor=1024,
+              desc=os.path.basename(target), leave=False,
+              disable=dataset.size<5000000) as progbar :
+        def update(size):
+            progbar.update(size)
+            if progcallback:
+                progcallback(size)
+        shutil.copyfileobj(req.raw, CallbackIOWrapper(update, fout, "write"))
 
 
 def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
@@ -179,8 +225,7 @@ def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
     sourceurl = host + ":" + sourcepath
     return subprocess.run(['rsync', '-a', sourceurl, target])
 
-
-def fetchdata(catalog, path, checkonly=False, dest=None, destRelative=True, 
+def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
               maxthreads=None):
     """Download a copy of the files pointed by path to the local system, only
     if it is not already found.
@@ -190,11 +235,15 @@ def fetchdata(catalog, path, checkonly=False, dest=None, destRelative=True,
       path:  The file(s) to copy. Can take many forms:
              - a single string giving the full data catalog entry path
              - a CDMSDataset
+             - a string containing a wildcard '*', treated as a search query
              - a CDMSDataGroup (or path pointing to): download all ref'd todo
-             - a list/tuple of paths/Datasets
+             - a list/tuple of paths/queries/Datasets
 
-      checkonly (bool): if True, look to see if data is already present on 
-                        disk and abort if not found
+      checkonly (bool/int): if True, don't download, only look for datasets
+                            already present on disk.  If False, download all
+                            requested files without prompting. If a number,
+                            ask for user confirmation if download is greater
+                            than N MB. If None (default), use 100 MB
     
       dest (str or Path): target directory to place the file in.
                           Missing directories will be created. File
@@ -208,99 +257,128 @@ def fetchdata(catalog, path, checkonly=False, dest=None, destRelative=True,
     Returns:
       CDMSFetchResult: If file was successfully downloaded / already exists
                        and passes size or checksum verification, return T.
-                       Also update the `filePath` member to new location.
+                       Also update the `filepath` member to new location.
                        Else returns F, though in many cases an exception
                        will be raised first.
     """
+
+    # sanity guard
     if not path:
-        return CDMSFetchResult(path, success=False, error="Empty request")
-    
+        return CDMSFetchResult(path, error="Empty request")
+
+    if checkonly is None:
+        checkonly = 100
+
     # check destination
     if dest is None:
         dest = catalog.default_fetchdir
 
-    # first check the type of path
-    if isinstance(path, (list, tuple)):
-        # fetch each one individually (in multiple threads), return the set
-        def dofetch(apath):
-            return fetchdata(catalog, apath, checkonly, dest, destRelative)
-        if maxthreads is not None:
-            maxthreads = min(maxthreads, len(path))
-        with ThreadPool(processes=maxthreads) as pool:
-            try:
-                results = pool.map(dofetch, path)
-            except KeyboardInterrupt as e:
-                print("\n******** Canceling download ******** \n")
-                pool.terminate()
-                pool.join()
-                print("\nDownload cancelled")
-                results = [CDMSFetchResult(pth, success=False,
-                                           error='cancelled')
-                           for pth in path]
-            return CDMSMultiFetchResult(results)
-
-    elif isinstance(path, str):
-        if path.find('*') != -1:
-            # this is a search string
-            try:
-                datasets = catalog.search(path)
-            except BaseException as e:
-                return CDMSFetchResult(path, success=False, error=str(e))
-            return fetchdata(catalog, datasets, checkonly, dest, destRelative)
-        # if we get here, it's a plain string, so convert to a Dataset
-        try:
-            path = catalog.get(path)
-        except BaseException as e:
-            return CDMSFetchResult(path, success=False, error=str(e))
-
-    # if we get here, path _should_ be a CDMSDataset
-    dataset = path
-    target = get_fetch_path(dataset, dest, destRelative)
-    if not target:
-        return CDMSFetchResult(path, success=False,
-                               error="Unable to determine fetch target path")
-
-    targetexists = os.path.isfile(target)
-    if not targetexists:
-        if checkonly: # nothing to do but fail here
-            return CDMSFetchResult(path, success=False,
-                                   error="Checked target does not exist")
-
-
-        # we need to actually do the download
-        targetDir = os.path.dirname(target)
-        try:
-            pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
-        except BaseException as e:
-            error = "Unable to create target directory {}: {}"
-            error = error.format(targetDir, e)
-            return CDMSFetchResult(path, success=False, error=error)
-
-        # give a message with size
-        sizestr = "unknown"
-        if dataset.size:
-            if dataset.size > 1024*1024*1024:
-                sizestr = "%.2f GB" % (dataset.size/1024/1024/1024)
-            elif dataset.size > 1024*1024:
-                sizestr = "%.2f MB" % (dataset.size/1024/1024)
+    # at most complex, `path` could be a list of queries that will each expand
+    # to lists of their own. First step is to flatten everything into a single
+    # list of datasets to check and/or download
+    tocheck = []
+    todownload = []
+    errors = []
+    success = []
+    def _expand_query(request):
+        if isinstance(request, str):
+            if request.find('*') != -1:
+                # this is a search string, will return a list of datasets
+                err = ""
+                try:
+                    datasets = catalog.search(request)
+                except BaseException as e:
+                    err = f"Error searching catalog: {e}"
+                    errors.append(CDMSFetchResult(request, error=err))
+                else:
+                    if datasets:
+                        tocheck.extend(datasets)
+                    else:
+                        err = f"Search query yielded 0 results"
+                        errors.append(CDMSFetchResult(request, error=err))
             else:
-                sizestr = "%.2f kB" % (dataset.size/1024)
-        print("Downloading file", dataset.datasetName, '(', sizestr, ')...')
-        try:
-            download_web(dataset, target, catalog.client.http_client.base_url)
-        except AttributeError as e:
-            return CDMSFetchResult(path, success=False, error=str(e))
-        print("Finished downloading", dataset.datasetName)
+                # this should be a full entry path
+                try:
+                    tocheck.append(catalog.get(request))
+                except BaseException as e:
+                    err = f"Error getting entry from catalog: {e}"
+                    errors.append(CDMSFetchResult(requeset, error=err))
+        elif isinstance(request, CDMSDataset):
+            tocheck.append(request)
+        else:
+            # request should be a loop
+            try:
+                for req in request:
+                    _expand_query(req)
+            except TypeError:
+                raise TypeError(f"Unhandled type {type(request)} for fetch")
 
-    # now make sure the local file matches size
-    try:
-        size = os.path.getsize(target)
-    except OSError as e:
-        return CDMSFetchResult(path, success=False, filePath=target,
-                               error="File not downloaded: {}".format(e))
-    if dataset.size and size != dataset.size:
-        return CDMSFetchResult(path, success=False, filePath=target,
-                               error="File size does not match")
+    _expand_query(path)
 
-    # finally we are successful!
-    return CDMSFetchResult(path, success=True, filePath=target)
+    # now that we have a flat list of `CDMSDataset`s, check each one
+    def _check_local(dataset, errifnotfound):
+        target = get_fetch_path(dataset, dest, destRelative)
+        if target:
+            targetexists = os.path.isfile(target)
+            if targetexists:
+                size = os.path.getsize(target)
+                if dataset.size and size != dataset.size:
+                    err = "File size mismatch"
+                    errors.append(CDMSFetchResult(dataset, error=err))
+                else:
+                    success.append(CDMSFetchResult(dataset, filepath=target))
+            else:
+                if errifnotfound:
+                    err = "File not found on local disk"
+                    errors.append(CDMSFetchResult(dataset, error=err))
+                else:
+                    todownload.append(dataset)
+        else:
+            err = "Unable to determine local disk path"
+            errors.append(CDMSFetchResult(dataset, error=err))
+                    
+        
+    for dataset in tocheck:
+        _check_local(dataset, errifnotfound=False)
+    tocheck = []
+
+    # now download any required files
+    # TODO: should we skip download if there are errors already?
+    dlsize = sum(dataset.size for dataset in todownload)
+    dodownload = checkonly is not True and dlsize > 0
+    if dlsize > 0:
+        print("Need to download", print_filesize(dlsize),
+              "(", len(todownload), "files ) from catalog")
+        if checkonly is not True and dlsize > checkonly*1000000:
+            confirm = input("Do you want to proceed? (y/n): ")
+            dodownload = confirm[0] in 'Yy'
+
+    if dodownload:
+        baseurl = catalog.client.http_client.base_url
+        # tqdm gives nice progress bars
+        with tqdm(total=dlsize, desc="Total progress", position=0, unit='B',
+                  unit_scale=True, unit_divisor=1024) as pbar:
+            def _get(dataset):
+                target = get_fetch_path(dataset, dest, destRelative)
+                # we need to actually do the download
+                targetDir = os.path.dirname(target)
+                try:
+                    pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
+                    download_web(dataset, target, baseurl, pbar.update)
+                except BaseException as e:
+                    err = f"Exception during download: {e}"
+                    errors.append(CDMSFetchResult(dataset, error=err))
+                else:
+                    _check_local(dataset, errifnotfound=True)
+                    
+            with ThreadPoolExecutor(max_workers=maxthreads) as pool:
+                pool.map(_get, todownload)
+        tqdm.write("Download finished")
+    elif todownload:
+        print("Skipping download")
+        for dataset in todownload:
+            errors.append(CDMSFetchResult(dataset, error="Download prevented"))
+
+    # we're finally done!
+    return CDMSMultiFetchResult(path, success + errors)
+    

@@ -1,7 +1,6 @@
 """ Provides the base CDMSDataset class as well as some derived ones"""
 import os
 from datacat.model import Metadata
-from .fetch import get_default_fetchdir
 
 
 class CDMSDataset:
