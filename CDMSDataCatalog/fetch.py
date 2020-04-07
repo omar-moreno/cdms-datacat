@@ -5,7 +5,7 @@ import shutil
 import os
 import requests
 import subprocess
-from tqdm.auto import tqdm
+from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from .CDMSDataset import CDMSDataset
 
@@ -199,15 +199,10 @@ def download_web(dataset, target, baseurl, progcallback=None):
     # from https://stackoverflow.com/questions/16694907/
     # what about auth?
     with requests.get(url, params=params, stream=True) as req, \
-         open(target, 'wb') as fout, \
-         tqdm(total=dataset.size, unit='B', unit_scale=True, unit_divisor=1024,
-              desc=os.path.basename(target), leave=False,
-              disable=dataset.size<5000000) as progbar :
-        def update(size):
-            progbar.update(size)
-            if progcallback:
-                progcallback(size)
-        shutil.copyfileobj(req.raw, CallbackIOWrapper(update, fout, "write"))
+         open(target, 'wb') as fout:
+        if progcallback:
+            fout = CallbackIOWrapper(progcallback, fout, "write")
+        shutil.copyfileobj(req.raw, fout)
 
 
 def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
