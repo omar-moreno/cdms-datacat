@@ -10,11 +10,11 @@ class CDMSDataset:
                  'txt': 'CDMSTXT', 'png': 'CDMSDMCPNG', 'epot': 'CDMSEPOT',
                  'supersim': 'CDMSHISTOGRAMS', 'midas': 'CDMSMIDAS',
                  'cdmsraw': 'CDMSSOUDANRAW', 'numpy': 'CDMSNUMPY',
-                 'pickle': 'CDMSPICKLE'}
+                 'pickle': 'CDMSPICKLE', 'error':'ERROR', None:'ERROR'}
     fileFormats = {'m': 'm', 'mat': 'mat', 'root': 'root', 'txt': 'txt',
                    'epot': 'mat', 'supersim': 'root', 'png': 'png',
                    'pdf': 'pdf', 'midas': 'midas', 'cdmsraw': 'cdmsraw',
-                   'numpy': 'npz', 'pickle': 'pickle'}
+                   'numpy': 'npz', 'pickle': 'pickle', 'error':None, None:None}
 
     def __init__(self,
                  name,
@@ -38,8 +38,9 @@ class CDMSDataset:
         self.setDataType(dataType)
         self.setSite(site)
         self.setFileFormat(fileFormat)
-        self.relativePath = '/CDMS/' + self.dataType
+        self.relativePath = '/CDMS/' + dataType if dataType else None
         self.metadata = Metadata()
+        self.fetchError = None
 
     @staticmethod
     def findLocation(rawds, site=None):
@@ -58,17 +59,14 @@ class CDMSDataset:
 
     @classmethod
     def fromDataset(cls, ds):
-        resource = None
         site = None
         try:
-            resource = ds.resource
             site = ds.site
         except AttributeError:
             location = cls.findLocation(ds)
-            resource = location.resource
             site = location.site
 
-        nds = cls(str(ds.name), str(resource),
+        nds = cls(str(ds.name), None,
                   dataType='DatacatQuery',
                   site=str(site),
                   fileFormat=str(ds.fileFormat))

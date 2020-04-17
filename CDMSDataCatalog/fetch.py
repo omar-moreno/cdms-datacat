@@ -5,10 +5,29 @@ import shutil
 import os
 import requests
 import subprocess
+import sys
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from .CDMSDataset import CDMSDataset
 
+
+class CDMSFetchError(CDMSDataset):
+    """ Class to report information about fetch errors that may not result in
+    sensible datasets.
+    Args:
+        request: The original request (usually a string) that caused the error
+        fetchError (str): Description of the error
+    """
+    def __init__(self, request, error):
+        super().__init__(None, None, None, None, None)
+        self.fetchRequest = request
+        self.fetchError = error
+
+    def __str__(self):
+        return self.fetchRequest
+
+    def __repr__(self):
+        return '<CDMSFetchError Class,'+self.fetchError+'>'
 
 def get_default_fetchdir():
     """ Try to determine a default location for datacatalog data by inspecting
@@ -41,7 +60,7 @@ def get_fetch_path(dataset, dest=None, destRelative=True):
     target = None
     targetexists = False
     for fp in dataset.getSitePaths().values():
-        if os.path.isfile(fp):
+        if fp and os.path.isfile(fp):
             target = fp
             targetexists = True
             break
@@ -58,116 +77,6 @@ def get_fetch_path(dataset, dest=None, destRelative=True):
             target = os.path.join(target, dataset.datasetName)
     return target
 
-class CDMSFetchResult(object):
-    """An instance of this class is returned by `fetch` operations.
-    It is truthy if all fetches completed successfully. Details on each
-    individual request are provided.
-    """
-
-    def __init__(self, request, filepath=None, error=None):
-        self.request = request
-        try:
-            self.filepath = os.path.abspath(filepath)
-        except TypeError:
-            self.filepath = filepath
-        self.error = error
-        self.success = (error is None)
-
-    def summary(self):
-        if self.success:
-            print("Fetch", self.request, "succeeded. File at", self.filepath)
-        else:
-            print("\x1b[1;31mFetch", self.request, "failed\x1b[0m", self.error)
-
-    def __bool__(self):
-        return self.success
-
-    def __repr__(self):
-        return "CDMSFetchRequest(%s)" % ("success" if self.success
-                                         else "failed: %s" % self.error)
-
-    def __str__(self):
-        return repr(self)
-
-    # for easier compatibility with MultiFetchRequest:
-    def __iter__(self):
-        return [self].__iter__()
-
-    @property
-    def filepaths(self):
-        return [self.filepath]
-
-    @property
-    def valid_filepaths(self):
-        return self.filepaths
-
-
-class CDMSMultiFetchResult(object):
-    """Container for multiple fetch requests"""
-    def __init__(self, request, results):
-        self.request = request
-        self.results = results
-
-    def summary(self, verbose=True):
-        if self.success:
-            print("All", len(self.results), "fetches succeeded")
-        else:
-            succeeded = sum(1 for res in self.results if res)
-            print(succeeded, "out of", len(self.results), "succeeded")
-            if verbose:
-                for res in self.results:
-                    res.summary()
-
-    def __getitem__(self, key):
-        return self.results[key]
-
-    def __iter__(self):
-        return self.results.__iter__()
-
-    def __len__(self):
-        return len(self.results)
-
-    @property
-    def success(self):
-        return all(self.results)
-
-    @success.setter
-    def success(self, val):
-        pass
-
-    @property
-    def error(self):
-        return {res.request: res.error for res in self.results if not res}
-
-    @error.setter
-    def error(self, val):
-        pass
-
-    def __bool__(self):
-        return self.success
-
-    @property
-    def filepaths(self):
-        """ Return a list of local disk paths for this request.
-        Raises: ValueError if any request had an error
-        """
-        if not self.success:
-            raise ValueError("Some fetch results returned errors")
-        return [res.filepath for res in results]
-
-    @property
-    def valid_filepaths(self):
-        """ Return a list of all *valid* local disk paths for successful
-        requests. will not throw
-        """
-        return [res.filepath for res in results if res]
-
-    def __repr__(self):
-        succeeded = sum(1 for res in self.results if res)
-        return f"CDMSMultFetchRequest({request}, {succeeded}/{len(self)} succeeded)"
-
-    def __str__(self):
-        return repr(self)
 
 def print_filesize(num, suffix='B'):
     for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
@@ -220,6 +129,7 @@ def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
     sourceurl = host + ":" + sourcepath
     return subprocess.run(['rsync', '-a', sourceurl, target])
 
+
 def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
               maxthreads=None):
     """Download a copy of the files pointed by path to the local system, only
@@ -250,16 +160,15 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
       maxthreads (int): If a list, use up to `maxthreads` simultaneous
                         download connections
     Returns:
-      CDMSFetchResult: If file was successfully downloaded / already exists
-                       and passes size or checksum verification, return T.
-                       Also update the `filepath` member to new location.
-                       Else returns F, though in many cases an exception
-                       will be raised first.
+      results (list): A flat list of CDMSDataset objects retrieved. `filePath`
+                      will be set to the found/downloaded file if successful.
+                      Otherwise, `filePath` will be `None` and `fetchError`
+                      will contain info about the error.
     """
 
     # sanity guard
     if not path:
-        return CDMSFetchResult(path, error="Empty request")
+        return CDMSFetchError(path, error="Empty request")
 
     if checkonly is None:
         checkonly = 100
@@ -284,20 +193,22 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     datasets = catalog.search(request)
                 except BaseException as e:
                     err = f"Error searching catalog: {e}"
-                    errors.append(CDMSFetchResult(request, error=err))
+                    errors.append(CDMSFetchError(request, err))
                 else:
                     if datasets:
                         tocheck.extend(datasets)
                     else:
                         err = f"Search query yielded 0 results"
-                        errors.append(CDMSFetchResult(request, error=err))
+                        errors.append(CDMSFetchError(request, err))
             else:
                 # this should be a full entry path
                 try:
                     tocheck.append(catalog.get(request))
                 except BaseException as e:
-                    err = f"Error getting entry from catalog: {e}"
-                    errors.append(CDMSFetchResult(requeset, error=err))
+                    emsg = f"Error getting entry {request} from catalog: {e}"
+                    err = CDMSFetchError(request, emsg)
+                    err.relativePath = request
+                    errors.append(err)
         elif isinstance(request, CDMSDataset):
             tocheck.append(request)
         else:
@@ -318,19 +229,20 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
             if targetexists:
                 size = os.path.getsize(target)
                 if dataset.size and size != dataset.size:
-                    err = "File size mismatch"
-                    errors.append(CDMSFetchResult(dataset, error=err))
+                    dataset.fetchError = f"File '{target}' size mismatch"
+                    errors.append(dataset)
                 else:
-                    success.append(CDMSFetchResult(dataset, filepath=target))
+                    dataset.filePath = target
+                    success.append(dataset)
             else:
                 if errifnotfound:
-                    err = "File not found on local disk"
-                    errors.append(CDMSFetchResult(dataset, error=err))
+                    dataset.fetchError = f"File '{target}' not found on disk"
+                    errors.append(dataset)
                 else:
                     todownload.append(dataset)
         else:
-            err = "Unable to determine local disk path"
-            errors.append(CDMSFetchResult(dataset, error=err))
+            dataset.fetchError = "Unable to determine local disk path"
+            errors.append(dataset)
                     
         
     for dataset in tocheck:
@@ -361,8 +273,8 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
                     download_web(dataset, target, baseurl, pbar.update)
                 except BaseException as e:
-                    err = f"Exception during download: {e}"
-                    errors.append(CDMSFetchResult(dataset, error=err))
+                    dataset.fetchError = f"Exception during download: {e}"
+                    errors.append(dataset)
                 else:
                     _check_local(dataset, errifnotfound=True)
                     
@@ -372,8 +284,15 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
     elif todownload:
         print("Skipping download")
         for dataset in todownload:
-            errors.append(CDMSFetchResult(dataset, error="Download prevented"))
+            dataset.fetchError = 'Download prevented'
+            errors.append(dataset)
 
     # we're finally done!
-    return CDMSMultiFetchResult(path, success + errors)
+    total = success + errors
+    if errors:
+        print(f"DataCat: Failed to fetch {len(errors)}/{len(total)} datasets!",
+              file=sys.stderr)
+        for err in errors:
+            print(f"\t{str(err)}: {err.fetchError}", file=sys.stderr)
+    return total
     
