@@ -118,19 +118,29 @@ class CDMSDataCatalog:
         self.client.mkdir(path, parents=parents)
         return
 
-    def search(self, path, site='All', **kwargs):
-        """ Call `client.search` and return sorted CDMSDatasets """
+    def search(self, path, site='All', getallmetadata=False, **kwargs):
+        """ Call `client.search` and return sorted CDMSDatasets
+        Normally search results don't contain metadata unless specified by the
+        `show` optional argument.  if `getrallmetadata` is True, call `get` on
+        each hit returned to get it's full metadata list.  This results in a
+        separate round-trip query for each hit, so don't enable unless you
+        need it; giving `show` is MUCH more efficient. 
+        """
         path = corrPathCDMS(path)
         results = self.client.search(path, site=site, **kwargs)
         # results come back unsorted, which is not what we want
         results.sort(key=lambda res: res.path)
-        return list(CDMSDataset.fromDataset(res) for res in results)
+        if getallmetadata:
+            results = [self.get(res.path, site=site) for res in results]
+        else:
+            results = [CDMSDataset.fromDataset(res) for res in results]
+        return results
 
     def get(self, path, site='All'):
         """Convert a path (string) to a full CDMSDataset object"""
         path = corrPathCDMS(path)
         rawds = self.client.path(path, site=site)
-        return CDMSDataset.fromDataset(self.client.path(path, site=site))
+        return CDMSDataset.fromDataset(rawds)
 
     def add(self, CDMSds, replace=True, catch_errors=True):
         """Add a new CDMSDataset entry to the catalog
