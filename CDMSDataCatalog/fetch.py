@@ -1,3 +1,6 @@
+""" Utility functions for downloading data to local disk
+"""
+
 import pathlib
 from concurrent.futures import ThreadPoolExecutor
 import urllib
@@ -9,6 +12,7 @@ import sys
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from .CDMSDataset import CDMSDataset
+
 
 
 class CDMSFetchError(CDMSDataset):
@@ -33,10 +37,15 @@ def get_default_fetchdir():
     """ Try to determine a default location for datacatalog data by inspecting
         paths that are present on the system.
     """
-    # first look for official tier 1 locations
+    # first look for official tier 1/2 locations
     # todo: do this by hostname!
-    testpaths = ['/nfs/slac/g/supercdms/data', #SLAC
-                 '/data1/public_overflow/datacat-data', #cdmsz3.fnal.gov
+    testpaths = ['/gpfs/slac/staas/fs1/supercdms/data', #SLAC
+                 '/scratch/m/mdiamond/data',            #Niagara
+                 '/scratch/group/mitchcomp/CDMS/data',  #TAMU HPRC
+                 '/scratch/group/cdms/data',            #ManeFrame
+                 '/cvmfs/data',                         #XSEDE
+                 '/data1/public_overflow/data',         #cdmsz3.fnal.gov
+                 '/project/rrg-mdiamond/data',          #Cedar
                 ]
     for path in testpaths:
         if os.path.isdir(path):
@@ -138,32 +147,37 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
     Args:
       catalog: a CDMSDataCatalog object
       path:  The file(s) to copy. Can take many forms:
-             - a single string giving the full data catalog entry path
-             - a CDMSDataset
-             - a string containing a wildcard '*', treated as a search query
-             - a CDMSDataGroup (or path pointing to): download all ref'd todo
-             - a list/tuple of paths/queries/Datasets
+      
+        * a single string giving the full data catalog entry path
+        * a CDMSDataset
+        * a string containing a wildcard '*', treated as a search query
+        * a CDMSDataGroup (or path pointing to): download all ref'd todo
+        * a list/tuple of paths/queries/Datasets
 
-      checkonly (bool/int): if True, don't download, only look for datasets
+
+      checkonly (bool or int): if True, don't download, only look for datasets
                             already present on disk.  If False, download all
                             requested files without prompting. If a number,
                             ask for user confirmation if download is greater
                             than N MB. If None (default), use 100 MB
     
-      dest (str or Path): target directory to place the file in.
+      dest (str or pathlib.Path): target directory to place the file in.
                           Missing directories will be created. File
                           will have same name as data catalog entry
+
       destRelative (bool): If True (default), create a directory
-                           hierarchy under `destimation` to match
+                           hierarchy under `destination` to match
                            the `relativePath` member. If `path` has
                            multiple entries, will be treated as True
-      maxthreads (int): If a list, use up to `maxthreads` simultaneous
-                        download connections
+
+      maxthreads (int): If a `path` expands to more than a single dataset, use
+                        up to `maxthreads` simultaneous download connections
     Returns:
-      results (list): A flat list of CDMSDataset objects retrieved. `filePath`
-                      will be set to the found/downloaded file if successful.
-                      Otherwise, `filePath` will be `None` and `fetchError`
-                      will contain info about the error.
+      list: A flat list of CDMSDataset objects retrieved. The `filePath`
+            attribute on each object will be set to the found/downloaded file
+            if successful.
+            Otherwise, `filePath` will be `None` and `fetchError` will contain
+            more info about the error.
     """
 
     # sanity guard
