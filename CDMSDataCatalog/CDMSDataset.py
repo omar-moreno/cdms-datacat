@@ -4,17 +4,36 @@ from datacat.model import Metadata
 
 
 class CDMSDataset:
-    """Base class for CDMS datasets"""
+    """Base class for CDMS datasets
+    
+    Attributes:
+        datasetName (str): the `name` constructor argument
+        filePath (str): path to file on disk, `None` if this object was
+            retrieved from a catalog entry and not fetched
+        dataType (str): facility where data was taken or sim type
+        fileFormat (str): format of data file
+        relativePath (str): The full data catalog entry path
+        metadata (dict): additional metadata keys
+        fetchError (str): If we attempted to fetch this data (i.e., find
+            it on local disk or download it) and an error occurred, this
+            will contain info on the error. Otherwise will be `None`
+        size (int): size of data file in bytes
+            
+    """
 
     fileTypes = {'m': 'M', 'mat': 'CDMSMATLAB', 'root': 'CDMSROOT',
                  'txt': 'CDMSTXT', 'png': 'CDMSDMCPNG', 'epot': 'CDMSEPOT',
                  'supersim': 'CDMSHISTOGRAMS', 'midas': 'CDMSMIDAS',
                  'cdmsraw': 'CDMSSOUDANRAW', 'numpy': 'CDMSNUMPY',
                  'pickle': 'CDMSPICKLE', 'error':'ERROR', None:'ERROR'}
+    """ List of allowed file types """
+    
     fileFormats = {'m': 'm', 'mat': 'mat', 'root': 'root', 'txt': 'txt',
                    'epot': 'mat', 'supersim': 'root', 'png': 'png',
                    'pdf': 'pdf', 'midas': 'midas', 'cdmsraw': 'cdmsraw',
                    'numpy': 'npz', 'pickle': 'pickle', 'error':None, None:None}
+    """ List of allowed file formats (map type: suffix) """
+    
 
     def __init__(self,
                  name,
@@ -22,17 +41,26 @@ class CDMSDataset:
                  dataType,
                  site,
                  fileFormat):
-        """Constructor for the CDMS dataset base class
-        All of these are mandatory; the optional metadata can be specified
-        after construction
+        """ ##Constructor
+        All arguments are mandatory; the optional metadata can be specified
+        after construction.  This class should almost never be constructed
+        directly.  `CDMSDataset`s constructed from data catalog entries
+        retrieved through the web API will be built by the client using the
+        `CDMSDataset.fromDataset` class function. To add new entries to the
+        catalog, we will generally use subclasses tailored for that data type.
 
-        name - dataset name
-        filePath - physical path to file
-        dataType/Facility- 'DMC', 'Soudan', 'SNOLAB', 'UCB', etc
-        site -  e.g. 'SLAC'
-        fileFormat - e.g. 'root', 'mat', 'txt', 'm', 'epot','midas'
+        Args:
+            name (str): Name of the dataset entry. This should usually be the
+                basename of the data file itself
+            filePath (str): Full absolute path to the data file
+            dataType (str): For raw/processed data, this is the facility
+                where the data qas taken. Other data types may have different
+                values here
+            site (str): name of computing facility where the data is located
+            fileFormat (str): descriptive name of format; key must be in
+                `CDMSDataset.fileFormats`
 
-        """
+       """
         self.datasetName = name
         self.filePath = filePath
         self.setDataType(dataType)
@@ -59,6 +87,7 @@ class CDMSDataset:
 
     @classmethod
     def fromDataset(cls, ds):
+        """ Construct a `CDMSDataset` from a raw `datacat.model.Dataset` """
         site = None
         try:
             site = ds.site
@@ -101,10 +130,13 @@ class CDMSDataset:
 
     @property
     def size(self):
-        """Get the file size from the raw dataset"""
+        """Get the file size (bytes) from the raw dataset"""
         return self._test_location_attr('size')
 
     def setFileFormat(self, fileFormat):
+        """ Make sure `fileFormat` is one of the known types and set the
+        corresponding member
+        """
         try:
             self.fileFormat = CDMSDataset.fileFormats[fileFormat]
             self.fileType = CDMSDataset.fileTypes[fileFormat]
