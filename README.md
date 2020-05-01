@@ -4,6 +4,8 @@ Installation
 ------------
 `pip install git+ssh://nero.stanford.edu/data/git/DataHandling/DataCat#egg=CDMSDataCatalog`
 
+Note: This command assumes that you have your ssh config setup as the following link suggests:
+[Link](http://titus.stanford.edu:8080/git/blob/?f=ssh_SUF.md&r=cdms_docs.git&h=master)
 
 Usage
 --------
