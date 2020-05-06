@@ -1,0 +1,1707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.1" />
+<title>CDMSDataCatalog.CDMSDataset API documentation</title>
+<meta name="description" content="Provides the base CDMSDataset class as well as some derived ones" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>CDMSDataCatalog.CDMSDataset</code></h1>
+</header>
+<section id="section-intro">
+<p>Provides the base CDMSDataset class as well as some derived ones</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34; Provides the base CDMSDataset class as well as some derived ones&#34;&#34;&#34;
+import os
+from datacat.model import Metadata
+
+
+class CDMSDataset:
+    &#34;&#34;&#34;Base class for CDMS datasets
+    
+    Attributes:
+        datasetName (str): the `name` constructor argument
+        filePath (str): path to file on disk, `None` if this object was
+            retrieved from a catalog entry and not fetched
+        dataType (str): facility where data was taken or sim type
+        fileFormat (str): format of data file
+        relativePath (str): The full data catalog entry path
+        metadata (dict): additional metadata keys
+        fetchError (str): If we attempted to fetch this data (i.e., find
+            it on local disk or download it) and an error occurred, this
+            will contain info on the error. Otherwise will be `None`
+        size (int): size of data file in bytes
+            
+    &#34;&#34;&#34;
+
+    fileTypes = {&#39;m&#39;: &#39;M&#39;, &#39;mat&#39;: &#39;CDMSMATLAB&#39;, &#39;root&#39;: &#39;CDMSROOT&#39;,
+                 &#39;txt&#39;: &#39;CDMSTXT&#39;, &#39;png&#39;: &#39;CDMSDMCPNG&#39;, &#39;epot&#39;: &#39;CDMSEPOT&#39;,
+                 &#39;supersim&#39;: &#39;CDMSHISTOGRAMS&#39;, &#39;midas&#39;: &#39;CDMSMIDAS&#39;,
+                 &#39;cdmsraw&#39;: &#39;CDMSSOUDANRAW&#39;, &#39;numpy&#39;: &#39;CDMSNUMPY&#39;,
+                 &#39;pickle&#39;: &#39;CDMSPICKLE&#39;, &#39;error&#39;:&#39;ERROR&#39;, None:&#39;ERROR&#39;}
+    &#34;&#34;&#34; List of allowed file types &#34;&#34;&#34;
+    
+    fileFormats = {&#39;m&#39;: &#39;m&#39;, &#39;mat&#39;: &#39;mat&#39;, &#39;root&#39;: &#39;root&#39;, &#39;txt&#39;: &#39;txt&#39;,
+                   &#39;epot&#39;: &#39;mat&#39;, &#39;supersim&#39;: &#39;root&#39;, &#39;png&#39;: &#39;png&#39;,
+                   &#39;pdf&#39;: &#39;pdf&#39;, &#39;midas&#39;: &#39;midas&#39;, &#39;cdmsraw&#39;: &#39;cdmsraw&#39;,
+                   &#39;numpy&#39;: &#39;npz&#39;, &#39;pickle&#39;: &#39;pickle&#39;, &#39;error&#39;:None, None:None}
+    &#34;&#34;&#34; List of allowed file formats (map type: suffix) &#34;&#34;&#34;
+    
+
+    def __init__(self,
+                 name,
+                 filePath,
+                 dataType,
+                 site,
+                 fileFormat):
+        &#34;&#34;&#34; ##Constructor
+        All arguments are mandatory; the optional metadata can be specified
+        after construction.  This class should almost never be constructed
+        directly.  `CDMSDataset`s constructed from data catalog entries
+        retrieved through the web API will be built by the client using the
+        `CDMSDataset.fromDataset` class function. To add new entries to the
+        catalog, we will generally use subclasses tailored for that data type.
+
+        Args:
+            name (str): Name of the dataset entry. This should usually be the
+                basename of the data file itself
+            filePath (str): Full absolute path to the data file
+            dataType (str): For raw/processed data, this is the facility
+                where the data qas taken. Other data types may have different
+                values here
+            site (str): name of computing facility where the data is located
+            fileFormat (str): descriptive name of format; key must be in
+                `CDMSDataset.fileFormats`
+
+       &#34;&#34;&#34;
+        self.datasetName = name
+        self.filePath = filePath
+        self.setDataType(dataType)
+        self.setSite(site)
+        self.setFileFormat(fileFormat)
+        self.relativePath = &#39;/CDMS/&#39; + dataType if dataType else None
+        self.metadata = Metadata()
+        self.fetchError = None
+
+    @staticmethod
+    def findLocation(rawds, site=None):
+        &#34;&#34;&#34; Find the DatasetLocation for the specified site &#34;&#34;&#34;
+        location = None
+        try:
+            for loc in rawds.locations:
+                if site == loc.site or site is None:
+                    location = loc
+                    break
+            if location is None:
+                location = rawds.locations[0]
+        except (KeyError, AttributeError):
+            pass
+        return location
+
+    @classmethod
+    def fromDataset(cls, ds):
+        &#34;&#34;&#34; Construct a `CDMSDataset` from a raw `datacat.model.Dataset` &#34;&#34;&#34;
+        site = None
+        try:
+            site = ds.site
+        except AttributeError:
+            location = cls.findLocation(ds)
+            site = location.site
+
+        nds = cls(str(ds.name), None,
+                  dataType=&#39;DatacatQuery&#39;,
+                  site=str(site),
+                  fileFormat=str(ds.fileFormat))
+        nds.relativePath = str(ds.path)
+        
+        # metadata may be called metadata or versionMetadata, so check both
+        for metadata_name in (&#39;metadata&#39;, &#39;versionMetadata&#39;): 
+            for k, v in getattr(ds, metadata_name, {}).items():
+                nds.metadata[k] = v
+
+        nds.rawDataset = ds
+        return nds
+
+    def _test_location_attr(self, attr, locationattr=None):
+        &#34;&#34;&#34; Test for attributes in the raw dataset that may be attached to
+            the SLAC location instead
+        &#34;&#34;&#34;
+        result = None
+        result = getattr(self.rawDataset, attr, None)
+        if not result:
+            location = self.findLocation(self.rawDataset, &#39;SLAC&#39;)
+            if location:
+                if not locationattr:
+                    locationattr = attr
+                result = getattr(location, locationattr, None)
+        return result
+
+    @property
+    def locationPk(self):
+        &#34;&#34;&#34;Get the Pk of the first location from the raw dataset&#34;&#34;&#34;
+        return self._test_location_attr(&#39;locationPk&#39;, &#39;pk&#39;)
+
+    @property
+    def size(self):
+        &#34;&#34;&#34;Get the file size (bytes) from the raw dataset&#34;&#34;&#34;
+        return self._test_location_attr(&#39;size&#39;)
+
+    def setFileFormat(self, fileFormat):
+        &#34;&#34;&#34; Make sure `fileFormat` is one of the known types and set the
+        corresponding member
+        &#34;&#34;&#34;
+        try:
+            self.fileFormat = CDMSDataset.fileFormats[fileFormat]
+            self.fileType = CDMSDataset.fileTypes[fileFormat]
+        except KeyError:
+            raise ValueError(&#39;Unknown file format, known types are &#39; +
+                             str(CDMSDataset.fileFormats.keys()))
+
+    def setSite(self, site):
+        self.site = site
+
+    def setDataType(self, dataType):
+        self.dataType = dataType
+
+    def info(self):
+        &#34;&#34;&#34;Neatly output all information in dataset structure&#34;&#34;&#34;
+        print(&#34;Name:        {}&#34;.format(self.datasetName))
+        print(&#34;System Path: {}&#34;.format(self.filePath))
+        print(&#34;Catalog Path:{}&#34;.format(self.relativePath))
+        print(&#34;Site:        {}&#34;.format(self.site))
+        print(&#34;Data Type:   {}&#34;.format(self.dataType))
+        print(&#34;File Format: {}&#34;.format(self.fileFormat))
+        print(&#34;File Type:   {}&#34;.format(self.fileType))
+        print(&#34;Metadata:&#34;)
+        for k, v in self.metadata.items():
+            print(&#34;  - {0}: {1}&#34;.format(k, v))
+
+    def getSitePaths(self):
+        &#34;&#34;&#34; return a dict mapping site names to on-disk paths &#34;&#34;&#34;
+        locs = {}
+        try:
+            locs = {loc.site: loc.resource
+                    for loc in self.rawDataset.locations}
+        except AttributeError:
+            pass
+        locs[self.site] = self.filePath
+        return locs
+
+    def __str__(self):
+        return self.datasetName
+
+    def __repr__(self):
+        return &#39;&lt;CDMSDataset Class, Name: &#39;+self.datasetName+&#39;&gt;&#39;
+
+    def keys(self):
+        return self.metadata.keys()
+
+    def __getitem__(self, key):
+        return self.metadata[key]
+
+    def __setitem__(self, key, value):
+        self.metadata[key] = value
+
+
+class DMCData(CDMSDataset):
+
+    def __init__(self,
+                 name,
+                 filePath,
+                 DMCType,
+                 processStep=&#39;Postprocessed&#39;,
+                 experiment=&#39;Soudan&#39;,
+                 implement=&#39;MATLAB&#39;,
+                 site=&#39;SLAC&#39;,
+                 fileFormat=&#39;root&#39;,
+                 analysis=&#39;All&#39;,
+                 analysisVersion=&#39;53&#39;,
+                 detector=&#39;All&#39;,
+                 DMCVersion=&#39;5-3&#39;,
+                 COMSOLVersion=&#39;5.0&#39;):
+        &#34;&#34;&#34;Constructor for the CDMS DMC dataset class
+
+        All of these are mandatory; the optional metadata can be specified
+        after construction
+
+        name     - dataset name
+        filePath - physical path to file
+        DMCType  - &#39;Cf&#39;,&#39;Ba&#39;,&#39;WIMP&#39;,...
+
+        Optional Inputs
+        experiment  - &#39;Soudan&#39; (default), &#39;SNOLAB&#39;, &#39;TestDevices&#39;
+        implement   - &#39;MATLAB&#39; (default), &#39;Geant&#39;
+        processStep - &#39;Constants&#39;, &#39;SuperSim&#39;, &#39;Raw&#39;, &#39;Preprocessed&#39;,
+                      &#39;Postprocessed&#39; (default)
+        site        - e.g. &#39;SLAC&#39; (default)
+        fileFormat  - &#39;root&#39; (default), &#39;mat&#39;, &#39;txt&#39;
+        analysis    - e.g. &#39;All&#39; (default), &#39;HT&#39;, &#39;LT&#39;, &#39;G133&#39;
+        analysisVersion - e.g. &#39;53&#39; (default)
+        detector    - e.g. &#39;All&#39; (default), &#39;T1Z1&#39;
+        DMCVersion  - e.g. &#39;5-3&#39; (default)
+        COMSOLVersion - e.g. 5.0 (default)
+        &#34;&#34;&#34;
+        CDMSDataset.__init__(self, name, filePath, experiment + &#39;/DMC&#39;, site,
+                             fileFormat)
+
+        processSteps = [&#39;Constants&#39;, &#39;SuperSim&#39;, &#39;Raw&#39;, &#39;Preprocessed&#39;,
+                        &#39;Postprocessed&#39;]
+        if(processStep in processSteps):
+            self.processStep = processStep
+        else:
+            raise ValueError(&#34;Please specify DMC process level (processStep),&#34;
+                             &#34; options are &#34; + str(processSteps))
+
+        # add implementation to path
+        self.implement = implement
+        self.relativePath += &#39;/&#39; + self.implement
+
+        # add analysis and source to path
+        self.relativePath += &#39;/&#39;+analysis + &#39;/&#39;+DMCType
+
+        # add category to path
+        if(self.processStep in [&#39;Constants&#39;, &#39;SuperSim&#39;]):
+            self.relativePath += &#39;/Input/&#39; + self.processStep
+        elif(self.processStep in [&#39;Raw&#39;, &#39;Preprocessed&#39;, &#39;Postprocessed&#39;]):
+            self.relativePath += &#39;/Production/&#39; + self.processStep
+
+        # add detector if necessary
+        if(self.processStep in [&#39;Constants&#39;, &#39;Raw&#39;, &#39;Preprocessed&#39;]):
+            self.relativePath += &#39;/&#39; + detector
+
+        self.metadata[&#34;Analysis&#34;] = analysis
+        self.metadata[&#34;AnalysisVersion&#34;] = analysisVersion
+        self.metadata[&#34;COMSOLVersion&#34;] = COMSOLVersion
+        self.metadata[&#34;Detector&#34;] = detector
+        self.metadata[&#34;DMCImpl&#34;] = implement
+        self.metadata[&#34;DMCversion&#34;] = DMCVersion
+        self.metadata[&#34;Source&#34;] = DMCType
+        self.metadata[&#34;SourceLoc&#34;] = &#39;None&#39;
+        self.metadata[&#34;EnergyMax&#34;] = &#39;-1&#39;
+        self.metadata[&#34;EnergyMin&#34;] = &#39;-1&#39;
+        self.metadata[&#34;NoiseProfile&#34;] = &#39;NA&#39;
+        self.metadata[&#34;WIMPmass&#34;] = &#34;-1&#34;
+
+
+class SuperSimData(CDMSDataset):
+
+    def __init__(self,
+                 name,
+                 filePath,
+                 SuperSimType,
+                 SuperSimVersion,
+                 experiment=&#39;Soudan&#39;,
+                 site=&#39;SLAC&#39;,
+                 fileFormat=&#39;root&#39;):
+        &#34;&#34;&#34;Constructor for the CDMS SuperSim dataset class
+
+        All of these are mandatory; the optional metadata can be specified
+        after construction
+
+        name     - dataset name
+        filePath - physical path to file
+        SuperSimType  - e.g. &#39;Backgrounds&#39;
+        SuperSimVersion - e.g. 1.0
+
+        Optional Inputs
+        experiment  - &#39;Soudan&#39; (default), &#39;SNOLAB&#39;, &#39;TestDevices&#39;, &#39;UMN&#39;, &#39;UCB&#39;
+        site        - e.g. &#39;SLAC&#39; (default)
+        fileFormat  - &#39;root&#39; (default), &#39;mat&#39;, &#39;txt&#39;
+        SuperSimVersion - e.g. 1.0 (default)
+        &#34;&#34;&#34;
+        CDMSDataset.__init__(self, name, filePath, experiment + &#39;/SuperSim&#39;,
+                             site, fileFormat)
+
+        # add simulation type to path
+        self.relativePath += &#39;/&#39; + SuperSimType + &#39;/&#39; + SuperSimVersion
+
+        self.metadata[&#34;SuperSimType&#34;] = SuperSimType
+        self.metadata[&#34;SuperSimVersion&#34;] = SuperSimVersion
+
+
+class RawData(CDMSDataset):
+
+    def __init__(self,
+                 fileName,
+                 filePath,
+                 facility,
+                 nFridgeRun,
+                 nDataType,
+                 series,
+                 nDump,
+                 nEventsAll,
+                 nEventsBORR,
+                 nEventsEORR,
+                 nEventsBORTS,
+                 nEventsEORTS,
+                 nIsJunk,
+                 dataLocation=&#39;SLAC&#39;,
+                 fileFormat=&#39;midas&#39;,
+                 commentStart=&#39;None&#39;,
+                 commentEnd=&#39;None&#39;):
+        &#39;&#39;&#39;
+        Constructor for the CDMS RawData dataset class
+        &#39;&#39;&#39;
+
+        # instantiate CDMSDataset base object
+        CDMSDataset.__init__(self, fileName, filePath,
+                             facility, dataLocation, fileFormat)
+        self.relativePath += &#39;/R&#39;+str(nFridgeRun)+&#39;/Raw/&#39;+str(series)
+
+        self.metadata[&#34;Facility&#34;] = facility
+        self.metadata[&#34;nFridgeRun&#34;] = int(nFridgeRun)
+        self.metadata[&#34;nDataType&#34;] = int(nDataType)
+        self.metadata[&#34;Series&#34;] = series
+        self.metadata[&#34;nDump&#34;] = int(nDump)
+        self.metadata[&#34;nEvAll&#34;] = int(nEventsAll)
+        self.metadata[&#34;nEvBORR&#34;] = int(nEventsBORR)
+        self.metadata[&#34;nEvEORR&#34;] = int(nEventsEORR)
+        self.metadata[&#34;nEvBORTS&#34;] = int(nEventsBORTS)
+        self.metadata[&#34;nEvEORTS&#34;] = int(nEventsEORTS)
+        self.metadata[&#34;CommentStart&#34;] = commentStart
+        self.metadata[&#34;CommentEnd&#34;] = commentEnd
+        self.metadata[&#34;nIsJunk&#34;] = int(nIsJunk)
+
+class ProcessedData(CDMSDataset):
+
+    def __init__(self,
+                 fileName, 
+                 filePath,
+                 datacatPath,
+                 facility,
+                 nFridgeRun,
+                 nDataType,
+                 series,
+                 prodStep,
+                 prodTag=&#39;Test&#39;,
+                 prodType=&#39;test&#39;,
+                 nMergeLevel = 0,
+                 dataLocation=&#39;SLAC&#39;,
+                 fileFormat=&#39;root&#39;,
+                 commentStart = &#39;None&#39;,
+                 commentEnd = &#39;None&#39;,
+                 nIsJunk=0,
+                 nDump = 0,
+                 noiseDumps = &#39;0&#39;,
+                 processing_config = &#39;None&#39;,
+                 analysis_config = &#39;None&#39;,
+                 calib_processing_config = &#39;None&#39;,
+                 calibration_config = &#39;None&#39;,
+                 nEventsAll = 0,
+                 nEventsBORR = 0,
+                 nEventsEORR=0,
+                 nEventsBORTS=0,
+                 nEventsEORTS=0,
+                 analysis = &#39;All&#39;,
+                 cutName =&#39;cGood&#39;,
+                 cutVersion =&#39;0&#39;):
+        
+        &#34;&#34;&#34;
+        Constructor for the CDMS processed dataset class
+        &#34;&#34;&#34;
+        # Some checks
+        prodSteps=[&#39;BatNoise&#39;,&#39;BatRoot&#39;,&#39;BatCalib&#39;,&#39;Cut&#39;]
+        if(not prodStep in prodSteps):
+            raise ValueError(&#34;Please specify data process level (prodStep), options are &#34;+str(prodSteps))
+ 
+
+        # instantiate CDMSDataset base object
+        CDMSDataset.__init__(self,fileName,filePath,facility,dataLocation,fileFormat)
+        self.relativePath = datacatPath
+      
+        #add category to path
+        if (prodStep == &#39;BatNoise&#39;):
+            self.relativePath+=&#39;/Noise&#39;
+        elif (prodStep == &#39;Cut&#39;):
+            self.relativePath+=&#39;/Cuts&#39;
+        else:
+            if int(nMergeLevel)==0:
+                self.relativePath+=&#39;/Unmerged/&#39; + series
+            elif int(nMergeLevel)==1:
+                self.relativePath+=&#39;/Submerged&#39;
+            elif int(nMergeLevel)==2:
+                self.relativePath+=&#39;/Merged&#39;
+            
+                
+        # series data time
+        # remove underscore and facility ID (first 2 digit)
+        pos_underscore = series.find(&#39;_&#39;)
+        series_time = series[pos_underscore-6:]
+        series_time =  series_time.replace(&#39;_&#39;,&#39;&#39;)
+        if len(series_time)==10:
+            series_time += &#39;00&#39;
+
+
+        # metadata
+        self.metadata[&#34;Facility&#34;]=facility
+        self.metadata[&#34;nFridgeRun&#34;]=int(nFridgeRun)
+        self.metadata[&#34;nDataType&#34;]=int(nDataType)
+        self.metadata[&#34;nSeriesDateTime&#34;]=int(series_time)
+        self.metadata[&#34;Series&#34;]=series
+        self.metadata[&#34;CommentStart&#34;] = commentStart
+        self.metadata[&#34;CommentEnd&#34;] = commentEnd
+        self.metadata[&#34;nIsJunk&#34;]=int(nIsJunk)
+        self.metadata[&#34;ProdStep&#34;] = prodStep
+        self.metadata[&#34;ProdTag&#34;] = prodTag
+        self.metadata[&#34;ProdType&#34;] = prodType
+        self.metadata[&#34;nMergeLevel&#34;] = int(nMergeLevel)
+        if prodStep==&#39;BatNoise&#39;:
+            self.metadata[&#34;DumpsNoise&#34;] = str(noiseDumps)
+                  
+        if prodStep==&#39;BatRoot&#39; or prodStep==&#39;BatCalib&#39;:
+            self.metadata[&#34;nEvAll&#34;]=int(nEventsAll)
+            self.metadata[&#34;nEvBORR&#34;] = int(nEventsBORR)
+            self.metadata[&#34;nEvEORR&#34;] = int(nEventsEORR)
+            self.metadata[&#34;nEvBORTS&#34;] =int(nEventsBORTS)
+            self.metadata[&#34;nEvEORTS&#34;] = int(nEventsEORTS)
+               
+            if int(nMergeLevel)==0:
+                self.metadata[&#34;nDump&#34;] = int(nDump)
+            else:
+                self.metadata[&#34;Dumps&#34;]=str(nDump)
+                
+
+        self.metadata[&#34;ProcessingConfig&#34;] = processing_config
+        self.metadata[&#34;AnalysisConfig&#34;] = analysis_config
+      
+        if prodStep==&#39;BatCalib&#39;:
+            self.metadata[&#34;CalibProcessingConfig&#34;] = calib_processing_config
+            self.metadata[&#34;CalibAnalysisConfig&#34;] = calibration_config
+        
+
+
+        if prodStep==&#39;Cut&#39;:
+            self.metadata[&#34;Analysis&#34;] = analysis
+            self.metadata[&#34;CutName&#34;] = cutName
+            self.metadata[&#34;CutVersion&#34;] = CutVersion
+
+
+
+class ProcessedIVdIdVData(CDMSDataset):
+
+    def __init__(self,
+                 fileName,
+                 filePath,
+                 facility,
+                 nFridgeRun,
+                 nDataType,
+                 series,
+                 prodType,
+                 nStep,
+                 nTotalSteps,
+                 prodVersion=&#39;Test&#39;,
+                 dataLocation=&#39;SLAC&#39;,
+                 fileFormat=&#39;pickle&#39;,
+                 commentStart=&#39;None&#39;,
+                 commentEnd=&#39;None&#39;,
+                 nIsJunk=0):
+
+        &#34;&#34;&#34;
+        Constructor for the CDMS processed dataset class
+        &#34;&#34;&#34;
+        # Some checks
+        prodTypes = [&#39;IV&#39;, &#39;dIdV&#39;]
+        if(prodType not in prodTypes):
+            raise ValueError(&#34;Please specify data process level (prodStep), &#34;
+                             &#34;options are &#34;+str(prodTypes))
+
+        # instantiate CDMSDataset base object
+        CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation,
+                             fileFormat)
+
+        # Build Data catalog path
+        self.relativePath += (&#39;/R&#39; + str(nFridgeRun) +
+                              &#39;/Processed/IV_dIdV_Sweeps/&#39; + prodVersion)
+
+        # metadata
+        self.metadata[&#34;Facility&#34;] = facility
+        self.metadata[&#34;nFridgeRun&#34;] = int(nFridgeRun)
+        self.metadata[&#34;nDataType&#34;] = int(nDataType)
+        self.metadata[&#34;Series&#34;] = series
+        self.metadata[&#34;CommentStart&#34;] = commentStart
+        self.metadata[&#34;CommentEnd&#34;] = commentEnd
+        self.metadata[&#34;nIsJunk&#34;] = int(nIsJunk)
+        self.metadata[&#34;ProdType&#34;] = prodType
+        self.metadata[&#34;nStep&#34;] = int(nStep)
+        self.metadata[&#34;nTotalSteps&#34;] = int(nTotalSteps)
+        self.metadata[&#34;ProdVersion&#34;] = prodVersion</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset"><code class="flex name class">
+<span>class <span class="ident">CDMSDataset</span></span>
+<span>(</span><span>name, filePath, dataType, site, fileFormat)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for CDMS datasets</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>datasetName</code></strong> :&ensp;<code>str</code></dt>
+<dd>the <code>name</code> constructor argument</dd>
+<dt><strong><code>filePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>path to file on disk, <code>None</code> if this object was
+retrieved from a catalog entry and not fetched</dd>
+<dt><strong><code>dataType</code></strong> :&ensp;<code>str</code></dt>
+<dd>facility where data was taken or sim type</dd>
+<dt><strong><code>fileFormat</code></strong> :&ensp;<code>str</code></dt>
+<dd>format of data file</dd>
+<dt><strong><code>relativePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>The full data catalog entry path</dd>
+<dt><strong><code>metadata</code></strong> :&ensp;<code>dict</code></dt>
+<dd>additional metadata keys</dd>
+<dt><strong><code>fetchError</code></strong> :&ensp;<code>str</code></dt>
+<dd>If we attempted to fetch this data (i.e., find
+it on local disk or download it) and an error occurred, this
+will contain info on the error. Otherwise will be <code>None</code></dd>
+<dt><strong><code>size</code></strong> :&ensp;<code>int</code></dt>
+<dd>size of data file in bytes</dd>
+</dl>
+<h2 id="constructor">Constructor</h2>
+<p>All arguments are mandatory; the optional metadata can be specified
+after construction.
+This class should almost never be constructed
+directly.
+<code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></code>s constructed from data catalog entries
+retrieved through the web API will be built by the client using the
+<code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset">CDMSDataset.fromDataset()</a></code> class function. To add new entries to the
+catalog, we will generally use subclasses tailored for that data type.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the dataset entry. This should usually be the
+basename of the data file itself</dd>
+<dt><strong><code>filePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>Full absolute path to the data file</dd>
+<dt><strong><code>dataType</code></strong> :&ensp;<code>str</code></dt>
+<dd>For raw/processed data, this is the facility
+where the data qas taken. Other data types may have different
+values here</dd>
+<dt><strong><code>site</code></strong> :&ensp;<code>str</code></dt>
+<dd>name of computing facility where the data is located</dd>
+<dt><strong><code>fileFormat</code></strong> :&ensp;<code>str</code></dt>
+<dd>descriptive name of format; key must be in
+<code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats">CDMSDataset.fileFormats</a></code></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CDMSDataset:
+    &#34;&#34;&#34;Base class for CDMS datasets
+    
+    Attributes:
+        datasetName (str): the `name` constructor argument
+        filePath (str): path to file on disk, `None` if this object was
+            retrieved from a catalog entry and not fetched
+        dataType (str): facility where data was taken or sim type
+        fileFormat (str): format of data file
+        relativePath (str): The full data catalog entry path
+        metadata (dict): additional metadata keys
+        fetchError (str): If we attempted to fetch this data (i.e., find
+            it on local disk or download it) and an error occurred, this
+            will contain info on the error. Otherwise will be `None`
+        size (int): size of data file in bytes
+            
+    &#34;&#34;&#34;
+
+    fileTypes = {&#39;m&#39;: &#39;M&#39;, &#39;mat&#39;: &#39;CDMSMATLAB&#39;, &#39;root&#39;: &#39;CDMSROOT&#39;,
+                 &#39;txt&#39;: &#39;CDMSTXT&#39;, &#39;png&#39;: &#39;CDMSDMCPNG&#39;, &#39;epot&#39;: &#39;CDMSEPOT&#39;,
+                 &#39;supersim&#39;: &#39;CDMSHISTOGRAMS&#39;, &#39;midas&#39;: &#39;CDMSMIDAS&#39;,
+                 &#39;cdmsraw&#39;: &#39;CDMSSOUDANRAW&#39;, &#39;numpy&#39;: &#39;CDMSNUMPY&#39;,
+                 &#39;pickle&#39;: &#39;CDMSPICKLE&#39;, &#39;error&#39;:&#39;ERROR&#39;, None:&#39;ERROR&#39;}
+    &#34;&#34;&#34; List of allowed file types &#34;&#34;&#34;
+    
+    fileFormats = {&#39;m&#39;: &#39;m&#39;, &#39;mat&#39;: &#39;mat&#39;, &#39;root&#39;: &#39;root&#39;, &#39;txt&#39;: &#39;txt&#39;,
+                   &#39;epot&#39;: &#39;mat&#39;, &#39;supersim&#39;: &#39;root&#39;, &#39;png&#39;: &#39;png&#39;,
+                   &#39;pdf&#39;: &#39;pdf&#39;, &#39;midas&#39;: &#39;midas&#39;, &#39;cdmsraw&#39;: &#39;cdmsraw&#39;,
+                   &#39;numpy&#39;: &#39;npz&#39;, &#39;pickle&#39;: &#39;pickle&#39;, &#39;error&#39;:None, None:None}
+    &#34;&#34;&#34; List of allowed file formats (map type: suffix) &#34;&#34;&#34;
+    
+
+    def __init__(self,
+                 name,
+                 filePath,
+                 dataType,
+                 site,
+                 fileFormat):
+        &#34;&#34;&#34; ##Constructor
+        All arguments are mandatory; the optional metadata can be specified
+        after construction.  This class should almost never be constructed
+        directly.  `CDMSDataset`s constructed from data catalog entries
+        retrieved through the web API will be built by the client using the
+        `CDMSDataset.fromDataset` class function. To add new entries to the
+        catalog, we will generally use subclasses tailored for that data type.
+
+        Args:
+            name (str): Name of the dataset entry. This should usually be the
+                basename of the data file itself
+            filePath (str): Full absolute path to the data file
+            dataType (str): For raw/processed data, this is the facility
+                where the data qas taken. Other data types may have different
+                values here
+            site (str): name of computing facility where the data is located
+            fileFormat (str): descriptive name of format; key must be in
+                `CDMSDataset.fileFormats`
+
+       &#34;&#34;&#34;
+        self.datasetName = name
+        self.filePath = filePath
+        self.setDataType(dataType)
+        self.setSite(site)
+        self.setFileFormat(fileFormat)
+        self.relativePath = &#39;/CDMS/&#39; + dataType if dataType else None
+        self.metadata = Metadata()
+        self.fetchError = None
+
+    @staticmethod
+    def findLocation(rawds, site=None):
+        &#34;&#34;&#34; Find the DatasetLocation for the specified site &#34;&#34;&#34;
+        location = None
+        try:
+            for loc in rawds.locations:
+                if site == loc.site or site is None:
+                    location = loc
+                    break
+            if location is None:
+                location = rawds.locations[0]
+        except (KeyError, AttributeError):
+            pass
+        return location
+
+    @classmethod
+    def fromDataset(cls, ds):
+        &#34;&#34;&#34; Construct a `CDMSDataset` from a raw `datacat.model.Dataset` &#34;&#34;&#34;
+        site = None
+        try:
+            site = ds.site
+        except AttributeError:
+            location = cls.findLocation(ds)
+            site = location.site
+
+        nds = cls(str(ds.name), None,
+                  dataType=&#39;DatacatQuery&#39;,
+                  site=str(site),
+                  fileFormat=str(ds.fileFormat))
+        nds.relativePath = str(ds.path)
+        
+        # metadata may be called metadata or versionMetadata, so check both
+        for metadata_name in (&#39;metadata&#39;, &#39;versionMetadata&#39;): 
+            for k, v in getattr(ds, metadata_name, {}).items():
+                nds.metadata[k] = v
+
+        nds.rawDataset = ds
+        return nds
+
+    def _test_location_attr(self, attr, locationattr=None):
+        &#34;&#34;&#34; Test for attributes in the raw dataset that may be attached to
+            the SLAC location instead
+        &#34;&#34;&#34;
+        result = None
+        result = getattr(self.rawDataset, attr, None)
+        if not result:
+            location = self.findLocation(self.rawDataset, &#39;SLAC&#39;)
+            if location:
+                if not locationattr:
+                    locationattr = attr
+                result = getattr(location, locationattr, None)
+        return result
+
+    @property
+    def locationPk(self):
+        &#34;&#34;&#34;Get the Pk of the first location from the raw dataset&#34;&#34;&#34;
+        return self._test_location_attr(&#39;locationPk&#39;, &#39;pk&#39;)
+
+    @property
+    def size(self):
+        &#34;&#34;&#34;Get the file size (bytes) from the raw dataset&#34;&#34;&#34;
+        return self._test_location_attr(&#39;size&#39;)
+
+    def setFileFormat(self, fileFormat):
+        &#34;&#34;&#34; Make sure `fileFormat` is one of the known types and set the
+        corresponding member
+        &#34;&#34;&#34;
+        try:
+            self.fileFormat = CDMSDataset.fileFormats[fileFormat]
+            self.fileType = CDMSDataset.fileTypes[fileFormat]
+        except KeyError:
+            raise ValueError(&#39;Unknown file format, known types are &#39; +
+                             str(CDMSDataset.fileFormats.keys()))
+
+    def setSite(self, site):
+        self.site = site
+
+    def setDataType(self, dataType):
+        self.dataType = dataType
+
+    def info(self):
+        &#34;&#34;&#34;Neatly output all information in dataset structure&#34;&#34;&#34;
+        print(&#34;Name:        {}&#34;.format(self.datasetName))
+        print(&#34;System Path: {}&#34;.format(self.filePath))
+        print(&#34;Catalog Path:{}&#34;.format(self.relativePath))
+        print(&#34;Site:        {}&#34;.format(self.site))
+        print(&#34;Data Type:   {}&#34;.format(self.dataType))
+        print(&#34;File Format: {}&#34;.format(self.fileFormat))
+        print(&#34;File Type:   {}&#34;.format(self.fileType))
+        print(&#34;Metadata:&#34;)
+        for k, v in self.metadata.items():
+            print(&#34;  - {0}: {1}&#34;.format(k, v))
+
+    def getSitePaths(self):
+        &#34;&#34;&#34; return a dict mapping site names to on-disk paths &#34;&#34;&#34;
+        locs = {}
+        try:
+            locs = {loc.site: loc.resource
+                    for loc in self.rawDataset.locations}
+        except AttributeError:
+            pass
+        locs[self.site] = self.filePath
+        return locs
+
+    def __str__(self):
+        return self.datasetName
+
+    def __repr__(self):
+        return &#39;&lt;CDMSDataset Class, Name: &#39;+self.datasetName+&#39;&gt;&#39;
+
+    def keys(self):
+        return self.metadata.keys()
+
+    def __getitem__(self, key):
+        return self.metadata[key]
+
+    def __setitem__(self, key, value):
+        self.metadata[key] = value</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="CDMSDataCatalog.CDMSDataset.DMCData" href="#CDMSDataCatalog.CDMSDataset.DMCData">DMCData</a></li>
+<li><a title="CDMSDataCatalog.CDMSDataset.ProcessedData" href="#CDMSDataCatalog.CDMSDataset.ProcessedData">ProcessedData</a></li>
+<li><a title="CDMSDataCatalog.CDMSDataset.ProcessedIVdIdVData" href="#CDMSDataCatalog.CDMSDataset.ProcessedIVdIdVData">ProcessedIVdIdVData</a></li>
+<li><a title="CDMSDataCatalog.CDMSDataset.RawData" href="#CDMSDataCatalog.CDMSDataset.RawData">RawData</a></li>
+<li><a title="CDMSDataCatalog.CDMSDataset.SuperSimData" href="#CDMSDataCatalog.CDMSDataset.SuperSimData">SuperSimData</a></li>
+<li><a title="CDMSDataCatalog.fetch.CDMSFetchError" href="fetch.html#CDMSDataCatalog.fetch.CDMSFetchError">CDMSFetchError</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats"><code class="name">var <span class="ident">fileFormats</span></code></dt>
+<dd>
+<div class="desc"><p>List of allowed file formats (map type: suffix)</p></div>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes"><code class="name">var <span class="ident">fileTypes</span></code></dt>
+<dd>
+<div class="desc"><p>List of allowed file types</p></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation"><code class="name flex">
+<span>def <span class="ident">findLocation</span></span>(<span>rawds, site=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Find the DatasetLocation for the specified site</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def findLocation(rawds, site=None):
+    &#34;&#34;&#34; Find the DatasetLocation for the specified site &#34;&#34;&#34;
+    location = None
+    try:
+        for loc in rawds.locations:
+            if site == loc.site or site is None:
+                location = loc
+                break
+        if location is None:
+            location = rawds.locations[0]
+    except (KeyError, AttributeError):
+        pass
+    return location</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset"><code class="name flex">
+<span>def <span class="ident">fromDataset</span></span>(<span>ds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct a <code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></code> from a raw <code>datacat.model.Dataset</code></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def fromDataset(cls, ds):
+    &#34;&#34;&#34; Construct a `CDMSDataset` from a raw `datacat.model.Dataset` &#34;&#34;&#34;
+    site = None
+    try:
+        site = ds.site
+    except AttributeError:
+        location = cls.findLocation(ds)
+        site = location.site
+
+    nds = cls(str(ds.name), None,
+              dataType=&#39;DatacatQuery&#39;,
+              site=str(site),
+              fileFormat=str(ds.fileFormat))
+    nds.relativePath = str(ds.path)
+    
+    # metadata may be called metadata or versionMetadata, so check both
+    for metadata_name in (&#39;metadata&#39;, &#39;versionMetadata&#39;): 
+        for k, v in getattr(ds, metadata_name, {}).items():
+            nds.metadata[k] = v
+
+    nds.rawDataset = ds
+    return nds</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk"><code class="name">var <span class="ident">locationPk</span></code></dt>
+<dd>
+<div class="desc"><p>Get the Pk of the first location from the raw dataset</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def locationPk(self):
+    &#34;&#34;&#34;Get the Pk of the first location from the raw dataset&#34;&#34;&#34;
+    return self._test_location_attr(&#39;locationPk&#39;, &#39;pk&#39;)</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.size"><code class="name">var <span class="ident">size</span></code></dt>
+<dd>
+<div class="desc"><p>Get the file size (bytes) from the raw dataset</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def size(self):
+    &#34;&#34;&#34;Get the file size (bytes) from the raw dataset&#34;&#34;&#34;
+    return self._test_location_attr(&#39;size&#39;)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths"><code class="name flex">
+<span>def <span class="ident">getSitePaths</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>return a dict mapping site names to on-disk paths</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getSitePaths(self):
+    &#34;&#34;&#34; return a dict mapping site names to on-disk paths &#34;&#34;&#34;
+    locs = {}
+    try:
+        locs = {loc.site: loc.resource
+                for loc in self.rawDataset.locations}
+    except AttributeError:
+        pass
+    locs[self.site] = self.filePath
+    return locs</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.info"><code class="name flex">
+<span>def <span class="ident">info</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Neatly output all information in dataset structure</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def info(self):
+    &#34;&#34;&#34;Neatly output all information in dataset structure&#34;&#34;&#34;
+    print(&#34;Name:        {}&#34;.format(self.datasetName))
+    print(&#34;System Path: {}&#34;.format(self.filePath))
+    print(&#34;Catalog Path:{}&#34;.format(self.relativePath))
+    print(&#34;Site:        {}&#34;.format(self.site))
+    print(&#34;Data Type:   {}&#34;.format(self.dataType))
+    print(&#34;File Format: {}&#34;.format(self.fileFormat))
+    print(&#34;File Type:   {}&#34;.format(self.fileType))
+    print(&#34;Metadata:&#34;)
+    for k, v in self.metadata.items():
+        print(&#34;  - {0}: {1}&#34;.format(k, v))</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.keys"><code class="name flex">
+<span>def <span class="ident">keys</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def keys(self):
+    return self.metadata.keys()</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.setDataType"><code class="name flex">
+<span>def <span class="ident">setDataType</span></span>(<span>self, dataType)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setDataType(self, dataType):
+    self.dataType = dataType</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat"><code class="name flex">
+<span>def <span class="ident">setFileFormat</span></span>(<span>self, fileFormat)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Make sure <code>fileFormat</code> is one of the known types and set the
+corresponding member</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setFileFormat(self, fileFormat):
+    &#34;&#34;&#34; Make sure `fileFormat` is one of the known types and set the
+    corresponding member
+    &#34;&#34;&#34;
+    try:
+        self.fileFormat = CDMSDataset.fileFormats[fileFormat]
+        self.fileType = CDMSDataset.fileTypes[fileFormat]
+    except KeyError:
+        raise ValueError(&#39;Unknown file format, known types are &#39; +
+                         str(CDMSDataset.fileFormats.keys()))</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.CDMSDataset.setSite"><code class="name flex">
+<span>def <span class="ident">setSite</span></span>(<span>self, site)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setSite(self, site):
+    self.site = site</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.DMCData"><code class="flex name class">
+<span>class <span class="ident">DMCData</span></span>
+<span>(</span><span>name, filePath, DMCType, processStep='Postprocessed', experiment='Soudan', implement='MATLAB', site='SLAC', fileFormat='root', analysis='All', analysisVersion='53', detector='All', DMCVersion='5-3', COMSOLVersion='5.0')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for CDMS datasets</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>datasetName</code></strong> :&ensp;<code>str</code></dt>
+<dd>the <code>name</code> constructor argument</dd>
+<dt><strong><code>filePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>path to file on disk, <code>None</code> if this object was
+retrieved from a catalog entry and not fetched</dd>
+<dt><strong><code>dataType</code></strong> :&ensp;<code>str</code></dt>
+<dd>facility where data was taken or sim type</dd>
+<dt><strong><code>fileFormat</code></strong> :&ensp;<code>str</code></dt>
+<dd>format of data file</dd>
+<dt><strong><code>relativePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>The full data catalog entry path</dd>
+<dt><strong><code>metadata</code></strong> :&ensp;<code>dict</code></dt>
+<dd>additional metadata keys</dd>
+<dt><strong><code>fetchError</code></strong> :&ensp;<code>str</code></dt>
+<dd>If we attempted to fetch this data (i.e., find
+it on local disk or download it) and an error occurred, this
+will contain info on the error. Otherwise will be <code>None</code></dd>
+<dt><strong><code>size</code></strong> :&ensp;<code>int</code></dt>
+<dd>size of data file in bytes</dd>
+</dl>
+<p>Constructor for the CDMS DMC dataset class</p>
+<p>All of these are mandatory; the optional metadata can be specified
+after construction</p>
+<p>name
+- dataset name
+filePath - physical path to file
+DMCType
+- 'Cf','Ba','WIMP',&hellip;</p>
+<p>Optional Inputs
+experiment
+- 'Soudan' (default), 'SNOLAB', 'TestDevices'
+implement
+- 'MATLAB' (default), 'Geant'
+processStep - 'Constants', 'SuperSim', 'Raw', 'Preprocessed',
+'Postprocessed' (default)
+site
+- e.g. 'SLAC' (default)
+fileFormat
+- 'root' (default), 'mat', 'txt'
+analysis
+- e.g. 'All' (default), 'HT', 'LT', 'G133'
+analysisVersion - e.g. '53' (default)
+detector
+- e.g. 'All' (default), 'T1Z1'
+DMCVersion
+- e.g. '5-3' (default)
+COMSOLVersion - e.g. 5.0 (default)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DMCData(CDMSDataset):
+
+    def __init__(self,
+                 name,
+                 filePath,
+                 DMCType,
+                 processStep=&#39;Postprocessed&#39;,
+                 experiment=&#39;Soudan&#39;,
+                 implement=&#39;MATLAB&#39;,
+                 site=&#39;SLAC&#39;,
+                 fileFormat=&#39;root&#39;,
+                 analysis=&#39;All&#39;,
+                 analysisVersion=&#39;53&#39;,
+                 detector=&#39;All&#39;,
+                 DMCVersion=&#39;5-3&#39;,
+                 COMSOLVersion=&#39;5.0&#39;):
+        &#34;&#34;&#34;Constructor for the CDMS DMC dataset class
+
+        All of these are mandatory; the optional metadata can be specified
+        after construction
+
+        name     - dataset name
+        filePath - physical path to file
+        DMCType  - &#39;Cf&#39;,&#39;Ba&#39;,&#39;WIMP&#39;,...
+
+        Optional Inputs
+        experiment  - &#39;Soudan&#39; (default), &#39;SNOLAB&#39;, &#39;TestDevices&#39;
+        implement   - &#39;MATLAB&#39; (default), &#39;Geant&#39;
+        processStep - &#39;Constants&#39;, &#39;SuperSim&#39;, &#39;Raw&#39;, &#39;Preprocessed&#39;,
+                      &#39;Postprocessed&#39; (default)
+        site        - e.g. &#39;SLAC&#39; (default)
+        fileFormat  - &#39;root&#39; (default), &#39;mat&#39;, &#39;txt&#39;
+        analysis    - e.g. &#39;All&#39; (default), &#39;HT&#39;, &#39;LT&#39;, &#39;G133&#39;
+        analysisVersion - e.g. &#39;53&#39; (default)
+        detector    - e.g. &#39;All&#39; (default), &#39;T1Z1&#39;
+        DMCVersion  - e.g. &#39;5-3&#39; (default)
+        COMSOLVersion - e.g. 5.0 (default)
+        &#34;&#34;&#34;
+        CDMSDataset.__init__(self, name, filePath, experiment + &#39;/DMC&#39;, site,
+                             fileFormat)
+
+        processSteps = [&#39;Constants&#39;, &#39;SuperSim&#39;, &#39;Raw&#39;, &#39;Preprocessed&#39;,
+                        &#39;Postprocessed&#39;]
+        if(processStep in processSteps):
+            self.processStep = processStep
+        else:
+            raise ValueError(&#34;Please specify DMC process level (processStep),&#34;
+                             &#34; options are &#34; + str(processSteps))
+
+        # add implementation to path
+        self.implement = implement
+        self.relativePath += &#39;/&#39; + self.implement
+
+        # add analysis and source to path
+        self.relativePath += &#39;/&#39;+analysis + &#39;/&#39;+DMCType
+
+        # add category to path
+        if(self.processStep in [&#39;Constants&#39;, &#39;SuperSim&#39;]):
+            self.relativePath += &#39;/Input/&#39; + self.processStep
+        elif(self.processStep in [&#39;Raw&#39;, &#39;Preprocessed&#39;, &#39;Postprocessed&#39;]):
+            self.relativePath += &#39;/Production/&#39; + self.processStep
+
+        # add detector if necessary
+        if(self.processStep in [&#39;Constants&#39;, &#39;Raw&#39;, &#39;Preprocessed&#39;]):
+            self.relativePath += &#39;/&#39; + detector
+
+        self.metadata[&#34;Analysis&#34;] = analysis
+        self.metadata[&#34;AnalysisVersion&#34;] = analysisVersion
+        self.metadata[&#34;COMSOLVersion&#34;] = COMSOLVersion
+        self.metadata[&#34;Detector&#34;] = detector
+        self.metadata[&#34;DMCImpl&#34;] = implement
+        self.metadata[&#34;DMCversion&#34;] = DMCVersion
+        self.metadata[&#34;Source&#34;] = DMCType
+        self.metadata[&#34;SourceLoc&#34;] = &#39;None&#39;
+        self.metadata[&#34;EnergyMax&#34;] = &#39;-1&#39;
+        self.metadata[&#34;EnergyMin&#34;] = &#39;-1&#39;
+        self.metadata[&#34;NoiseProfile&#34;] = &#39;NA&#39;
+        self.metadata[&#34;WIMPmass&#34;] = &#34;-1&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></b></code>:
+<ul class="hlist">
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats">fileFormats</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes">fileTypes</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation">findLocation</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset">fromDataset</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths">getSitePaths</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.info" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.info">info</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk">locationPk</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat">setFileFormat</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.size" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.size">size</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.ProcessedData"><code class="flex name class">
+<span>class <span class="ident">ProcessedData</span></span>
+<span>(</span><span>fileName, filePath, datacatPath, facility, nFridgeRun, nDataType, series, prodStep, prodTag='Test', prodType='test', nMergeLevel=0, dataLocation='SLAC', fileFormat='root', commentStart='None', commentEnd='None', nIsJunk=0, nDump=0, noiseDumps='0', processing_config='None', analysis_config='None', calib_processing_config='None', calibration_config='None', nEventsAll=0, nEventsBORR=0, nEventsEORR=0, nEventsBORTS=0, nEventsEORTS=0, analysis='All', cutName='cGood', cutVersion='0')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for CDMS datasets</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>datasetName</code></strong> :&ensp;<code>str</code></dt>
+<dd>the <code>name</code> constructor argument</dd>
+<dt><strong><code>filePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>path to file on disk, <code>None</code> if this object was
+retrieved from a catalog entry and not fetched</dd>
+<dt><strong><code>dataType</code></strong> :&ensp;<code>str</code></dt>
+<dd>facility where data was taken or sim type</dd>
+<dt><strong><code>fileFormat</code></strong> :&ensp;<code>str</code></dt>
+<dd>format of data file</dd>
+<dt><strong><code>relativePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>The full data catalog entry path</dd>
+<dt><strong><code>metadata</code></strong> :&ensp;<code>dict</code></dt>
+<dd>additional metadata keys</dd>
+<dt><strong><code>fetchError</code></strong> :&ensp;<code>str</code></dt>
+<dd>If we attempted to fetch this data (i.e., find
+it on local disk or download it) and an error occurred, this
+will contain info on the error. Otherwise will be <code>None</code></dd>
+<dt><strong><code>size</code></strong> :&ensp;<code>int</code></dt>
+<dd>size of data file in bytes</dd>
+</dl>
+<p>Constructor for the CDMS processed dataset class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ProcessedData(CDMSDataset):
+
+    def __init__(self,
+                 fileName, 
+                 filePath,
+                 datacatPath,
+                 facility,
+                 nFridgeRun,
+                 nDataType,
+                 series,
+                 prodStep,
+                 prodTag=&#39;Test&#39;,
+                 prodType=&#39;test&#39;,
+                 nMergeLevel = 0,
+                 dataLocation=&#39;SLAC&#39;,
+                 fileFormat=&#39;root&#39;,
+                 commentStart = &#39;None&#39;,
+                 commentEnd = &#39;None&#39;,
+                 nIsJunk=0,
+                 nDump = 0,
+                 noiseDumps = &#39;0&#39;,
+                 processing_config = &#39;None&#39;,
+                 analysis_config = &#39;None&#39;,
+                 calib_processing_config = &#39;None&#39;,
+                 calibration_config = &#39;None&#39;,
+                 nEventsAll = 0,
+                 nEventsBORR = 0,
+                 nEventsEORR=0,
+                 nEventsBORTS=0,
+                 nEventsEORTS=0,
+                 analysis = &#39;All&#39;,
+                 cutName =&#39;cGood&#39;,
+                 cutVersion =&#39;0&#39;):
+        
+        &#34;&#34;&#34;
+        Constructor for the CDMS processed dataset class
+        &#34;&#34;&#34;
+        # Some checks
+        prodSteps=[&#39;BatNoise&#39;,&#39;BatRoot&#39;,&#39;BatCalib&#39;,&#39;Cut&#39;]
+        if(not prodStep in prodSteps):
+            raise ValueError(&#34;Please specify data process level (prodStep), options are &#34;+str(prodSteps))
+ 
+
+        # instantiate CDMSDataset base object
+        CDMSDataset.__init__(self,fileName,filePath,facility,dataLocation,fileFormat)
+        self.relativePath = datacatPath
+      
+        #add category to path
+        if (prodStep == &#39;BatNoise&#39;):
+            self.relativePath+=&#39;/Noise&#39;
+        elif (prodStep == &#39;Cut&#39;):
+            self.relativePath+=&#39;/Cuts&#39;
+        else:
+            if int(nMergeLevel)==0:
+                self.relativePath+=&#39;/Unmerged/&#39; + series
+            elif int(nMergeLevel)==1:
+                self.relativePath+=&#39;/Submerged&#39;
+            elif int(nMergeLevel)==2:
+                self.relativePath+=&#39;/Merged&#39;
+            
+                
+        # series data time
+        # remove underscore and facility ID (first 2 digit)
+        pos_underscore = series.find(&#39;_&#39;)
+        series_time = series[pos_underscore-6:]
+        series_time =  series_time.replace(&#39;_&#39;,&#39;&#39;)
+        if len(series_time)==10:
+            series_time += &#39;00&#39;
+
+
+        # metadata
+        self.metadata[&#34;Facility&#34;]=facility
+        self.metadata[&#34;nFridgeRun&#34;]=int(nFridgeRun)
+        self.metadata[&#34;nDataType&#34;]=int(nDataType)
+        self.metadata[&#34;nSeriesDateTime&#34;]=int(series_time)
+        self.metadata[&#34;Series&#34;]=series
+        self.metadata[&#34;CommentStart&#34;] = commentStart
+        self.metadata[&#34;CommentEnd&#34;] = commentEnd
+        self.metadata[&#34;nIsJunk&#34;]=int(nIsJunk)
+        self.metadata[&#34;ProdStep&#34;] = prodStep
+        self.metadata[&#34;ProdTag&#34;] = prodTag
+        self.metadata[&#34;ProdType&#34;] = prodType
+        self.metadata[&#34;nMergeLevel&#34;] = int(nMergeLevel)
+        if prodStep==&#39;BatNoise&#39;:
+            self.metadata[&#34;DumpsNoise&#34;] = str(noiseDumps)
+                  
+        if prodStep==&#39;BatRoot&#39; or prodStep==&#39;BatCalib&#39;:
+            self.metadata[&#34;nEvAll&#34;]=int(nEventsAll)
+            self.metadata[&#34;nEvBORR&#34;] = int(nEventsBORR)
+            self.metadata[&#34;nEvEORR&#34;] = int(nEventsEORR)
+            self.metadata[&#34;nEvBORTS&#34;] =int(nEventsBORTS)
+            self.metadata[&#34;nEvEORTS&#34;] = int(nEventsEORTS)
+               
+            if int(nMergeLevel)==0:
+                self.metadata[&#34;nDump&#34;] = int(nDump)
+            else:
+                self.metadata[&#34;Dumps&#34;]=str(nDump)
+                
+
+        self.metadata[&#34;ProcessingConfig&#34;] = processing_config
+        self.metadata[&#34;AnalysisConfig&#34;] = analysis_config
+      
+        if prodStep==&#39;BatCalib&#39;:
+            self.metadata[&#34;CalibProcessingConfig&#34;] = calib_processing_config
+            self.metadata[&#34;CalibAnalysisConfig&#34;] = calibration_config
+        
+
+
+        if prodStep==&#39;Cut&#39;:
+            self.metadata[&#34;Analysis&#34;] = analysis
+            self.metadata[&#34;CutName&#34;] = cutName
+            self.metadata[&#34;CutVersion&#34;] = CutVersion</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></b></code>:
+<ul class="hlist">
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats">fileFormats</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes">fileTypes</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation">findLocation</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset">fromDataset</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths">getSitePaths</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.info" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.info">info</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk">locationPk</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat">setFileFormat</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.size" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.size">size</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.ProcessedIVdIdVData"><code class="flex name class">
+<span>class <span class="ident">ProcessedIVdIdVData</span></span>
+<span>(</span><span>fileName, filePath, facility, nFridgeRun, nDataType, series, prodType, nStep, nTotalSteps, prodVersion='Test', dataLocation='SLAC', fileFormat='pickle', commentStart='None', commentEnd='None', nIsJunk=0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for CDMS datasets</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>datasetName</code></strong> :&ensp;<code>str</code></dt>
+<dd>the <code>name</code> constructor argument</dd>
+<dt><strong><code>filePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>path to file on disk, <code>None</code> if this object was
+retrieved from a catalog entry and not fetched</dd>
+<dt><strong><code>dataType</code></strong> :&ensp;<code>str</code></dt>
+<dd>facility where data was taken or sim type</dd>
+<dt><strong><code>fileFormat</code></strong> :&ensp;<code>str</code></dt>
+<dd>format of data file</dd>
+<dt><strong><code>relativePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>The full data catalog entry path</dd>
+<dt><strong><code>metadata</code></strong> :&ensp;<code>dict</code></dt>
+<dd>additional metadata keys</dd>
+<dt><strong><code>fetchError</code></strong> :&ensp;<code>str</code></dt>
+<dd>If we attempted to fetch this data (i.e., find
+it on local disk or download it) and an error occurred, this
+will contain info on the error. Otherwise will be <code>None</code></dd>
+<dt><strong><code>size</code></strong> :&ensp;<code>int</code></dt>
+<dd>size of data file in bytes</dd>
+</dl>
+<p>Constructor for the CDMS processed dataset class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ProcessedIVdIdVData(CDMSDataset):
+
+    def __init__(self,
+                 fileName,
+                 filePath,
+                 facility,
+                 nFridgeRun,
+                 nDataType,
+                 series,
+                 prodType,
+                 nStep,
+                 nTotalSteps,
+                 prodVersion=&#39;Test&#39;,
+                 dataLocation=&#39;SLAC&#39;,
+                 fileFormat=&#39;pickle&#39;,
+                 commentStart=&#39;None&#39;,
+                 commentEnd=&#39;None&#39;,
+                 nIsJunk=0):
+
+        &#34;&#34;&#34;
+        Constructor for the CDMS processed dataset class
+        &#34;&#34;&#34;
+        # Some checks
+        prodTypes = [&#39;IV&#39;, &#39;dIdV&#39;]
+        if(prodType not in prodTypes):
+            raise ValueError(&#34;Please specify data process level (prodStep), &#34;
+                             &#34;options are &#34;+str(prodTypes))
+
+        # instantiate CDMSDataset base object
+        CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation,
+                             fileFormat)
+
+        # Build Data catalog path
+        self.relativePath += (&#39;/R&#39; + str(nFridgeRun) +
+                              &#39;/Processed/IV_dIdV_Sweeps/&#39; + prodVersion)
+
+        # metadata
+        self.metadata[&#34;Facility&#34;] = facility
+        self.metadata[&#34;nFridgeRun&#34;] = int(nFridgeRun)
+        self.metadata[&#34;nDataType&#34;] = int(nDataType)
+        self.metadata[&#34;Series&#34;] = series
+        self.metadata[&#34;CommentStart&#34;] = commentStart
+        self.metadata[&#34;CommentEnd&#34;] = commentEnd
+        self.metadata[&#34;nIsJunk&#34;] = int(nIsJunk)
+        self.metadata[&#34;ProdType&#34;] = prodType
+        self.metadata[&#34;nStep&#34;] = int(nStep)
+        self.metadata[&#34;nTotalSteps&#34;] = int(nTotalSteps)
+        self.metadata[&#34;ProdVersion&#34;] = prodVersion</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></b></code>:
+<ul class="hlist">
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats">fileFormats</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes">fileTypes</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation">findLocation</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset">fromDataset</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths">getSitePaths</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.info" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.info">info</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk">locationPk</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat">setFileFormat</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.size" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.size">size</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.RawData"><code class="flex name class">
+<span>class <span class="ident">RawData</span></span>
+<span>(</span><span>fileName, filePath, facility, nFridgeRun, nDataType, series, nDump, nEventsAll, nEventsBORR, nEventsEORR, nEventsBORTS, nEventsEORTS, nIsJunk, dataLocation='SLAC', fileFormat='midas', commentStart='None', commentEnd='None')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for CDMS datasets</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>datasetName</code></strong> :&ensp;<code>str</code></dt>
+<dd>the <code>name</code> constructor argument</dd>
+<dt><strong><code>filePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>path to file on disk, <code>None</code> if this object was
+retrieved from a catalog entry and not fetched</dd>
+<dt><strong><code>dataType</code></strong> :&ensp;<code>str</code></dt>
+<dd>facility where data was taken or sim type</dd>
+<dt><strong><code>fileFormat</code></strong> :&ensp;<code>str</code></dt>
+<dd>format of data file</dd>
+<dt><strong><code>relativePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>The full data catalog entry path</dd>
+<dt><strong><code>metadata</code></strong> :&ensp;<code>dict</code></dt>
+<dd>additional metadata keys</dd>
+<dt><strong><code>fetchError</code></strong> :&ensp;<code>str</code></dt>
+<dd>If we attempted to fetch this data (i.e., find
+it on local disk or download it) and an error occurred, this
+will contain info on the error. Otherwise will be <code>None</code></dd>
+<dt><strong><code>size</code></strong> :&ensp;<code>int</code></dt>
+<dd>size of data file in bytes</dd>
+</dl>
+<p>Constructor for the CDMS RawData dataset class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RawData(CDMSDataset):
+
+    def __init__(self,
+                 fileName,
+                 filePath,
+                 facility,
+                 nFridgeRun,
+                 nDataType,
+                 series,
+                 nDump,
+                 nEventsAll,
+                 nEventsBORR,
+                 nEventsEORR,
+                 nEventsBORTS,
+                 nEventsEORTS,
+                 nIsJunk,
+                 dataLocation=&#39;SLAC&#39;,
+                 fileFormat=&#39;midas&#39;,
+                 commentStart=&#39;None&#39;,
+                 commentEnd=&#39;None&#39;):
+        &#39;&#39;&#39;
+        Constructor for the CDMS RawData dataset class
+        &#39;&#39;&#39;
+
+        # instantiate CDMSDataset base object
+        CDMSDataset.__init__(self, fileName, filePath,
+                             facility, dataLocation, fileFormat)
+        self.relativePath += &#39;/R&#39;+str(nFridgeRun)+&#39;/Raw/&#39;+str(series)
+
+        self.metadata[&#34;Facility&#34;] = facility
+        self.metadata[&#34;nFridgeRun&#34;] = int(nFridgeRun)
+        self.metadata[&#34;nDataType&#34;] = int(nDataType)
+        self.metadata[&#34;Series&#34;] = series
+        self.metadata[&#34;nDump&#34;] = int(nDump)
+        self.metadata[&#34;nEvAll&#34;] = int(nEventsAll)
+        self.metadata[&#34;nEvBORR&#34;] = int(nEventsBORR)
+        self.metadata[&#34;nEvEORR&#34;] = int(nEventsEORR)
+        self.metadata[&#34;nEvBORTS&#34;] = int(nEventsBORTS)
+        self.metadata[&#34;nEvEORTS&#34;] = int(nEventsEORTS)
+        self.metadata[&#34;CommentStart&#34;] = commentStart
+        self.metadata[&#34;CommentEnd&#34;] = commentEnd
+        self.metadata[&#34;nIsJunk&#34;] = int(nIsJunk)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></b></code>:
+<ul class="hlist">
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats">fileFormats</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes">fileTypes</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation">findLocation</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset">fromDataset</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths">getSitePaths</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.info" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.info">info</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk">locationPk</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat">setFileFormat</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.size" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.size">size</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="CDMSDataCatalog.CDMSDataset.SuperSimData"><code class="flex name class">
+<span>class <span class="ident">SuperSimData</span></span>
+<span>(</span><span>name, filePath, SuperSimType, SuperSimVersion, experiment='Soudan', site='SLAC', fileFormat='root')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for CDMS datasets</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>datasetName</code></strong> :&ensp;<code>str</code></dt>
+<dd>the <code>name</code> constructor argument</dd>
+<dt><strong><code>filePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>path to file on disk, <code>None</code> if this object was
+retrieved from a catalog entry and not fetched</dd>
+<dt><strong><code>dataType</code></strong> :&ensp;<code>str</code></dt>
+<dd>facility where data was taken or sim type</dd>
+<dt><strong><code>fileFormat</code></strong> :&ensp;<code>str</code></dt>
+<dd>format of data file</dd>
+<dt><strong><code>relativePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>The full data catalog entry path</dd>
+<dt><strong><code>metadata</code></strong> :&ensp;<code>dict</code></dt>
+<dd>additional metadata keys</dd>
+<dt><strong><code>fetchError</code></strong> :&ensp;<code>str</code></dt>
+<dd>If we attempted to fetch this data (i.e., find
+it on local disk or download it) and an error occurred, this
+will contain info on the error. Otherwise will be <code>None</code></dd>
+<dt><strong><code>size</code></strong> :&ensp;<code>int</code></dt>
+<dd>size of data file in bytes</dd>
+</dl>
+<p>Constructor for the CDMS SuperSim dataset class</p>
+<p>All of these are mandatory; the optional metadata can be specified
+after construction</p>
+<p>name
+- dataset name
+filePath - physical path to file
+SuperSimType
+- e.g. 'Backgrounds'
+SuperSimVersion - e.g. 1.0</p>
+<p>Optional Inputs
+experiment
+- 'Soudan' (default), 'SNOLAB', 'TestDevices', 'UMN', 'UCB'
+site
+- e.g. 'SLAC' (default)
+fileFormat
+- 'root' (default), 'mat', 'txt'
+SuperSimVersion - e.g. 1.0 (default)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SuperSimData(CDMSDataset):
+
+    def __init__(self,
+                 name,
+                 filePath,
+                 SuperSimType,
+                 SuperSimVersion,
+                 experiment=&#39;Soudan&#39;,
+                 site=&#39;SLAC&#39;,
+                 fileFormat=&#39;root&#39;):
+        &#34;&#34;&#34;Constructor for the CDMS SuperSim dataset class
+
+        All of these are mandatory; the optional metadata can be specified
+        after construction
+
+        name     - dataset name
+        filePath - physical path to file
+        SuperSimType  - e.g. &#39;Backgrounds&#39;
+        SuperSimVersion - e.g. 1.0
+
+        Optional Inputs
+        experiment  - &#39;Soudan&#39; (default), &#39;SNOLAB&#39;, &#39;TestDevices&#39;, &#39;UMN&#39;, &#39;UCB&#39;
+        site        - e.g. &#39;SLAC&#39; (default)
+        fileFormat  - &#39;root&#39; (default), &#39;mat&#39;, &#39;txt&#39;
+        SuperSimVersion - e.g. 1.0 (default)
+        &#34;&#34;&#34;
+        CDMSDataset.__init__(self, name, filePath, experiment + &#39;/SuperSim&#39;,
+                             site, fileFormat)
+
+        # add simulation type to path
+        self.relativePath += &#39;/&#39; + SuperSimType + &#39;/&#39; + SuperSimVersion
+
+        self.metadata[&#34;SuperSimType&#34;] = SuperSimType
+        self.metadata[&#34;SuperSimVersion&#34;] = SuperSimVersion</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></b></code>:
+<ul class="hlist">
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats">fileFormats</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes">fileTypes</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation">findLocation</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset">fromDataset</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths">getSitePaths</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.info" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.info">info</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk">locationPk</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat">setFileFormat</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.size" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.size">size</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="CDMSDataCatalog" href="index.html">CDMSDataCatalog</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></code></h4>
+<ul class="two-column">
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats">fileFormats</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes">fileTypes</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation">findLocation</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset">fromDataset</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths">getSitePaths</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.info" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.info">info</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.keys" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.keys">keys</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk">locationPk</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.setDataType" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.setDataType">setDataType</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat">setFileFormat</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.setSite" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.setSite">setSite</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.size" href="#CDMSDataCatalog.CDMSDataset.CDMSDataset.size">size</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="CDMSDataCatalog.CDMSDataset.DMCData" href="#CDMSDataCatalog.CDMSDataset.DMCData">DMCData</a></code></h4>
+</li>
+<li>
+<h4><code><a title="CDMSDataCatalog.CDMSDataset.ProcessedData" href="#CDMSDataCatalog.CDMSDataset.ProcessedData">ProcessedData</a></code></h4>
+</li>
+<li>
+<h4><code><a title="CDMSDataCatalog.CDMSDataset.ProcessedIVdIdVData" href="#CDMSDataCatalog.CDMSDataset.ProcessedIVdIdVData">ProcessedIVdIdVData</a></code></h4>
+</li>
+<li>
+<h4><code><a title="CDMSDataCatalog.CDMSDataset.RawData" href="#CDMSDataCatalog.CDMSDataset.RawData">RawData</a></code></h4>
+</li>
+<li>
+<h4><code><a title="CDMSDataCatalog.CDMSDataset.SuperSimData" href="#CDMSDataCatalog.CDMSDataset.SuperSimData">SuperSimData</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

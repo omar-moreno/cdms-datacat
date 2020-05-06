@@ -7,6 +7,16 @@ Installation
 Note: This command assumes that you have your ssh config setup as the following link suggests:
 [SSH Config Setup](http://titus.stanford.edu:8080/git/blob/?f=ssh_SUF.md&r=cdms_docs.git&h=master)
 
+Documentation
+-------------
+Documentation is mostly in the docstrings of the relevant classes and methods.
+An HTML rendering of this can be found in the 'html' directory. To regenerate 
+this, use the `pdoc3` package (`CDMSDataCatalog` must be installed in the 
+relevant python environment):
+```
+python3 -m pdoc3 --html CDMSDataCatalog
+```
+
 Usage
 --------
 In most cases, especially if working at an adminstered CDMS site, you can and

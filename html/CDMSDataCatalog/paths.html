@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.1" />
+<title>CDMSDataCatalog.paths API documentation</title>
+<meta name="description" content="Utility functions to generate and interpret data catalog entry paths" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>CDMSDataCatalog.paths</code></h1>
+</header>
+<section id="section-intro">
+<p>Utility functions to generate and interpret data catalog entry paths</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34; Utility functions to generate and interpret data catalog entry paths
+&#34;&#34;&#34;
+from warnings import warn
+
+def fridgeRun_tostring(fridgeRun):
+    &#34;&#34;&#34; Convert the argument to the form &#39;R&lt;n\&gt;&#39; &#34;&#34;&#34;
+    result = str(fridgeRun)
+    if result != &#39;*&#39; and not result.startswith(&#39;R&#39;):
+        result = &#39;R&#39;+result
+    return result
+
+
+def getpath_rawdata(Facility, nFridgeRun, Series=None, filename=None):
+    &#34;&#34;&#34; Get the data catalog entry path for raw data &#34;&#34;&#34;
+    fridgeRun = fridgeRun_tostring(nFridgeRun)
+    path = &#39;/&#39;.join((&#39;/CDMS&#39;, Facility, fridgeRun, &#39;Raw&#39;))
+    if Series:
+        path = &#39;/&#39;.join((path, str(Series)))
+        if filename:
+            path = &#39;/&#39;.join((path, filename))
+    return path
+        
+
+def getpath_processed(Facility, nFridgeRun, ProdType, ProdTag, nMergeLevel=None,
+                      Series=None, ProdStep=None, filename=None):
+    &#34;&#34;&#34; Get the data catalog entry path for processed data &#34;&#34;&#34;
+    fridgeRun = fridgeRun_tostring(nFridgeRun)
+
+    # this handles ProdType is &#39;*&#39;
+    prodPath = &#39;Processed/&#39;+ProdType
+    if ProdType == &#39;test&#39;:
+        prodPath = &#39;Processed/Tests&#39;
+    elif ProdType == &#39;release&#39;: 
+        prodPath = &#39;Processed/Releases&#39;
+    path = &#39;/&#39;.join((&#39;/CDMS&#39;, Facility, fridgeRun, prodPath, ProdTag))
+    
+    mergepath = nMergeLevel
+    if ProdStep == &#39;BatNoise&#39;:
+        mergepath = &#39;Noise&#39;
+    elif ProdStep == &#39;Cut&#39;:
+        mergepath = &#39;Cuts&#39;
+    elif isinstance(nMergeLevel, int):
+        mergepath = {0: &#39;Unmerged&#39;, 
+                     1: &#39;Submerged&#39;, 
+                     2: &#39;Merged&#39;} [nMergeLevel]
+    if mergepath is not None:
+        path = &#39;/&#39;.join((path, mergepath))
+    
+    if Series is not None:
+        if mergepath == &#39;Unmerged&#39;:
+            path = &#39;/&#39;.join((path, str(Series)))
+        else:
+            #warn(f&#34;Series argument ignored for nMergeLevel={nMergeLevel}&#34;)
+            pass
+
+    if filename is not None:
+        path = &#39;/&#39;.join((path, filename))
+
+    return path
+
+
+def getpath_data(Facility, nFridgeRun, ProdType, ProdTag=None, nMergeLevel=None,
+                 Series=None, ProdStep=None, filename=None):
+    &#34;&#34;&#34; Get the data catalog entry path for either raw or processed data,
+    depending on the `ProdType` argument.
+    &#34;&#34;&#34;
+    path = None
+    if ProdType is None or ProdType.lower() == &#39;raw&#39;:
+        # consistency check
+        #if ProdTag:
+            #warn(&#34;Ignoring ProdTag for &#39;raw&#39; processing type&#34;)
+        #if nMergeLevel:
+            #warn(&#34;Ignoring nMergeLevel for &#39;raw&#39; processing type&#34;)
+        path = getpath_rawdata(Facility, nFridgeRun, Series, filename)
+       
+    elif ProdType.lower() in (&#39;test&#39;, &#39;release&#39;, &#39;*&#39;):
+        path = getpath_processed(Facility, nFridgeRun, ProdType, ProdTag,
+                                 nMergeLevel, Series, ProdStep, filename)
+    else:
+        raise ValueError(f&#34;Unknown value &#39;{ProdType}&#39; for ProdType,\n&#34;
+                         &#34;Should be one of &#39;raw&#39;, &#39;test&#39;, &#39;release&#39;&#34;)
+    return path
+
+
+def is_simple_arg(val, allowstar=True, allownone=True):
+    &#34;&#34;&#34; Determine whether `val` is a single, specific argument for constructing
+    a data catalog path or has some kind of wildcard.
+    Args:
+        val: the path component to interpret, usually a str
+        allowstar (bool): if True (default), let `*` count as a simple argument
+                          (i.e. accept all values for that path level)
+        allownone (bool): If True (default) let `None` count as a simple argument
+    Returns:
+        bool: Is the argument a basic (non-wildcard) argument?
+     &#34;&#34;&#34;
+    if val == &#39;*&#39;:
+        return allowstar
+    elif val is None:
+        return allownone
+    elif (isinstance(val, str) and (val.find(&#39;*&#39;) != -1 or
+                                    val.find(&#39;[&#39;) != -1)    ):
+        return false
+    return isinstance(val, (str, int, float))
+        
+
+def build_query_phrase(key, val):
+        &#34;&#34;&#34; interpret `val` as a DataCatalog language filter on `key`. 
+        Allowed types are:
+        
+        - str: plain strings generate &#39;eq&#39; queries. Strings containing wildcards
+               (*, []) generate =~ queries
+        - list, tuple: generate &#39;in&#39; queries
+        - slice: generate range queries (step is ignored)
+        - int or float generate &#39;eq&#39; queries
+        &#34;&#34;&#34;
+        def escapestr(s, convertbool=True):
+            if isinstance(s, str):
+                s = f&#34;&#39;{s}&#39;&#34;
+            elif convertbool and isinstance(s, bool):
+                s = int(s)
+            return s
+
+        op = &#39;eq&#39;
+        suffix = escapestr(val)
+
+        if isinstance(val, slice):
+            op = &#39;in&#39;
+            suffix = f&#34;{escapestr(val.start)}:{escapestr(val.stop)}&#34;
+        
+        elif isinstance(val, (list, tuple)):
+            op = &#39;in&#39;
+            suffix = tuple(val)
+
+        elif isinstance(val, str):
+            if val.find(&#39;*&#39;) != -1 or val.find(&#39;[&#39;) != -1:
+                op = &#39;=~&#39;
+                
+        return f&#34;{key} {op} {suffix}&#34;
+
+def build_query(basequery=None, **kwargs):
+    &#34;&#34;&#34; Build a single query string from a list of arguments &#34;&#34;&#34;
+    if basequery is not None:
+        basequery = [basequery]
+    return &#39; and &#39;.join(build_query_phrase(k, v) for k, v in kwargs.items)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="CDMSDataCatalog.paths.build_query"><code class="name flex">
+<span>def <span class="ident">build_query</span></span>(<span>basequery=None, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Build a single query string from a list of arguments</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_query(basequery=None, **kwargs):
+    &#34;&#34;&#34; Build a single query string from a list of arguments &#34;&#34;&#34;
+    if basequery is not None:
+        basequery = [basequery]
+    return &#39; and &#39;.join(build_query_phrase(k, v) for k, v in kwargs.items)</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.paths.build_query_phrase"><code class="name flex">
+<span>def <span class="ident">build_query_phrase</span></span>(<span>key, val)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>interpret <code>val</code> as a DataCatalog language filter on <code>key</code>.
+Allowed types are:</p>
+<ul>
+<li>str: plain strings generate 'eq' queries. Strings containing wildcards
+(*, []) generate =~ queries</li>
+<li>list, tuple: generate 'in' queries</li>
+<li>slice: generate range queries (step is ignored)</li>
+<li>int or float generate 'eq' queries</li>
+</ul></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_query_phrase(key, val):
+        &#34;&#34;&#34; interpret `val` as a DataCatalog language filter on `key`. 
+        Allowed types are:
+        
+        - str: plain strings generate &#39;eq&#39; queries. Strings containing wildcards
+               (*, []) generate =~ queries
+        - list, tuple: generate &#39;in&#39; queries
+        - slice: generate range queries (step is ignored)
+        - int or float generate &#39;eq&#39; queries
+        &#34;&#34;&#34;
+        def escapestr(s, convertbool=True):
+            if isinstance(s, str):
+                s = f&#34;&#39;{s}&#39;&#34;
+            elif convertbool and isinstance(s, bool):
+                s = int(s)
+            return s
+
+        op = &#39;eq&#39;
+        suffix = escapestr(val)
+
+        if isinstance(val, slice):
+            op = &#39;in&#39;
+            suffix = f&#34;{escapestr(val.start)}:{escapestr(val.stop)}&#34;
+        
+        elif isinstance(val, (list, tuple)):
+            op = &#39;in&#39;
+            suffix = tuple(val)
+
+        elif isinstance(val, str):
+            if val.find(&#39;*&#39;) != -1 or val.find(&#39;[&#39;) != -1:
+                op = &#39;=~&#39;
+                
+        return f&#34;{key} {op} {suffix}&#34;</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.paths.fridgeRun_tostring"><code class="name flex">
+<span>def <span class="ident">fridgeRun_tostring</span></span>(<span>fridgeRun)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convert the argument to the form 'R&lt;n>'</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fridgeRun_tostring(fridgeRun):
+    &#34;&#34;&#34; Convert the argument to the form &#39;R&lt;n\&gt;&#39; &#34;&#34;&#34;
+    result = str(fridgeRun)
+    if result != &#39;*&#39; and not result.startswith(&#39;R&#39;):
+        result = &#39;R&#39;+result
+    return result</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.paths.getpath_data"><code class="name flex">
+<span>def <span class="ident">getpath_data</span></span>(<span>Facility, nFridgeRun, ProdType, ProdTag=None, nMergeLevel=None, Series=None, ProdStep=None, filename=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the data catalog entry path for either raw or processed data,
+depending on the <code>ProdType</code> argument.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getpath_data(Facility, nFridgeRun, ProdType, ProdTag=None, nMergeLevel=None,
+                 Series=None, ProdStep=None, filename=None):
+    &#34;&#34;&#34; Get the data catalog entry path for either raw or processed data,
+    depending on the `ProdType` argument.
+    &#34;&#34;&#34;
+    path = None
+    if ProdType is None or ProdType.lower() == &#39;raw&#39;:
+        # consistency check
+        #if ProdTag:
+            #warn(&#34;Ignoring ProdTag for &#39;raw&#39; processing type&#34;)
+        #if nMergeLevel:
+            #warn(&#34;Ignoring nMergeLevel for &#39;raw&#39; processing type&#34;)
+        path = getpath_rawdata(Facility, nFridgeRun, Series, filename)
+       
+    elif ProdType.lower() in (&#39;test&#39;, &#39;release&#39;, &#39;*&#39;):
+        path = getpath_processed(Facility, nFridgeRun, ProdType, ProdTag,
+                                 nMergeLevel, Series, ProdStep, filename)
+    else:
+        raise ValueError(f&#34;Unknown value &#39;{ProdType}&#39; for ProdType,\n&#34;
+                         &#34;Should be one of &#39;raw&#39;, &#39;test&#39;, &#39;release&#39;&#34;)
+    return path</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.paths.getpath_processed"><code class="name flex">
+<span>def <span class="ident">getpath_processed</span></span>(<span>Facility, nFridgeRun, ProdType, ProdTag, nMergeLevel=None, Series=None, ProdStep=None, filename=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the data catalog entry path for processed data</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getpath_processed(Facility, nFridgeRun, ProdType, ProdTag, nMergeLevel=None,
+                      Series=None, ProdStep=None, filename=None):
+    &#34;&#34;&#34; Get the data catalog entry path for processed data &#34;&#34;&#34;
+    fridgeRun = fridgeRun_tostring(nFridgeRun)
+
+    # this handles ProdType is &#39;*&#39;
+    prodPath = &#39;Processed/&#39;+ProdType
+    if ProdType == &#39;test&#39;:
+        prodPath = &#39;Processed/Tests&#39;
+    elif ProdType == &#39;release&#39;: 
+        prodPath = &#39;Processed/Releases&#39;
+    path = &#39;/&#39;.join((&#39;/CDMS&#39;, Facility, fridgeRun, prodPath, ProdTag))
+    
+    mergepath = nMergeLevel
+    if ProdStep == &#39;BatNoise&#39;:
+        mergepath = &#39;Noise&#39;
+    elif ProdStep == &#39;Cut&#39;:
+        mergepath = &#39;Cuts&#39;
+    elif isinstance(nMergeLevel, int):
+        mergepath = {0: &#39;Unmerged&#39;, 
+                     1: &#39;Submerged&#39;, 
+                     2: &#39;Merged&#39;} [nMergeLevel]
+    if mergepath is not None:
+        path = &#39;/&#39;.join((path, mergepath))
+    
+    if Series is not None:
+        if mergepath == &#39;Unmerged&#39;:
+            path = &#39;/&#39;.join((path, str(Series)))
+        else:
+            #warn(f&#34;Series argument ignored for nMergeLevel={nMergeLevel}&#34;)
+            pass
+
+    if filename is not None:
+        path = &#39;/&#39;.join((path, filename))
+
+    return path</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.paths.getpath_rawdata"><code class="name flex">
+<span>def <span class="ident">getpath_rawdata</span></span>(<span>Facility, nFridgeRun, Series=None, filename=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the data catalog entry path for raw data</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getpath_rawdata(Facility, nFridgeRun, Series=None, filename=None):
+    &#34;&#34;&#34; Get the data catalog entry path for raw data &#34;&#34;&#34;
+    fridgeRun = fridgeRun_tostring(nFridgeRun)
+    path = &#39;/&#39;.join((&#39;/CDMS&#39;, Facility, fridgeRun, &#39;Raw&#39;))
+    if Series:
+        path = &#39;/&#39;.join((path, str(Series)))
+        if filename:
+            path = &#39;/&#39;.join((path, filename))
+    return path</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.paths.is_simple_arg"><code class="name flex">
+<span>def <span class="ident">is_simple_arg</span></span>(<span>val, allowstar=True, allownone=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Determine whether <code>val</code> is a single, specific argument for constructing
+a data catalog path or has some kind of wildcard.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>val</code></strong></dt>
+<dd>the path component to interpret, usually a str</dd>
+<dt><strong><code>allowstar</code></strong> :&ensp;<code>bool</code></dt>
+<dd>if True (default), let <code>*</code> count as a simple argument
+(i.e. accept all values for that path level)</dd>
+<dt><strong><code>allownone</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True (default) let <code>None</code> count as a simple argument</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool</code></dt>
+<dd>Is the argument a basic (non-wildcard) argument?</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_simple_arg(val, allowstar=True, allownone=True):
+    &#34;&#34;&#34; Determine whether `val` is a single, specific argument for constructing
+    a data catalog path or has some kind of wildcard.
+    Args:
+        val: the path component to interpret, usually a str
+        allowstar (bool): if True (default), let `*` count as a simple argument
+                          (i.e. accept all values for that path level)
+        allownone (bool): If True (default) let `None` count as a simple argument
+    Returns:
+        bool: Is the argument a basic (non-wildcard) argument?
+     &#34;&#34;&#34;
+    if val == &#39;*&#39;:
+        return allowstar
+    elif val is None:
+        return allownone
+    elif (isinstance(val, str) and (val.find(&#39;*&#39;) != -1 or
+                                    val.find(&#39;[&#39;) != -1)    ):
+        return false
+    return isinstance(val, (str, int, float))</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="CDMSDataCatalog" href="index.html">CDMSDataCatalog</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="two-column">
+<li><code><a title="CDMSDataCatalog.paths.build_query" href="#CDMSDataCatalog.paths.build_query">build_query</a></code></li>
+<li><code><a title="CDMSDataCatalog.paths.build_query_phrase" href="#CDMSDataCatalog.paths.build_query_phrase">build_query_phrase</a></code></li>
+<li><code><a title="CDMSDataCatalog.paths.fridgeRun_tostring" href="#CDMSDataCatalog.paths.fridgeRun_tostring">fridgeRun_tostring</a></code></li>
+<li><code><a title="CDMSDataCatalog.paths.getpath_data" href="#CDMSDataCatalog.paths.getpath_data">getpath_data</a></code></li>
+<li><code><a title="CDMSDataCatalog.paths.getpath_processed" href="#CDMSDataCatalog.paths.getpath_processed">getpath_processed</a></code></li>
+<li><code><a title="CDMSDataCatalog.paths.getpath_rawdata" href="#CDMSDataCatalog.paths.getpath_rawdata">getpath_rawdata</a></code></li>
+<li><code><a title="CDMSDataCatalog.paths.is_simple_arg" href="#CDMSDataCatalog.paths.is_simple_arg">is_simple_arg</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

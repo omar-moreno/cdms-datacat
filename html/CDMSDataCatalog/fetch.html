@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.1" />
+<title>CDMSDataCatalog.fetch API documentation</title>
+<meta name="description" content="Utility functions for downloading data to local disk" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>CDMSDataCatalog.fetch</code></h1>
+</header>
+<section id="section-intro">
+<p>Utility functions for downloading data to local disk</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34; Utility functions for downloading data to local disk
+&#34;&#34;&#34;
+
+import pathlib
+from concurrent.futures import ThreadPoolExecutor
+import urllib
+import shutil
+import os
+import requests
+import subprocess
+import sys
+from tqdm import tqdm
+from tqdm.utils import CallbackIOWrapper
+from .CDMSDataset import CDMSDataset
+
+
+
+class CDMSFetchError(CDMSDataset):
+    &#34;&#34;&#34; Class to report information about fetch errors that may not result in
+    sensible datasets.
+    Args:
+        request: The original request (usually a string) that caused the error
+        fetchError (str): Description of the error
+    &#34;&#34;&#34;
+    def __init__(self, request, error):
+        super().__init__(None, None, None, None, None)
+        self.fetchRequest = request
+        self.fetchError = error
+
+    def __str__(self):
+        return self.fetchRequest
+
+    def __repr__(self):
+        return &#39;&lt;CDMSFetchError Class,&#39;+self.fetchError+&#39;&gt;&#39;
+
+def get_default_fetchdir():
+    &#34;&#34;&#34; Try to determine a default location for datacatalog data by inspecting
+        paths that are present on the system.
+    &#34;&#34;&#34;
+    # first look for official tier 1/2 locations
+    # todo: do this by hostname!
+    testpaths = [&#39;/gpfs/slac/staas/fs1/supercdms/data&#39;, #SLAC
+                 &#39;/scratch/m/mdiamond/mdiamond/data&#39;,   #Niagara
+                 &#39;/scratch/group/mitchcomp/CDMS/data&#39;,  #TAMU HPRC
+                 &#39;/scratch/group/cdms/data&#39;,            #ManeFrame
+                 &#39;/cvmfs/data&#39;,                         #XSEDE
+                 &#39;/data1/public_overflow/data&#39;,         #cdmsz3.fnal.gov
+                 &#39;/project/rrg-mdiamond/data&#39;,          #Cedar
+                ]
+    for path in testpaths:
+        if os.path.isdir(path):
+            return path
+
+    # see if there is a scratch directory, mostly for grid nodes
+    if os.path.isdir(&#39;/scratch&#39;):
+        return &#39;/scratch/CDMS/datacat-data&#39;
+
+    # just make everything relative to CWD
+    return &#39;datacat-data&#39;
+
+def get_fetch_path(dataset, dest=None, destRelative=True):
+    &#34;&#34;&#34; Get the location where this file would be downloaded to
+    Args:
+        dataset: The CDMSDataset to check
+        dest (str): top-level destination directory
+        destRelative (bool): if True, recreate the datacat path below dest
+    &#34;&#34;&#34;
+    # first, see if it&#39;s sitting at one of the official paths
+    target = None
+    targetexists = False
+    for fp in dataset.getSitePaths().values():
+        if fp and os.path.isfile(fp):
+            target = fp
+            targetexists = True
+            break
+
+    if not targetexists:
+        # build the path for fetching relative to dest
+        target = dest or get_default_fetchdir()
+        if destRelative:
+            relPath = dataset.relativePath
+            if os.path.isabs(relPath):
+                relPath = relPath[1:]
+            target = os.path.join(target, relPath)
+        else:
+            target = os.path.join(target, dataset.datasetName)
+    return target
+
+
+def print_filesize(num, suffix=&#39;B&#39;):
+    for unit in [&#39;&#39;,&#39;Ki&#39;,&#39;Mi&#39;,&#39;Gi&#39;,&#39;Ti&#39;,&#39;Pi&#39;,&#39;Ei&#39;,&#39;Zi&#39;]:
+        if abs(num) &lt; 1024.0:
+            return &#34;%3.1f%s%s&#34; % (num, unit, suffix)
+        num /= 1024.0
+    return &#34;%.1f%s%s&#34; % (num, &#39;Yi&#39;, suffix)
+
+def download_web(dataset, target, baseurl, progcallback=None):
+    &#34;&#34;&#34; Download a file through the data catalog web interface
+    Args:
+        dataset (CDMSDataset): the datsaet to download
+        target (str): path and name to download the file as
+        baseurl (str): the root URL of the data catalog interface
+    Raises:
+        AttributeError if unable to determine  full URL from dataset
+    &#34;&#34;&#34;
+    # determine the URL for the file
+    baseparsed = urllib.parse.urlparse(baseurl)
+    url = urllib.parse.urlunparse((baseparsed[0], baseparsed[1],
+                                   &#39;DataCatalog/get&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;))
+    # need to get raw dataset to determine url
+    locationPk = dataset.locationPk
+    if locationPk is None:
+        raise AttributeError(&#34;Unable to generate download URL&#34;)
+
+    params = dict(datasetLocation=locationPk)
+    # finally we can download to file
+    # from https://stackoverflow.com/questions/16694907/
+    # what about auth?
+    with requests.get(url, params=params, stream=True) as req, \
+         open(target, &#39;wb&#39;) as fout:
+        if progcallback:
+            fout = CallbackIOWrapper(progcallback, fout, &#34;write&#34;)
+        shutil.copyfileobj(req.raw, fout)
+
+
+def download_rsync(dataset, target, host=&#39;centos7.slac.stanford.edu&#39;):
+    &#34;&#34;&#34; Download a single dataset over rsync
+    Args:
+        dataset (CDMSDataset): the dataset (file) to download
+        target (str): path and filename to save as
+        host (str): the host to rsync (ssh) to
+    Returns:
+        subprocess.run result
+    Raises:
+        AttributeError if unable to determine source data path
+    &#34;&#34;&#34;
+    sourcepath = dataset.findLocation(&#39;SLAC&#39;).resource
+    sourceurl = host + &#34;:&#34; + sourcepath
+    return subprocess.run([&#39;rsync&#39;, &#39;-a&#39;, sourceurl, target])
+
+
+def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
+              maxthreads=None):
+    &#34;&#34;&#34;Download a copy of the files pointed by path to the local system, only
+    if it is not already found.
+
+    Args:
+      catalog: a CDMSDataCatalog object
+      path:  The file(s) to copy. Can take many forms:
+      
+        * a single string giving the full data catalog entry path
+        * a CDMSDataset
+        * a string containing a wildcard &#39;*&#39;, treated as a search query
+        * a CDMSDataGroup (or path pointing to): download all ref&#39;d todo
+        * a list/tuple of paths/queries/Datasets
+
+
+      checkonly (bool or int): if True, don&#39;t download, only look for datasets
+                            already present on disk.  If False, download all
+                            requested files without prompting. If a number,
+                            ask for user confirmation if download is greater
+                            than N MB. If None (default), use 100 MB
+    
+      dest (str or pathlib.Path): target directory to place the file in.
+                          Missing directories will be created. File
+                          will have same name as data catalog entry
+
+      destRelative (bool): If True (default), create a directory
+                           hierarchy under `destination` to match
+                           the `relativePath` member. If `path` has
+                           multiple entries, will be treated as True
+
+      maxthreads (int): If a `path` expands to more than a single dataset, use
+                        up to `maxthreads` simultaneous download connections
+    Returns:
+      list: A flat list of CDMSDataset objects retrieved. The `filePath`
+            attribute on each object will be set to the found/downloaded file
+            if successful.
+            Otherwise, `filePath` will be `None` and `fetchError` will contain
+            more info about the error.
+    &#34;&#34;&#34;
+
+    # sanity guard
+    if not path:
+        return CDMSFetchError(path, error=&#34;Empty request&#34;)
+
+    if checkonly is None:
+        checkonly = 100
+
+    # check destination
+    if dest is None:
+        dest = catalog.default_fetchdir
+
+    # at most complex, `path` could be a list of queries that will each expand
+    # to lists of their own. First step is to flatten everything into a single
+    # list of datasets to check and/or download
+    tocheck = []
+    todownload = []
+    errors = []
+    success = []
+    def _expand_query(request):
+        if isinstance(request, str):
+            if request.find(&#39;*&#39;) != -1:
+                # this is a search string, will return a list of datasets
+                err = &#34;&#34;
+                try:
+                    datasets = catalog.search(request)
+                except BaseException as e:
+                    err = f&#34;Error searching catalog: {e}&#34;
+                    errors.append(CDMSFetchError(request, err))
+                else:
+                    if datasets:
+                        tocheck.extend(datasets)
+                    else:
+                        err = f&#34;Search query yielded 0 results&#34;
+                        errors.append(CDMSFetchError(request, err))
+            else:
+                # this should be a full entry path
+                try:
+                    tocheck.append(catalog.get(request))
+                except BaseException as e:
+                    emsg = f&#34;Error getting entry {request} from catalog: {e}&#34;
+                    err = CDMSFetchError(request, emsg)
+                    err.relativePath = request
+                    errors.append(err)
+        elif isinstance(request, CDMSDataset):
+            tocheck.append(request)
+        else:
+            # request should be a loop
+            try:
+                for req in request:
+                    _expand_query(req)
+            except TypeError:
+                raise TypeError(f&#34;Unhandled type {type(request)} for fetch&#34;)
+
+    _expand_query(path)
+
+    # now that we have a flat list of `CDMSDataset`s, check each one
+    def _check_local(dataset, errifnotfound):
+        target = get_fetch_path(dataset, dest, destRelative)
+        if target:
+            targetexists = os.path.isfile(target)
+            if targetexists:
+                size = os.path.getsize(target)
+                if dataset.size and size != dataset.size:
+                    dataset.fetchError = f&#34;File &#39;{target}&#39; size mismatch&#34;
+                    errors.append(dataset)
+                else:
+                    dataset.filePath = target
+                    success.append(dataset)
+            else:
+                if errifnotfound:
+                    dataset.fetchError = f&#34;File &#39;{target}&#39; not found on disk&#34;
+                    errors.append(dataset)
+                else:
+                    todownload.append(dataset)
+        else:
+            dataset.fetchError = &#34;Unable to determine local disk path&#34;
+            errors.append(dataset)
+                    
+        
+    for dataset in tocheck:
+        _check_local(dataset, errifnotfound=False)
+    tocheck = []
+
+    # now download any required files
+    # TODO: should we skip download if there are errors already?
+    dlsize = sum(dataset.size for dataset in todownload)
+    dodownload = checkonly is not True and dlsize &gt; 0
+    if dlsize &gt; 0:
+        print(&#34;Need to download&#34;, print_filesize(dlsize),
+              &#34;(&#34;, len(todownload), &#34;files ) from catalog&#34;)
+        if checkonly is not True and dlsize &gt; checkonly*1000000:
+            confirm = input(&#34;Do you want to proceed? (y/n): &#34;)
+            dodownload = confirm[0] in &#39;Yy&#39;
+
+    if dodownload:
+        baseurl = catalog.client.http_client.base_url
+        # tqdm gives nice progress bars
+        with tqdm(total=dlsize, desc=&#34;Total progress&#34;, position=0, unit=&#39;B&#39;,
+                  unit_scale=True, unit_divisor=1024) as pbar:
+            def _get(dataset):
+                target = get_fetch_path(dataset, dest, destRelative)
+                # we need to actually do the download
+                targetDir = os.path.dirname(target)
+                try:
+                    pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
+                    download_web(dataset, target, baseurl, pbar.update)
+                except BaseException as e:
+                    dataset.fetchError = f&#34;Exception during download: {e}&#34;
+                    errors.append(dataset)
+                else:
+                    _check_local(dataset, errifnotfound=True)
+                    
+            with ThreadPoolExecutor(max_workers=maxthreads) as pool:
+                pool.map(_get, todownload)
+        tqdm.write(&#34;Download finished&#34;)
+    elif todownload:
+        print(&#34;Skipping download&#34;)
+        for dataset in todownload:
+            dataset.fetchError = &#39;Download prevented&#39;
+            errors.append(dataset)
+
+    # we&#39;re finally done!
+    total = success + errors
+    if errors:
+        print(f&#34;DataCat: Failed to fetch {len(errors)}/{len(total)} datasets!&#34;,
+              file=sys.stderr)
+        for err in errors:
+            print(f&#34;\t{str(err)}: {err.fetchError}&#34;, file=sys.stderr)
+    return total
+    </code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="CDMSDataCatalog.fetch.download_rsync"><code class="name flex">
+<span>def <span class="ident">download_rsync</span></span>(<span>dataset, target, host='centos7.slac.stanford.edu')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Download a single dataset over rsync</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dataset</code></strong> :&ensp;<code>CDMSDataset</code></dt>
+<dd>the dataset (file) to download</dd>
+<dt><strong><code>target</code></strong> :&ensp;<code>str</code></dt>
+<dd>path and filename to save as</dd>
+<dt><strong><code>host</code></strong> :&ensp;<code>str</code></dt>
+<dd>the host to rsync (ssh) to</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>subprocess.run result</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>AttributeError if unable to determine source data path</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def download_rsync(dataset, target, host=&#39;centos7.slac.stanford.edu&#39;):
+    &#34;&#34;&#34; Download a single dataset over rsync
+    Args:
+        dataset (CDMSDataset): the dataset (file) to download
+        target (str): path and filename to save as
+        host (str): the host to rsync (ssh) to
+    Returns:
+        subprocess.run result
+    Raises:
+        AttributeError if unable to determine source data path
+    &#34;&#34;&#34;
+    sourcepath = dataset.findLocation(&#39;SLAC&#39;).resource
+    sourceurl = host + &#34;:&#34; + sourcepath
+    return subprocess.run([&#39;rsync&#39;, &#39;-a&#39;, sourceurl, target])</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.fetch.download_web"><code class="name flex">
+<span>def <span class="ident">download_web</span></span>(<span>dataset, target, baseurl, progcallback=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Download a file through the data catalog web interface</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dataset</code></strong> :&ensp;<code>CDMSDataset</code></dt>
+<dd>the datsaet to download</dd>
+<dt><strong><code>target</code></strong> :&ensp;<code>str</code></dt>
+<dd>path and name to download the file as</dd>
+<dt><strong><code>baseurl</code></strong> :&ensp;<code>str</code></dt>
+<dd>the root URL of the data catalog interface</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>AttributeError if unable to determine
+full URL from dataset</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def download_web(dataset, target, baseurl, progcallback=None):
+    &#34;&#34;&#34; Download a file through the data catalog web interface
+    Args:
+        dataset (CDMSDataset): the datsaet to download
+        target (str): path and name to download the file as
+        baseurl (str): the root URL of the data catalog interface
+    Raises:
+        AttributeError if unable to determine  full URL from dataset
+    &#34;&#34;&#34;
+    # determine the URL for the file
+    baseparsed = urllib.parse.urlparse(baseurl)
+    url = urllib.parse.urlunparse((baseparsed[0], baseparsed[1],
+                                   &#39;DataCatalog/get&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;))
+    # need to get raw dataset to determine url
+    locationPk = dataset.locationPk
+    if locationPk is None:
+        raise AttributeError(&#34;Unable to generate download URL&#34;)
+
+    params = dict(datasetLocation=locationPk)
+    # finally we can download to file
+    # from https://stackoverflow.com/questions/16694907/
+    # what about auth?
+    with requests.get(url, params=params, stream=True) as req, \
+         open(target, &#39;wb&#39;) as fout:
+        if progcallback:
+            fout = CallbackIOWrapper(progcallback, fout, &#34;write&#34;)
+        shutil.copyfileobj(req.raw, fout)</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.fetch.fetchdata"><code class="name flex">
+<span>def <span class="ident">fetchdata</span></span>(<span>catalog, path, checkonly=None, dest=None, destRelative=True, maxthreads=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Download a copy of the files pointed by path to the local system, only
+if it is not already found.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>catalog</code></strong></dt>
+<dd>a CDMSDataCatalog object</dd>
+<dt><strong><code>path</code></strong></dt>
+<dd>
+<p>The file(s) to copy. Can take many forms:</p>
+<ul>
+<li>a single string giving the full data catalog entry path</li>
+<li>a CDMSDataset</li>
+<li>a string containing a wildcard '*', treated as a search query</li>
+<li>a CDMSDataGroup (or path pointing to): download all ref'd todo</li>
+<li>a list/tuple of paths/queries/Datasets</li>
+</ul>
+</dd>
+<dt><strong><code>checkonly</code></strong> :&ensp;<code>bool</code> or <code>int</code></dt>
+<dd>if True, don't download, only look for datasets
+already present on disk.
+If False, download all
+requested files without prompting. If a number,
+ask for user confirmation if download is greater
+than N MB. If None (default), use 100 MB</dd>
+<dt><strong><code>dest</code></strong> :&ensp;<code>str</code> or <code>pathlib.Path</code></dt>
+<dd>target directory to place the file in.
+Missing directories will be created. File
+will have same name as data catalog entry</dd>
+<dt><strong><code>destRelative</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True (default), create a directory
+hierarchy under <code>destination</code> to match
+the <code>relativePath</code> member. If <code>path</code> has
+multiple entries, will be treated as True</dd>
+<dt><strong><code>maxthreads</code></strong> :&ensp;<code>int</code></dt>
+<dd>If a <code>path</code> expands to more than a single dataset, use
+up to <code>maxthreads</code> simultaneous download connections</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code></dt>
+<dd>A flat list of CDMSDataset objects retrieved. The <code>filePath</code>
+attribute on each object will be set to the found/downloaded file
+if successful.
+Otherwise, <code>filePath</code> will be <code>None</code> and <code>fetchError</code> will contain
+more info about the error.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
+              maxthreads=None):
+    &#34;&#34;&#34;Download a copy of the files pointed by path to the local system, only
+    if it is not already found.
+
+    Args:
+      catalog: a CDMSDataCatalog object
+      path:  The file(s) to copy. Can take many forms:
+      
+        * a single string giving the full data catalog entry path
+        * a CDMSDataset
+        * a string containing a wildcard &#39;*&#39;, treated as a search query
+        * a CDMSDataGroup (or path pointing to): download all ref&#39;d todo
+        * a list/tuple of paths/queries/Datasets
+
+
+      checkonly (bool or int): if True, don&#39;t download, only look for datasets
+                            already present on disk.  If False, download all
+                            requested files without prompting. If a number,
+                            ask for user confirmation if download is greater
+                            than N MB. If None (default), use 100 MB
+    
+      dest (str or pathlib.Path): target directory to place the file in.
+                          Missing directories will be created. File
+                          will have same name as data catalog entry
+
+      destRelative (bool): If True (default), create a directory
+                           hierarchy under `destination` to match
+                           the `relativePath` member. If `path` has
+                           multiple entries, will be treated as True
+
+      maxthreads (int): If a `path` expands to more than a single dataset, use
+                        up to `maxthreads` simultaneous download connections
+    Returns:
+      list: A flat list of CDMSDataset objects retrieved. The `filePath`
+            attribute on each object will be set to the found/downloaded file
+            if successful.
+            Otherwise, `filePath` will be `None` and `fetchError` will contain
+            more info about the error.
+    &#34;&#34;&#34;
+
+    # sanity guard
+    if not path:
+        return CDMSFetchError(path, error=&#34;Empty request&#34;)
+
+    if checkonly is None:
+        checkonly = 100
+
+    # check destination
+    if dest is None:
+        dest = catalog.default_fetchdir
+
+    # at most complex, `path` could be a list of queries that will each expand
+    # to lists of their own. First step is to flatten everything into a single
+    # list of datasets to check and/or download
+    tocheck = []
+    todownload = []
+    errors = []
+    success = []
+    def _expand_query(request):
+        if isinstance(request, str):
+            if request.find(&#39;*&#39;) != -1:
+                # this is a search string, will return a list of datasets
+                err = &#34;&#34;
+                try:
+                    datasets = catalog.search(request)
+                except BaseException as e:
+                    err = f&#34;Error searching catalog: {e}&#34;
+                    errors.append(CDMSFetchError(request, err))
+                else:
+                    if datasets:
+                        tocheck.extend(datasets)
+                    else:
+                        err = f&#34;Search query yielded 0 results&#34;
+                        errors.append(CDMSFetchError(request, err))
+            else:
+                # this should be a full entry path
+                try:
+                    tocheck.append(catalog.get(request))
+                except BaseException as e:
+                    emsg = f&#34;Error getting entry {request} from catalog: {e}&#34;
+                    err = CDMSFetchError(request, emsg)
+                    err.relativePath = request
+                    errors.append(err)
+        elif isinstance(request, CDMSDataset):
+            tocheck.append(request)
+        else:
+            # request should be a loop
+            try:
+                for req in request:
+                    _expand_query(req)
+            except TypeError:
+                raise TypeError(f&#34;Unhandled type {type(request)} for fetch&#34;)
+
+    _expand_query(path)
+
+    # now that we have a flat list of `CDMSDataset`s, check each one
+    def _check_local(dataset, errifnotfound):
+        target = get_fetch_path(dataset, dest, destRelative)
+        if target:
+            targetexists = os.path.isfile(target)
+            if targetexists:
+                size = os.path.getsize(target)
+                if dataset.size and size != dataset.size:
+                    dataset.fetchError = f&#34;File &#39;{target}&#39; size mismatch&#34;
+                    errors.append(dataset)
+                else:
+                    dataset.filePath = target
+                    success.append(dataset)
+            else:
+                if errifnotfound:
+                    dataset.fetchError = f&#34;File &#39;{target}&#39; not found on disk&#34;
+                    errors.append(dataset)
+                else:
+                    todownload.append(dataset)
+        else:
+            dataset.fetchError = &#34;Unable to determine local disk path&#34;
+            errors.append(dataset)
+                    
+        
+    for dataset in tocheck:
+        _check_local(dataset, errifnotfound=False)
+    tocheck = []
+
+    # now download any required files
+    # TODO: should we skip download if there are errors already?
+    dlsize = sum(dataset.size for dataset in todownload)
+    dodownload = checkonly is not True and dlsize &gt; 0
+    if dlsize &gt; 0:
+        print(&#34;Need to download&#34;, print_filesize(dlsize),
+              &#34;(&#34;, len(todownload), &#34;files ) from catalog&#34;)
+        if checkonly is not True and dlsize &gt; checkonly*1000000:
+            confirm = input(&#34;Do you want to proceed? (y/n): &#34;)
+            dodownload = confirm[0] in &#39;Yy&#39;
+
+    if dodownload:
+        baseurl = catalog.client.http_client.base_url
+        # tqdm gives nice progress bars
+        with tqdm(total=dlsize, desc=&#34;Total progress&#34;, position=0, unit=&#39;B&#39;,
+                  unit_scale=True, unit_divisor=1024) as pbar:
+            def _get(dataset):
+                target = get_fetch_path(dataset, dest, destRelative)
+                # we need to actually do the download
+                targetDir = os.path.dirname(target)
+                try:
+                    pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
+                    download_web(dataset, target, baseurl, pbar.update)
+                except BaseException as e:
+                    dataset.fetchError = f&#34;Exception during download: {e}&#34;
+                    errors.append(dataset)
+                else:
+                    _check_local(dataset, errifnotfound=True)
+                    
+            with ThreadPoolExecutor(max_workers=maxthreads) as pool:
+                pool.map(_get, todownload)
+        tqdm.write(&#34;Download finished&#34;)
+    elif todownload:
+        print(&#34;Skipping download&#34;)
+        for dataset in todownload:
+            dataset.fetchError = &#39;Download prevented&#39;
+            errors.append(dataset)
+
+    # we&#39;re finally done!
+    total = success + errors
+    if errors:
+        print(f&#34;DataCat: Failed to fetch {len(errors)}/{len(total)} datasets!&#34;,
+              file=sys.stderr)
+        for err in errors:
+            print(f&#34;\t{str(err)}: {err.fetchError}&#34;, file=sys.stderr)
+    return total</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.fetch.get_default_fetchdir"><code class="name flex">
+<span>def <span class="ident">get_default_fetchdir</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Try to determine a default location for datacatalog data by inspecting
+paths that are present on the system.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_default_fetchdir():
+    &#34;&#34;&#34; Try to determine a default location for datacatalog data by inspecting
+        paths that are present on the system.
+    &#34;&#34;&#34;
+    # first look for official tier 1/2 locations
+    # todo: do this by hostname!
+    testpaths = [&#39;/gpfs/slac/staas/fs1/supercdms/data&#39;, #SLAC
+                 &#39;/scratch/m/mdiamond/mdiamond/data&#39;,   #Niagara
+                 &#39;/scratch/group/mitchcomp/CDMS/data&#39;,  #TAMU HPRC
+                 &#39;/scratch/group/cdms/data&#39;,            #ManeFrame
+                 &#39;/cvmfs/data&#39;,                         #XSEDE
+                 &#39;/data1/public_overflow/data&#39;,         #cdmsz3.fnal.gov
+                 &#39;/project/rrg-mdiamond/data&#39;,          #Cedar
+                ]
+    for path in testpaths:
+        if os.path.isdir(path):
+            return path
+
+    # see if there is a scratch directory, mostly for grid nodes
+    if os.path.isdir(&#39;/scratch&#39;):
+        return &#39;/scratch/CDMS/datacat-data&#39;
+
+    # just make everything relative to CWD
+    return &#39;datacat-data&#39;</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.fetch.get_fetch_path"><code class="name flex">
+<span>def <span class="ident">get_fetch_path</span></span>(<span>dataset, dest=None, destRelative=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the location where this file would be downloaded to</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dataset</code></strong></dt>
+<dd>The CDMSDataset to check</dd>
+<dt><strong><code>dest</code></strong> :&ensp;<code>str</code></dt>
+<dd>top-level destination directory</dd>
+<dt><strong><code>destRelative</code></strong> :&ensp;<code>bool</code></dt>
+<dd>if True, recreate the datacat path below dest</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_fetch_path(dataset, dest=None, destRelative=True):
+    &#34;&#34;&#34; Get the location where this file would be downloaded to
+    Args:
+        dataset: The CDMSDataset to check
+        dest (str): top-level destination directory
+        destRelative (bool): if True, recreate the datacat path below dest
+    &#34;&#34;&#34;
+    # first, see if it&#39;s sitting at one of the official paths
+    target = None
+    targetexists = False
+    for fp in dataset.getSitePaths().values():
+        if fp and os.path.isfile(fp):
+            target = fp
+            targetexists = True
+            break
+
+    if not targetexists:
+        # build the path for fetching relative to dest
+        target = dest or get_default_fetchdir()
+        if destRelative:
+            relPath = dataset.relativePath
+            if os.path.isabs(relPath):
+                relPath = relPath[1:]
+            target = os.path.join(target, relPath)
+        else:
+            target = os.path.join(target, dataset.datasetName)
+    return target</code></pre>
+</details>
+</dd>
+<dt id="CDMSDataCatalog.fetch.print_filesize"><code class="name flex">
+<span>def <span class="ident">print_filesize</span></span>(<span>num, suffix='B')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def print_filesize(num, suffix=&#39;B&#39;):
+    for unit in [&#39;&#39;,&#39;Ki&#39;,&#39;Mi&#39;,&#39;Gi&#39;,&#39;Ti&#39;,&#39;Pi&#39;,&#39;Ei&#39;,&#39;Zi&#39;]:
+        if abs(num) &lt; 1024.0:
+            return &#34;%3.1f%s%s&#34; % (num, unit, suffix)
+        num /= 1024.0
+    return &#34;%.1f%s%s&#34; % (num, &#39;Yi&#39;, suffix)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="CDMSDataCatalog.fetch.CDMSFetchError"><code class="flex name class">
+<span>class <span class="ident">CDMSFetchError</span></span>
+<span>(</span><span>request, error)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to report information about fetch errors that may not result in
+sensible datasets.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>request</code></strong></dt>
+<dd>The original request (usually a string) that caused the error</dd>
+<dt><strong><code>fetchError</code></strong> :&ensp;<code>str</code></dt>
+<dd>Description of the error</dd>
+</dl>
+<h2 id="constructor">Constructor</h2>
+<p>All arguments are mandatory; the optional metadata can be specified
+after construction.
+This class should almost never be constructed
+directly.
+<code>CDMSDataset</code>s constructed from data catalog entries
+retrieved through the web API will be built by the client using the
+<code>CDMSDataset.fromDataset</code> class function. To add new entries to the
+catalog, we will generally use subclasses tailored for that data type.</p>
+<h2 id="args_1">Args</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the dataset entry. This should usually be the
+basename of the data file itself</dd>
+<dt><strong><code>filePath</code></strong> :&ensp;<code>str</code></dt>
+<dd>Full absolute path to the data file</dd>
+<dt><strong><code>dataType</code></strong> :&ensp;<code>str</code></dt>
+<dd>For raw/processed data, this is the facility
+where the data qas taken. Other data types may have different
+values here</dd>
+<dt><strong><code>site</code></strong> :&ensp;<code>str</code></dt>
+<dd>name of computing facility where the data is located</dd>
+<dt><strong><code>fileFormat</code></strong> :&ensp;<code>str</code></dt>
+<dd>descriptive name of format; key must be in
+<code>CDMSDataset.fileFormats</code></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CDMSFetchError(CDMSDataset):
+    &#34;&#34;&#34; Class to report information about fetch errors that may not result in
+    sensible datasets.
+    Args:
+        request: The original request (usually a string) that caused the error
+        fetchError (str): Description of the error
+    &#34;&#34;&#34;
+    def __init__(self, request, error):
+        super().__init__(None, None, None, None, None)
+        self.fetchRequest = request
+        self.fetchError = error
+
+    def __str__(self):
+        return self.fetchRequest
+
+    def __repr__(self):
+        return &#39;&lt;CDMSFetchError Class,&#39;+self.fetchError+&#39;&gt;&#39;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset">CDMSDataset</a></b></code>:
+<ul class="hlist">
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileFormats">fileFormats</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset.fileTypes">fileTypes</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset.findLocation">findLocation</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset.fromDataset">fromDataset</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset.getSitePaths">getSitePaths</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.info" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset.info">info</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset.locationPk">locationPk</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset.setFileFormat">setFileFormat</a></code></li>
+<li><code><a title="CDMSDataCatalog.CDMSDataset.CDMSDataset.size" href="CDMSDataset.html#CDMSDataCatalog.CDMSDataset.CDMSDataset.size">size</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="CDMSDataCatalog" href="index.html">CDMSDataCatalog</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="CDMSDataCatalog.fetch.download_rsync" href="#CDMSDataCatalog.fetch.download_rsync">download_rsync</a></code></li>
+<li><code><a title="CDMSDataCatalog.fetch.download_web" href="#CDMSDataCatalog.fetch.download_web">download_web</a></code></li>
+<li><code><a title="CDMSDataCatalog.fetch.fetchdata" href="#CDMSDataCatalog.fetch.fetchdata">fetchdata</a></code></li>
+<li><code><a title="CDMSDataCatalog.fetch.get_default_fetchdir" href="#CDMSDataCatalog.fetch.get_default_fetchdir">get_default_fetchdir</a></code></li>
+<li><code><a title="CDMSDataCatalog.fetch.get_fetch_path" href="#CDMSDataCatalog.fetch.get_fetch_path">get_fetch_path</a></code></li>
+<li><code><a title="CDMSDataCatalog.fetch.print_filesize" href="#CDMSDataCatalog.fetch.print_filesize">print_filesize</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="CDMSDataCatalog.fetch.CDMSFetchError" href="#CDMSDataCatalog.fetch.CDMSFetchError">CDMSFetchError</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
