@@ -282,22 +282,36 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
         # tqdm gives nice progress bars
         with tqdm(total=dlsize, desc="Total progress", position=0, unit='B',
                   unit_scale=True, unit_divisor=1024) as pbar:
+
+            pbar.abort = False
+            def _callback(n=1):
+                """wrap tqdm.update with the ability to abort"""
+                if pbar.abort:
+                    raise pbar.abort
+                pbar.update(n)
+
             def _get(dataset):
                 target = get_fetch_path(dataset, dest, destRelative)
                 # we need to actually do the download
                 targetDir = os.path.dirname(target)
                 try:
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
-                    download_web(dataset, target, baseurl, pbar.update)
+                    download_web(dataset, target, baseurl, _callback)
                 except BaseException as e:
                     dataset.fetchError = f"Exception during download: {e}"
                     errors.append(dataset)
                 else:
                     _check_local(dataset, errifnotfound=True)
                     
-            with ThreadPoolExecutor(max_workers=maxthreads) as pool:
-                pool.map(_get, todownload)
+            try:
+                with ThreadPoolExecutor(max_workers=maxthreads) as pool:
+                    pool.map(_get, todownload)
+            except KeyboardInterrupt as e:
+                print("Aborting download...")
+                pbar.abort = KeyboardInterrupt("User interrupted")
+
         tqdm.write("Download finished")
+    
     elif todownload:
         print("Skipping download")
         for dataset in todownload:
