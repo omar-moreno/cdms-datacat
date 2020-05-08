@@ -195,9 +195,8 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
     # to lists of their own. First step is to flatten everything into a single
     # list of datasets to check and/or download
     tocheck = []
-    todownload = []
     errors = []
-    success = []
+    
     def _expand_query(request):
         if isinstance(request, str):
             if request.find('*') != -1:
@@ -234,6 +233,10 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                 raise TypeError(f"Unhandled type {type(request)} for fetch")
 
     _expand_query(path)
+
+    allresults = tocheck + errors
+    todownload = []
+    success = []
 
     # now that we have a flat list of `CDMSDataset`s, check each one
     def _check_local(dataset, errifnotfound):
@@ -302,11 +305,10 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
             errors.append(dataset)
 
     # we're finally done!
-    total = success + errors
     if errors:
-        print(f"DataCat: Failed to fetch {len(errors)}/{len(total)} datasets!",
-              file=sys.stderr)
+        print(f"DataCat: Failed to fetch {len(errors)}/{len(allresults)}",
+              "datasets!", file=sys.stderr)
         for err in errors:
             print(f"\t{str(err)}: {err.fetchError}", file=sys.stderr)
-    return total
+    return allresults
     
