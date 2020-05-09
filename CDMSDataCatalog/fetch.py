@@ -9,11 +9,12 @@ import os
 import requests
 import subprocess
 import sys
+import logging
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from .CDMSDataset import CDMSDataset
 
-
+log = logging.getLogger(__name__)
 
 class CDMSFetchError(CDMSDataset):
     """ Class to report information about fetch errors that may not result in
@@ -140,7 +141,7 @@ def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
 
 
 def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
-              maxthreads=None):
+              maxthreads=None, force=False):
     """Download a copy of the files pointed by path to the local system, only
     if it is not already found.
 
@@ -172,6 +173,9 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
 
       maxthreads (int): If a `path` expands to more than a single dataset, use
                         up to `maxthreads` simultaneous download connections
+      force (bool): If True and a file is found but is bad (usually has wrong
+                    size due to a cancelled download), delete the original 
+                    and attempt to download again
     Returns:
       list: A flat list of CDMSDataset objects retrieved. The `filePath`
             attribute on each object will be set to the found/downloaded file
@@ -246,8 +250,11 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
             if targetexists:
                 size = os.path.getsize(target)
                 if dataset.size and size != dataset.size:
-                    dataset.fetchError = f"File '{target}' size mismatch"
-                    errors.append(dataset)
+                    if force and not errifnotfound:
+                        todownload.append(dataset)
+                    else:
+                        dataset.fetchError = f"File '{target}' size mismatch"
+                        errors.append(dataset)
                 else:
                     dataset.filePath = target
                     success.append(dataset)
@@ -291,25 +298,31 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                 pbar.update(n)
 
             def _get(dataset):
-                target = get_fetch_path(dataset, dest, destRelative)
-                # we need to actually do the download
-                targetDir = os.path.dirname(target)
                 try:
+                    #fail fast in case we've gotten an abort request
+                    _callback(0)
+                    target = get_fetch_path(dataset, dest, destRelative)
+                    # we need to actually do the download
+                    targetDir = os.path.dirname(target)
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
                     download_web(dataset, target, baseurl, _callback)
                 except BaseException as e:
                     dataset.fetchError = f"Exception during download: {e}"
-                    errors.append(dataset)
-                else:
-                    _check_local(dataset, errifnotfound=True)
-                    
+                return dataset
+            
+            pool = ThreadPoolExecutor(max_workers=maxthreads)
+            dls = pool.map(_get, todownload)
             try:
-                with ThreadPoolExecutor(max_workers=maxthreads) as pool:
-                    pool.map(_get, todownload)
+                pool.shutdown()
             except KeyboardInterrupt as e:
                 print("Aborting download...")
                 pbar.abort = KeyboardInterrupt("User interrupted")
-
+            for dl in dls:
+                if dl.fetchError:
+                    errors.append(dl)
+                else:
+                    _check_local(dl, errifnotfound=True)
+                
         tqdm.write("Download finished")
     
     elif todownload:
@@ -320,9 +333,8 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
 
     # we're finally done!
     if errors:
-        print(f"DataCat: Failed to fetch {len(errors)}/{len(allresults)}",
-              "datasets!", file=sys.stderr)
-        for err in errors:
-            print(f"\t{str(err)}: {err.fetchError}", file=sys.stderr)
+        log.warn(f"DataCat WARNING: Failed to fetch {len(errors)}/{len(allresults)} datasets!")
+        #for err in errors:
+            #warn(f"\t{str(err)}: {err.fetchError}")
     return allresults
     
