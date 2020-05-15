@@ -17,6 +17,10 @@ relevant python environment):
 python3 -m pdoc3 --html CDMSDataCatalog
 ```
 
+The latest API documentation is hosted at https://www.slac.stanford.edu/exp/cdms/software/releasedocs/latest/cdmspython-0.6.1/CDMSDataCatalog/.
+
+In addition, there is documentation for the DataCat package on Confluence at https://confluence.slac.stanford.edu/display/CDMS/SuperCDMS+Data+Catalog.
+
 Usage
 --------
 In most cases, especially if working at an adminstered CDMS site, you can and
