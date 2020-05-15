@@ -7,6 +7,16 @@ Installation
 Note: This command assumes that you have your ssh config setup as the following link suggests:
 [SSH Config Setup](http://titus.stanford.edu:8080/git/blob/?f=ssh_SUF.md&r=cdms_docs.git&h=master)
 
+For use on SLAC server (or any server with CVMFS mounted):
+	
+	Step 1) Check the version(s) mounted using:
+		`/cvmfs/cdms.opensciencegrid.org/setup_cdms.sh -L`
+
+	Step 2) Using the version you'd like, enter:
+		`source /cvmfs/cdms.opensciencegrid.org/setup_cdms.sh V03-00`
+		
+	Step 3) All good to go!
+
 Documentation
 -------------
 Documentation is mostly in the docstrings of the relevant classes and methods.
