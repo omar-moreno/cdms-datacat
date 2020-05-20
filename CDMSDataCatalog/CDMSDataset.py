@@ -31,7 +31,7 @@ class CDMSDataset:
     fileFormats = {'m': 'm', 'mat': 'mat', 'root': 'root', 'txt': 'txt',
                    'epot': 'mat', 'supersim': 'root', 'png': 'png',
                    'pdf': 'pdf', 'midas': 'midas', 'cdmsraw': 'cdmsraw',
-                   'numpy': 'npz', 'pickle': 'pickle', 'error':None, None:None}
+                   'numpy': 'npz', 'pickle': 'pickle','hdf5':'hdf5', 'error':None, None:None}
     """ List of allowed file formats (map type: suffix) """
     
 
@@ -347,6 +347,36 @@ class RawData(CDMSDataset):
         self.metadata["nEvEORTS"] = int(nEventsEORTS)
         self.metadata["CommentStart"] = commentStart
         self.metadata["CommentEnd"] = commentEnd
+        self.metadata["nIsJunk"] = int(nIsJunk)
+
+class ContinuousRaw(CDMSDataset):
+
+    def __init__(self,
+                 fileName,
+                 filePath,
+                 facility,
+                 nFridgeRun,
+                 nDataType,
+                 series,
+                 nEventsAll,
+                 nIsJunk,
+                 dataLocation = 'SLAC',
+                 fileFormat = 'hdf5',
+                 commentStart = 'None',
+                 commendEnd = 'None'):
+        '''
+        Constructor for raw data taken with continuous DAQ
+        '''
+
+        #Instantiate CDMSDataset Base Object
+        CDMSDataset.__init__(self, fileName, filePath, Facility, dataLocation, FileFormat)
+
+        self.relativepath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
+
+        self.metadata["nFridgeRun"] = int(nFridgeRun)
+        self.metadata["nDataType"] = int(nDataType)
+        self.metadata["Series"] = series
+        self.metadata["nEvAll"] = int(nEventsAll)
         self.metadata["nIsJunk"] = int(nIsJunk)
 
 class ProcessedData(CDMSDataset):
