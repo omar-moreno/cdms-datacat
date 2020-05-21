@@ -25,7 +25,9 @@ class CDMSDataset:
                  'txt': 'CDMSTXT', 'png': 'CDMSDMCPNG', 'epot': 'CDMSEPOT',
                  'supersim': 'CDMSHISTOGRAMS', 'midas': 'CDMSMIDAS',
                  'cdmsraw': 'CDMSSOUDANRAW', 'numpy': 'CDMSNUMPY',
-                 'pickle': 'CDMSPICKLE', 'error':'ERROR', None:'ERROR'}
+                 'pickle': 'CDMSPICKLE', 'hdf5':'CDMSHDF5',
+                 'error':'ERROR', None:'ERROR'}
+
     """ List of allowed file types """
     
     fileFormats = {'m': 'm', 'mat': 'mat', 'root': 'root', 'txt': 'txt',
@@ -358,7 +360,6 @@ class ContinuousRaw(CDMSDataset):
                  nFridgeRun,
                  nDataType,
                  series,
-                 nEventsAll,
                  nIsJunk,
                  dataLocation = 'SLAC',
                  fileFormat = 'hdf5',
@@ -369,14 +370,13 @@ class ContinuousRaw(CDMSDataset):
         '''
 
         #Instantiate CDMSDataset Base Object
-        CDMSDataset.__init__(self, fileName, filePath, Facility, dataLocation, FileFormat)
+        CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation, fileFormat)
 
-        self.relativepath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
+        self.relativePath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
 
         self.metadata["nFridgeRun"] = int(nFridgeRun)
         self.metadata["nDataType"] = int(nDataType)
         self.metadata["Series"] = series
-        self.metadata["nEvAll"] = int(nEventsAll)
         self.metadata["nIsJunk"] = int(nIsJunk)
 
 class ProcessedData(CDMSDataset):
