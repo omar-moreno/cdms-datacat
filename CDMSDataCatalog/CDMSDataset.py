@@ -351,7 +351,7 @@ class RawData(CDMSDataset):
         self.metadata["CommentEnd"] = commentEnd
         self.metadata["nIsJunk"] = int(nIsJunk)
 
-class ContinuousRaw(CDMSDataset):
+class ContinuousRawData(CDMSDataset):
 
     def __init__(self,
                  fileName,

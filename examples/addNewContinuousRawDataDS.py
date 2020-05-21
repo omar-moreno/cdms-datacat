@@ -12,7 +12,7 @@ fileName = '20200210151921_0.hdf5'
 filePath = os.path.join(basePath, fileName)
 
 #Creates a the dataset object
-ds = ContinuousRaw(fileName,filePath,'NEXUS', 4, 0, '25200210_151921',0)
+ds = ContinuousRawData(fileName,filePath,'NEXUS', 4, 0, '25200210_151921',0)
 
 #output name of dataset
 print(ds) # or print ds.datasetName
