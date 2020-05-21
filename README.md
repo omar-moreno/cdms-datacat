@@ -8,14 +8,19 @@ Note: This command assumes that you have your ssh config setup as the following 
 [SSH Config Setup](http://titus.stanford.edu:8080/git/blob/?f=ssh_SUF.md&r=cdms_docs.git&h=master)
 
 For use on SLAC server (or any server with CVMFS mounted):
-	
-	Step 1) Check the version(s) mounted using:
-		`/cvmfs/cdms.opensciencegrid.org/setup_cdms.sh -L`
 
-	Step 2) Using the version you'd like, enter:
-		`source /cvmfs/cdms.opensciencegrid.org/setup_cdms.sh V03-00`
-		
-	Step 3) All good to go!
+Step 1) Check the version(s) mounted using:
+
+```
+/cvmfs/cdms.opensciencegrid.org/setup_cdms.sh -L 
+```
+
+Step 2) Using the version you'd like, enter:
+```
+source /cvmfs/cdms.opensciencegrid.org/setup_cdms.sh V03-00`
+```
+
+Step 3) All good to go!
 
 Documentation
 -------------
@@ -50,4 +55,12 @@ For examples of workflow to insert new datasets, see the
 [pipeline_proc repo](http://titus.stanford.edu:8080/git/summary/?r=Reconstruction/pipeline_proc.git).
 
 
+Development
+------------
+For development, clone the repository locally, then install the package using this command, within the DataCat directory (on local computer).
 
+```
+pip install --user --edit .
+```
+
+If you change your code, the 'build' is updated automatically, allowing you to run your update without having to rebuild the package
