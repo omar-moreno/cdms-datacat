@@ -18,8 +18,9 @@ def continuousRawDataRegister(typeData, fileName, filePath, facility, nFridgeRun
 			      	       nDataType,
 			   	       Series,
 			     	       nIsJunk)
-		print(ds.info())
-		#dc.add(ds)
+		print('')
+		ds.info()
+		dc.add(ds)
 
 #Metadata that is used to register continuous raw data
 filePath = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/NEXUS/R4/Raw/25200210_151921/'
