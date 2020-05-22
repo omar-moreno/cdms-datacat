@@ -21,4 +21,4 @@ print(ds) # or print ds.datasetName
 ds.info()
 
 #add to the data catalog
-#dc.add(ds)
+dc.add(ds)
