@@ -9,7 +9,7 @@ from CDMSDataCatalog import *
 dc = CDMSDataCatalog()
 
 #Create a function to register the data 
-def registerData(typeData, fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk):
+def continuousRawDataRegister(typeData, fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk):
 	if typeData.lower() == 'continuous':
 		ds = ContinuousRawData(fileName,
 				       filePath,
@@ -21,33 +21,29 @@ def registerData(typeData, fileName, filePath, facility, nFridgeRun, nDataType, 
 		print(ds.info())
 		#dc.add(ds)
 
-#Filepath & File format we want to look at
+#Metadata that is used to register continuous raw data
 filePath = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/NEXUS/R4/Raw/25200210_151921/'
-
 fileFormat = 'hdf5'
-
 fileFacility = 'NEXUS'
-
 nFridgeRun = 4
-
 nDataType = 0
-
 nIsJunk = 0
-
 typeData = 'Continuous'
 
 #Create globlist for every file within the directory (hence the *)
-globList = glob.glob(filePath + '*')
+globList = glob.glob(filePath + '*.' + fileFormat)
 
 #Print out the name of the files in globList
 for fileP in globList:
-	if fileP.endswith(fileFormat):
-		name = os.path.basename(fileP)
-		pathName = os.path.dirname(fileP)
-		
-		series = os.path.basename(pathName)
-		
-		registerData(typeData, name, fileP, fileFacility, nFridgeRun, nDataType, series, nIsJunk)
+    #Gets the filename
+    name = os.path.basename(fileP)
+
+    #Gets the series information
+    pathName = os.path.dirname(fileP)
+    series = os.path.basename(pathName)
+    
+    #Registers the data
+    continuousRawDataRegister(typeData, name, fileP, fileFacility, nFridgeRun, nDataType, series, nIsJunk)
 
 #Thats it
 
