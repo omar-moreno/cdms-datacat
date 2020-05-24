@@ -378,6 +378,8 @@ class ContinuousRawData(CDMSDataset):
         self.metadata["nDataType"] = int(nDataType)
         self.metadata["Series"] = series
         self.metadata["nIsJunk"] = int(nIsJunk)
+	self.metadata["commentStart"] = commentStart
+	self.metadata["commentEnd"] = commentEnd
 
 class ProcessedData(CDMSDataset):
 
