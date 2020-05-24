@@ -364,7 +364,7 @@ class ContinuousRawData(CDMSDataset):
                  dataLocation = 'SLAC',
                  fileFormat = 'hdf5',
                  commentStart = 'None',
-                 commendEnd = 'None'):
+                 commentEnd = 'None'):
         '''
         Constructor for raw data taken with continuous DAQ
         '''
