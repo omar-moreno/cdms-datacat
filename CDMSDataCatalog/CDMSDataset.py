@@ -353,31 +353,31 @@ class RawData(CDMSDataset):
 
 class ContinuousRawData(CDMSDataset):
 
-    def __init__(self,
-                 fileName,
-                 filePath,
-                 facility,
-                 nFridgeRun,
-                 nDataType,
-                 series,
-                 nIsJunk,
-                 dataLocation = 'SLAC',
-                 fileFormat = 'hdf5',
-                 commentStart = 'None',
-                 commentEnd = 'None'):
-        '''
-        Constructor for raw data taken with continuous DAQ
-        '''
+	def __init__(self,
+		fileName,
+		filePath,
+		facility,
+		nFridgeRun,
+		nDataType,
+		series,
+		nIsJunk,
+		dataLocation = 'SLAC',
+		fileFormat = 'hdf5',
+		commentStart = 'None',
+		commentEnd = 'None'):
+		
+		'''
+		Constructor for raw data taken with continuous DAQ
+		'''
 
         #Instantiate CDMSDataset Base Object
-        CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation, fileFormat)
+	CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation, fileFormat)
 
-        self.relativePath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
-
-        self.metadata["nFridgeRun"] = int(nFridgeRun)
-        self.metadata["nDataType"] = int(nDataType)
-        self.metadata["Series"] = series
-        self.metadata["nIsJunk"] = int(nIsJunk)
+	self.relativePath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
+	self.metadata["nFridgeRun"] = int(nFridgeRun)
+	self.metadata["nDataType"] = int(nDataType)
+	self.metadata["Series"] = series
+	self.metadata["nIsJunk"] = int(nIsJunk)
 	self.metadata["commentStart"] = commentStart
 	self.metadata["commentEnd"] = commentEnd
 
