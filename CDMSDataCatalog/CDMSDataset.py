@@ -370,16 +370,17 @@ class ContinuousRawData(CDMSDataset):
 		Constructor for raw data taken with continuous DAQ
 		'''
 
-        #Instantiate CDMSDataset Base Object
-	CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation, fileFormat)
+        	#Instantiate CDMSDataset Base Object
+		CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation, fileFormat)
 
-	self.relativePath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
-	self.metadata["nFridgeRun"] = int(nFridgeRun)
-	self.metadata["nDataType"] = int(nDataType)
-	self.metadata["Series"] = series
-	self.metadata["nIsJunk"] = int(nIsJunk)
-	self.metadata["commentStart"] = commentStart
-	self.metadata["commentEnd"] = commentEnd
+		self.relativePath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
+		self.metadata["nFridgeRun"] = int(nFridgeRun)
+		self.metadata["nDataType"] = int(nDataType)
+		self.metadata["Series"] = series
+		self.metadata["nIsJunk"] = int(nIsJunk)
+		self.metadata["CommentStart"] = commentStart
+		self.metadata["CommentEnd"] = commentEnd
+
 
 class ProcessedData(CDMSDataset):
 
