@@ -99,7 +99,7 @@ def is_simple_arg(val, allowstar=True, allownone=True):
         return allownone
     elif (isinstance(val, str) and (val.find('*') != -1 or
                                     val.find('[') != -1)    ):
-        return false
+        return False
     return isinstance(val, (str, int, float))
         
 
