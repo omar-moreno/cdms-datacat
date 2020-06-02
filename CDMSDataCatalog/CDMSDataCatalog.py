@@ -301,8 +301,8 @@ class CDMSDataCatalog:
 
         # for each parameter, if it is a special query argument, replace
         # with '*' in the path
-        def checksimple(param_, name_, query_):
-            if not paths.is_simple_arg(param_):
+        def checksimple(param_, name_, query_, force=False):
+            if force or not paths.is_simple_arg(param_):
                 query.append(paths.build_query_phrase(name_, param_))
                 return '*'
             return param_
@@ -319,8 +319,10 @@ class CDMSDataCatalog:
         ProdType = checksimple(ProdType, 'ProdType', query)
         ProdTag = checksimple(ProdTag, 'ProdTag', query)
         nMergeLevel = checksimple(nMergeLevel, 'nMergeLevel', query)
-        Series = checksimple(Series, 'Series', query)
-        ProdStep = checksimple(ProdStep, 'ProdStep', query)
+        Series = checksimple(Series, 'Series', query,
+                             force=Series is not None)
+        ProdStep = checksimple(ProdStep, 'ProdStep', query,
+                               force=ProdStep is not None)
 
         path = paths.getpath_data(Facility, nFridgeRun, ProdType, ProdTag, 
                                   nMergeLevel, Series, ProdStep, filename)
