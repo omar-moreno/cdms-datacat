@@ -64,3 +64,5 @@ pip install --user --edit .
 ```
 
 If you change your code, the 'build' is updated automatically, allowing you to run your update without having to rebuild the package
+
+Use git flow while working on this repository.
