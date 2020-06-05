@@ -25,15 +25,18 @@ class CDMSDataset:
                  'txt': 'CDMSTXT', 'png': 'CDMSDMCPNG', 'epot': 'CDMSEPOT',
                  'supersim': 'CDMSHISTOGRAMS', 'midas': 'CDMSMIDAS',
                  'cdmsraw': 'CDMSSOUDANRAW', 'numpy': 'CDMSNUMPY',
-                 'pickle': 'CDMSPICKLE', 'hdf5':'CDMSHDF5',
-                 'error':'ERROR', None:'ERROR'}
+                 'pickle': 'CDMSPICKLE', 'hdf5': 'CDMSHDF5',
+                 'pmtroot': 'CDMSPMTROOT',
+                 'error': 'ERROR', None:'ERROR'}
 
     """ List of allowed file types """
     
     fileFormats = {'m': 'm', 'mat': 'mat', 'root': 'root', 'txt': 'txt',
                    'epot': 'mat', 'supersim': 'root', 'png': 'png',
                    'pdf': 'pdf', 'midas': 'midas', 'cdmsraw': 'cdmsraw',
-                   'numpy': 'npz', 'pickle': 'pickle','hdf5':'hdf5', 'error':None, None:None}
+                   'numpy': 'npz', 'pickle': 'pickle','hdf5':'hdf5',
+                   'pmtroot': 'root',
+                   'error':None, None:None}
     """ List of allowed file formats (map type: suffix) """
     
 
@@ -370,7 +373,7 @@ class ContinuousRawData(CDMSDataset):
 		Constructor for raw data taken with continuous DAQ
 		'''
 
-        	#Instantiate CDMSDataset Base Object
+        #Instantiate CDMSDataset Base Object
 		CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation, fileFormat)
 
 		self.relativePath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
