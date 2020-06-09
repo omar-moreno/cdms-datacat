@@ -40,24 +40,28 @@ def copyThatFile(orig, dest, oDir):
     #Reads through the 'dated' directory (eg: 20190401)
     
     for i in oDir:
-        #for each item in oDir, get the pathname 
-        dirPath = os.path.join(orig, i)
-        if os.path.isdir(dirPath):
-            #if its a directory, get the list of subdirectories within it
-            topDirList = os.listdir(path = dirPath)
+        if i.startswith("2019"):
+            #for each item in oDir, get the pathname 
+            dirPath = os.path.join(orig, i)
+            if os.path.isdir(dirPath):
+                #if its a directory, get the list of subdirectories within it
+                topDirList = os.listdir(path = dirPath)
             
-            for stuff in topDirList:
-                #for stuff in the topDirList create a not-so-series path, and a not-so-series basename
-                notSeriesPath = os.path.join(dirPath, stuff)
-                notSeriesName = os.path.basename(notSeriesPath)
-                
-                if os.path.isdir(notSeriesPath):
-                    #if stuff is a  directory, for each item in topDir, create series names
+                for stuff in topDirList:
+                    #for stuff in the topDirList create a not-so-series path, and a not-so-series basename
+                    notSeriesPath = os.path.join(dirPath, stuff)
+                    notSeriesName = os.path.basename(notSeriesPath)
                     
-                    series = SeriesRename('27', notSeriesName)
-                    seriesPath = os.path.join(dest, series)
-                    print(series)
-                    shutil.copytree(notSeriesPath, seriesPath)
+                    if os.path.isdir(notSeriesPath):
+                        #if stuff is a  directory, for each item in topDir, create series names
+                    
+                        series = SeriesRename('27', notSeriesName)
+                        seriesPath = os.path.join(dest, series)
+                        
+                        print("Working on series: ", series)
+                        print("Series origin path: ", notSeriesPath)
+
+                        shutil.copytree(notSeriesPath, seriesPath)
 
 #Get the list of all directories within the original directory
 oDirs1 = os.listdir(path = orig1)
@@ -65,6 +69,6 @@ oDirs2 = os.listdir(path = orig2)
 oDirs3 = os.listdir(path = orig3)
 
 #List the paths of all directories
-copyThatFile(orig1, new1, oDirs1)
+copyThatFile(orig2, new2, oDirs2)
 
 print("All done!")
