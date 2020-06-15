@@ -11,6 +11,7 @@
 #Import modules needed
 import os, shutil
 import pandas as pd
+import filecmp
 
 #Specify all original, and new paths
 #Original
@@ -33,13 +34,15 @@ def SeriesRename(facility, notSeries):
 
     return series
 
-def copyThatFile(orig, dest, theFileName, CSV):
+def checkThatFile(orig, dest):
     '''
     copies the directories from one place to another!
     '''
 
+    finalFileList = []
+
     #Reads through the 'dated' directory (eg: 20190401)
-    
+    oDir = os.listdir(path = orig)
     for i in oDir:
         if i.startswith("2019"):
             #for each item in oDir, get the pathname 
@@ -59,33 +62,36 @@ def copyThatFile(orig, dest, theFileName, CSV):
                             series = SeriesRename('27', notSeriesName)
                             seriesPath = os.path.join(dest, series)
                             
-                            #If the we need a new CSV File (Because it doesnt exist...)
-                            if CSV:
-                                print("Working on series: ", series)
-                                print("Series Origin Path ", notSeriesPath)
-                                
-                                df = pd.read_csv(theFileName)
+                            oldFileNameList = os.listdir(path = notSeriesPath)
+                            
+                            oldFileNamePaths = [os.path.join(notSeriesPath, thisfile) for thisfile in oldFileNameList]
+                            newFileNamePaths = [os.path.join(seriesPath, thisfile) for thisfile in oldFileNameList]
 
-                                if seriesPath in df.Series:
-                                    print(f"File at {series} Exists!")
+                            oldandnewzip = zip(oldFileNamePaths, newFileNamePaths)
+                            oldandnewtuple = tuple(oldandnewzip)
+                            
+                            finalFileList.extend(oldandnewtuple)
+    print(finalFileList)
 
-                                else:
-                                    print(f"File {series} doesn't exist! Copying!")
-                                    
-                                    #shutil.copytree(notSeriesPath, seriesPath)
-
-                            else:
-                                newDFDict = { 'Series' : [seriesPath] }
-                                newDF = pd.DataFrame(newDFDict)
-                                newDF.to_csv(theFileName)
+    return finalFileList
 
 #Get the list of all directories within the original directory
 oDirs1 = os.listdir(path = orig1)
 oDirs2 = os.listdir(path = orig2)
 oDirs3 = os.listdir(path = orig3)
 
-filename = 'fileExistsAR70.csv'
+filename = 'fileListAR70.csv'
 
-copyThatFile(orig2, new2, oDirs2, filename, CSV = os.path.isfile(filename))
+if os.path.exists(filename):
+    #If the file exists, then we'll bring in its data
+    pass
+else:
+    #Creates a list of files, old & new!
+    #fileList = checkThatFile(orig2, new2)
+    fileList = [('file', 'lol'), ('haha', 'lol!!!')]
+
+    df = pd.DataFrame(fileList, columns = ['OldFile', 'NewFile'])
+
+    df.to_csv(filename, index = False)
 
 print("All done!")
