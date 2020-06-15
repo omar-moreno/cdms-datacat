@@ -42,30 +42,22 @@ class copyFiles:
         self.newpath = new
         self.walkdir(self.origpath)
 
-    def walkdir(self,currentPath):
+    def forDir(self, origdir):
         '''
-        Returns a list of subdirectories of a directory
+        Function for copyFiles class that returns the 
         '''
-        subdirs = []
-        if os.path.isdir(currentPath):
-            #If it leads to a directory...
-            for i in os.listdir(path = currentPath):
-                #This is the path to the subdirectory
-                pathtosub = os.path.join(currentPath, i)
-                subdirs.append(pathtosub)
-            return subdirs
-        else:
-            #If it leads to a file
-            return subdirs
+        for path in origdir:
+            
 
-    def copyFile(self):
-        '''
-        Copies over the file, and makes sure that it doesnt already exist, if it does, it will skip over it
-        '''
-        pass
+    def walkdir(self, path):
+        self.odir = os.listdir(path = path)
+        return self.odir
+        
 
 def main():
     copy = copyFiles(orig1, new1)
+    jimmy = copyFiles(orig1, new1)
+    jimmy.forDir()
 
 if __name__ == "__main__":
     main()

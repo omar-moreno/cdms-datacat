@@ -10,6 +10,9 @@
 
 #Import modules needed
 import os, shutil
+import pandas as pd
+
+df = pd. 
 
 #Specify all original, and new paths
 #Original
@@ -55,20 +58,31 @@ def copyThatFile(orig, dest, oDir):
                     if os.path.isdir(notSeriesPath):
                         #if stuff is a  directory, for each item in topDir, create series names
                     
-                        series = SeriesRename('27', notSeriesName)
-                        seriesPath = os.path.join(dest, series)
+                            series = SeriesRename('27', notSeriesName)
+                            seriesPath = os.path.join(dest, series)
                         
-                        print("Working on series: ", series)
-                        print("Series origin path: ", notSeriesPath)
+                            print("Working on series: ", series)
+                            print("Series origin path: ", notSeriesPath)
 
-                        shutil.copytree(notSeriesPath, seriesPath)
+                            #shutil.copytree(notSeriesPath, seriesPath)
+
+def DFStuff(Series = "create"):
+    '''
+    This function interacts for all pandas things
+    
+    Parameter exceptioms:
+        create:
+            Creates the pandas dataframe
+    '''
 
 #Get the list of all directories within the original directory
 oDirs1 = os.listdir(path = orig1)
 oDirs2 = os.listdir(path = orig2)
 oDirs3 = os.listdir(path = orig3)
 
-#List the paths of all directories
-copyThatFile(orig2, new2, oDirs2)
+if os.path.exists("filenamecheck.csv"):
+        else:
+            
+            copyThatFile(orig2, new2, oDirs2)
 
-print("All done!")
+print("Alil done!")
