@@ -12,7 +12,6 @@
 import os, shutil
 import pandas as pd
 
-df = pd. 
 
 #Specify all original, and new paths
 #Original
@@ -35,7 +34,7 @@ def SeriesRename(facility, notSeries):
 
     return series
 
-def copyThatFile(orig, dest, oDir):
+def copyThatFile(orig, dest, theFileName, CSV = True):
     '''
     copies the directories from one place to another!
     '''
@@ -60,29 +59,36 @@ def copyThatFile(orig, dest, oDir):
                     
                             series = SeriesRename('27', notSeriesName)
                             seriesPath = os.path.join(dest, series)
-                        
-                            print("Working on series: ", series)
-                            print("Series origin path: ", notSeriesPath)
+                            
+                            #If the we need a new CSV File (Because it doesnt exist...)
+                            if CSV:
+                                print("Working on series: ", series)
+                                print("Series Origin Path ", notSeriesPath)
+                                
+                                df = pd.read_csv(theFileName)
 
-                            #shutil.copytree(notSeriesPath, seriesPath)
+                                if seriesPath in df.Series:
+                                    print(f"File at {series} Exists!")
 
-def DFStuff(Series = "create"):
-    '''
-    This function interacts for all pandas things
-    
-    Parameter exceptioms:
-        create:
-            Creates the pandas dataframe
-    '''
+                                    #shutil.copytree(notSeriesPath, seriesPath)
+
+                                else:
+                                    print(f"File {series} doesn't exist! Copying!")
+                                    
+                                    #shutil.copytree(notSeriesPath, seriesPath)
+
+                            else:
+                                newDFDict = { 'Series' : [seriesPath] }
+                                newDF = pd.DataFrame(newDFDict)
+                                newDF.to_csv(theFileName)
 
 #Get the list of all directories within the original directory
 oDirs1 = os.listdir(path = orig1)
 oDirs2 = os.listdir(path = orig2)
 oDirs3 = os.listdir(path = orig3)
 
-if os.path.exists("filenamecheck.csv"):
-        else:
-            
-            copyThatFile(orig2, new2, oDirs2)
+filename = 'fileExistsAR70.csv'
 
-print("Alil done!")
+copyThatFile(orig2, new2, oDirs2, filename, CSV = os.path.isfile(filename))
+
+print("All done!")
