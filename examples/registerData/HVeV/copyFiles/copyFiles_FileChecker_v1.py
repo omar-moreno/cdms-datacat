@@ -12,7 +12,6 @@
 import os, shutil
 import pandas as pd
 
-
 #Specify all original, and new paths
 #Original
 orig1 = '/nfs/slac/g/supercdms/tf/northwestern/AnimalData/AR68dm/'
