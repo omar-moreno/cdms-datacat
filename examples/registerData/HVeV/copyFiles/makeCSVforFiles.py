@@ -80,11 +80,12 @@ oDirs1 = os.listdir(path = orig1)
 oDirs2 = os.listdir(path = orig2)
 oDirs3 = os.listdir(path = orig3)
 
-filename = 'fileListAR70.csv'
+fileCheckPath = 'fileChecks/fileListAR70.csv'
 
-if os.path.exists(filename):
+if os.path.exists(fileCheckPath):
     #If the file exists, then we'll bring in its data
-    pass
+    df = pd.read_csv(fileCheckPath)
+    
 else:
     #Creates a list of files, old & new!
     #fileList = checkThatFile(orig2, new2)
@@ -92,6 +93,11 @@ else:
 
     df = pd.DataFrame(fileList, columns = ['OldFile', 'NewFile'])
 
-    df.to_csv(filename, index = False)
+    df.to_csv(fileCheckPath, index = False)
+
+#Example on how to iterate through the dataframe!
+#Iterate through each row to do the thing we want to do!
+#for index, row in df.iterrows():
+#    print(row['OldFile'], row['NewFile'])
 
 print("All done!")
