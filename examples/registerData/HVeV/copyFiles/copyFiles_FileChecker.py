@@ -34,7 +34,7 @@ def SeriesRename(facility, notSeries):
 
     return series
 
-def copyThatFile(orig, dest, theFileName, CSV = True):
+def copyThatFile(orig, dest, theFileName, CSV):
     '''
     copies the directories from one place to another!
     '''
@@ -69,8 +69,6 @@ def copyThatFile(orig, dest, theFileName, CSV = True):
 
                                 if seriesPath in df.Series:
                                     print(f"File at {series} Exists!")
-
-                                    #shutil.copytree(notSeriesPath, seriesPath)
 
                                 else:
                                     print(f"File {series} doesn't exist! Copying!")
