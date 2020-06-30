@@ -11,6 +11,17 @@ CSVPath = 'fileChecks/fileListAR68dm.csv'
 #Create a dataframe from it!
 df = pd.read_csv(CSVPath)
 
+def SeriesRename(notSeries, facility = '27'):
+    '''
+    It renames the not-so-series to a standard series number
+    '''
+
+    date = notSeries[2:8]
+    hhmmss = notSeries[8:14]
+    series = facility + date + '_' + hhmmss
+
+    return series
+
 #itereate through each row
 for index, row in df.iterrows():
     #Get the oldpath, newpath, and series
@@ -31,14 +42,28 @@ for index, row in df.iterrows():
         
         if name.endswith(timestamp):
             rename = series + '_' + dump + '.' + fileFormat
-    
+        else:
+            #This is ready for copy command
     elif 'IV' in fileName:
         name = fileName.split('.')[0]
+        fileFormat = fileName.split('.')[1]
         if name.endswith(timestamp):
-            print(fileName)
+            seriesName = SeriesRename(fileName[2:]) + '.' + fileFormat
+            seriesPath = os.path.join(dirPath, seriesName)
+            #This is ready for copy command
     
     else:
         name = fileName.split('.')[0]
+        fileFormat = fileName.split('.')[1]
         if name.endswith(timestamp):
-            pass
-        
+            seriesName = SeriesRename(fileName) + '.' + fileFormat
+            seriesPath = os.path.join(dirPath, seriesName)
+            #This is ready for copy command
+        else:
+            seriesName = SeriesRename(fileName) + '.' + fileFormat
+            seriesPath = os.path.join(dirPath, seriesName)
+            
+            #print(seriesName, 'is not in the right timestamp zone!')
+            #print('Belongs in :', series)
+
+            #questioning what to do here! it's the last piece to the puzzle!
