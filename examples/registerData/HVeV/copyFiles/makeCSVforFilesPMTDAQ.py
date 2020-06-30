@@ -11,7 +11,6 @@
 #Import modules needed
 import os, shutil
 import pandas as pd
-import filecmp
 
 #Specify all original, and new paths
 #Original
@@ -23,7 +22,7 @@ orig3 = '/nfs/slac/g/supercdms/tf/northwestern/AnimalData/AR70/PMTDAQ'  #This on
 new1 = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R68/Raw/'
 new2 = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R70/Raw/' #Kinda ignore the root files for now...
 
-def SeriesRename(facility, notSeries):
+def SeriesRename(notSeries, facility = '27'):
     '''
     It renames the not-so-series to a standard series number
     '''
@@ -34,69 +33,69 @@ def SeriesRename(facility, notSeries):
 
     return series
 
-def checkThatFile(orig, dest):
+def copyThatFile(orig, dest):
     '''
     copies the directories from one place to another!
     '''
-
+    #This will return a list later that has all the filepaths that we want stored :)
     finalFileList = []
 
     #Reads through the 'dated' directory (eg: 20190401)
     oDir = os.listdir(path = orig)
-    for i in oDir:
-        if i.startswith("2019"):
-            #for each item in oDir, get the pathname 
-            dirPath = os.path.join(orig, i)
-            if os.path.isdir(dirPath):
-                #if its a directory, get the list of subdirectories within it
-                topDirList = os.listdir(path = dirPath)
-            
-                for stuff in topDirList:
-                    #for stuff in the topDirList create a not-so-series path, and a not-so-series basename
-                    notSeriesPath = os.path.join(dirPath, stuff)
-                    notSeriesName = os.path.basename(notSeriesPath)
-                    
-                    if os.path.isdir(notSeriesPath):
-                        #if stuff is a  directory, for each item in topDir, create series names
-                    
-                            series = SeriesRename('27', notSeriesName)
-                            seriesPath = os.path.join(dest, series)
-                            
-                            oldFileNameList = os.listdir(path = notSeriesPath)
-                            
-                            oldFileNamePaths = [os.path.join(notSeriesPath, thisfile) for thisfile in oldFileNameList]
-                            newFileNamePaths = [os.path.join(seriesPath, thisfile) for thisfile in oldFileNameList]
 
-                            oldandnewzip = zip(oldFileNamePaths, newFileNamePaths)
-                            oldandnewtuple = tuple(oldandnewzip)
-                            
-                            finalFileList.extend(oldandnewtuple)
-    print(finalFileList)
-
-    return finalFileList
+    for direc in oDir:
+        #This is the cdmsday0... that directory!
+        #This lists out the inards of the 'top directory'
+        nestedDirPath = os.path.join(orig, direc)
+        nestedDir = os.listdir(path = nestedDirPath)
+        
+        for direc1 in nestedDir:
+            #This goes thru the directory within each of the 'top directories'
+            #And checks if there's a raw folder, if there is, it goes inside
+            if 'raw' in direc1:
+                nestedDirPath1 = os.path.join(nestedDirPath, direc1)
+                nestedDir1 = os.listdir(path = nestedDirPath1)
+                
+                for direc2 in nestedDir1:
+                    oldFileDir = os.path.join(nestedDirPath1, direc2)
+                    if 'SIS' not in direc2:
+                        #print(fileDir)
+                        #These are 'not data files' even though they are! not sure what to do here
+                        pass 
+                    else:
+                        noSISname = direc2[11:]
+                        if not noSISname.endswith('root'):
+                            print(direc2)
+                        if 'conf' not in noSISname:
+                            #This filters out the configuration files
+                            newFileName = SeriesRename(noSISname) 
+                        
+                        #These are the data files we're looking for!
+                        
+            else:
+                #print(direc1, 'is not the raw directory')
+                pass
 
 #Get the list of all directories within the original directory
 oDirs1 = os.listdir(path = orig1)
 oDirs2 = os.listdir(path = orig2)
 oDirs3 = os.listdir(path = orig3)
 
-fileCheckPath = 'fileChecks/fileListAR68dm.csv'
+#List the paths of all directories
+copyThatFile(orig3, new2)
 
+fileCheckPath = 'fileChecks/fileListPMT.csv'
+'''
 if os.path.exists(fileCheckPath):
     #If the file exists, then we'll bring in its data
     df = pd.read_csv(fileCheckPath)
     
 else:
     #Creates a list of files, old & new!
-    fileList = checkThatFile(orig1, new1)
+    fileList = checkThatFile(orig3, new2)
 
-    df = pd.DataFrame(fileList, columns = ['OldFile', 'NewFile'])
+    df = pd.DataFrame(fileList, columns = ['OldFile', 'NewFile', 'Series'])
 
     df.to_csv(fileCheckPath, index = False)
-
-#Example on how to iterate through the dataframe!
-#Iterate through each row to do the thing we want to do!
-#for index, row in df.iterrows():
-#    print(row['OldFile'], row['NewFile'])
-
+'''
 print("All done!")
