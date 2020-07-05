@@ -6,11 +6,14 @@ import os
 import shutil as sht
 
 #Which CSV files would you like to look at
-CSVPath = 'fileChecks/fileListAR68dm.csv'
+CSVPath = 'fileChecks/fileListPMTDAQ.csv'
 
 #Create a dataframe from it!
 df = pd.read_csv(CSVPath)
 
+def GeneralCommand(previousPlace, newPlace):
+    sht.copy(previousPlace, newPlace)
+    print(previousPlace, 'copied')
 def SeriesRename(notSeries, facility = '27'):
     '''
     It renames the not-so-series to a standard series number
@@ -42,28 +45,32 @@ for index, row in df.iterrows():
         
         if name.endswith(timestamp):
             rename = series + '_' + dump + '.' + fileFormat
+            newpath = os.path.join(dirPath,rename)
+            GeneralCommand(oldpath, newpath)
         else:
-            #This is ready for copy command
+            GeneralCommand(oldpath, newpath)
+    
     elif 'IV' in fileName:
         name = fileName.split('.')[0]
         fileFormat = fileName.split('.')[1]
+        
         if name.endswith(timestamp):
             seriesName = SeriesRename(fileName[2:]) + '.' + fileFormat
-            seriesPath = os.path.join(dirPath, seriesName)
-            #This is ready for copy command
+            newpath = os.path.join(dirPath, seriesName)
+            GeneralCommand(oldpath, newpath)
     
     else:
         name = fileName.split('.')[0]
         fileFormat = fileName.split('.')[1]
         if name.endswith(timestamp):
             seriesName = SeriesRename(fileName) + '.' + fileFormat
-            seriesPath = os.path.join(dirPath, seriesName)
-            #This is ready for copy command
+            newpath = os.path.join(dirPath, seriesName)
+            GeneralCommand(oldpath, newpath)
         else:
             seriesName = SeriesRename(fileName) + '.' + fileFormat
-            seriesPath = os.path.join(dirPath, seriesName)
-            
-            #print(seriesName, 'is not in the right timestamp zone!')
-            #print('Belongs in :', series)
+            newpath = os.path.join(dirPath, seriesName)
+            GeneralCommand(oldpath, newpath)
+    
 
-            #questioning what to do here! it's the last piece to the puzzle!
+
+print('All done!')
