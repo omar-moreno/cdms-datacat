@@ -6,14 +6,20 @@ import os
 import shutil as sht
 
 #Which CSV files would you like to look at
-CSVPath = 'fileChecks/fileListPMTDAQ.csv'
+CSVPath = 'fileChecks/fileListAR68dm.csv'
 
 #Create a dataframe from it!
 df = pd.read_csv(CSVPath)
 
 def GeneralCommand(previousPlace, newPlace):
-    sht.copy(previousPlace, newPlace)
+    dirpath, filename = os.path.split(newPlace)
+    if not os.path.exists(dirpath):
+        os.mkdir(dirpath)
+        print(f"{os.path.basename(dirpath)} didnt exist, now it does")
+    
+    sht.copyfile(previousPlace, newPlace)
     print(previousPlace, 'copied')
+
 def SeriesRename(notSeries, facility = '27'):
     '''
     It renames the not-so-series to a standard series number

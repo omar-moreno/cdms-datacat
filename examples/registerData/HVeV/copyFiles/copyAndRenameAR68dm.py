@@ -12,6 +12,11 @@ CSVPath = 'fileChecks/fileListAR68dm.csv'
 df = pd.read_csv(CSVPath)
 
 def GeneralCommand(previousPlace, newPlace):
+    dirpath, filename = os.path.split(newPlace)
+    if not os.path.exists(dirpath):
+        os.mkdir(dirpath)
+        print(f"{os.path.basename(dirpath)} didnt exist, now it does")
+    
     sht.copyfile(previousPlace, newPlace)
     print(previousPlace, 'copied')
 
