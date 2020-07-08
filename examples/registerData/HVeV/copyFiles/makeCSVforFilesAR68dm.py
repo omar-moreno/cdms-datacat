@@ -70,7 +70,7 @@ def checkThatFile(orig, dest):
 
                             oldandnewzip = zip(oldFileNamePaths, newFileNamePaths, seriesList)
                             oldandnewtuple = tuple(oldandnewzip)
-                            
+
                             finalFileList.extend(oldandnewtuple)
     return finalFileList
 

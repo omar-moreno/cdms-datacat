@@ -13,12 +13,8 @@ df = pd.read_csv(CSVPath)
 
 def GeneralCommand(previousPlace, newPlace):
     dirpath, filename = os.path.split(newPlace)
-    if not os.path.exists(dirpath):
-        os.mkdir(dirpath)
-        print(f"{dirpath} created")
-    
-    sht.copyfile(previousPlace, newPlace)
-    print(newPlace, 'copied')
+    if not os.path.exists(newPlace):
+        print(newPlace, 'doesnt exist!')
 
 def SeriesRename(notSeries, facility = '27'):
     '''

@@ -6,19 +6,15 @@ import os
 import shutil as sht
 
 #Which CSV files would you like to look at
-CSVPath = 'fileChecks/fileListAR70.csv'
+CSVPath = 'fileChecks/fileListAR68dm.csv'
 
 #Create a dataframe from it!
 df = pd.read_csv(CSVPath)
 
 def GeneralCommand(previousPlace, newPlace):
     dirpath, filename = os.path.split(newPlace)
-    if not os.path.exists(dirpath):
-        os.mkdir(dirpath)
-        print(f"{dirpath} created")
-    
-    sht.copyfile(previousPlace, newPlace)
-    print(newPlace, 'copied')
+    if not os.path.exists(newPlace):
+        print(newPlace, 'doesnt exists')
 
 def SeriesRename(notSeries, facility = '27'):
     '''
@@ -55,7 +51,7 @@ for index, row in df.iterrows():
             GeneralCommand(oldpath, newpath)
         else:
             GeneralCommand(oldpath, newpath)
- 
+    
     elif 'IV' in fileName:
         name = fileName.split('.')[0]
         fileFormat = fileName.split('.')[1]
@@ -76,5 +72,7 @@ for index, row in df.iterrows():
             seriesName = SeriesRename(fileName) + '.' + fileFormat
             newpath = os.path.join(dirPath, seriesName)
             GeneralCommand(oldpath, newpath)
+    
+
 
 print('All done!')
