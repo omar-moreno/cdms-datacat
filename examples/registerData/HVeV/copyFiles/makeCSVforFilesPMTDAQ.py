@@ -97,15 +97,34 @@ def renamingWeirdFiles(origpath, newpath = new2):
         series = 'PMTTest'
         newpath = os.path.join(newpath, series)
         newpath = os.path.join(newpath, basename)
-        print(newpath)
 
         return newpath
 
     elif basename.startswith('.SIS'):
-        basename = '.' + basename[12:]
-        print(basename)
+        basename = basename[12:]  #This looks like this 20190703121403_54.root.wJLEPn
+        notSeries = basename.split('_')[0]
+        dumpFormatEnding = basename.split('_')[1]
+        dump = dumpFormatEnding.split('.')[0]
+        fileFormat = dumpFormatEnding.split('.')[1]
+        weirdEnding = dumpFormatEnding.split('.')[2]
+        
+        series = SeriesRename(notSeries)
+        
+        basename = '.' + series + '_' + dump + '.' + fileFormat + '.' + weirdEnding
+        
+        newpath = os.path.join(newpath, series)
+        newpath = os.path.join(newpath, basename)
+
+        return newpath
+        
     else:
-        pass
+        series = 'PMTTest'
+
+        newpath = os.path.join(newpath, series)
+        newpath = os.path.join(newpath, basename)
+        
+        return newpath
+
 def copyThatFile(orig, dest):
     '''
     copies the directories from one place to another!
@@ -156,7 +175,7 @@ def copyThatFile(orig, dest):
                             else:
                                 #These start with a dot and usually have a weird ending
                                 myNewPath = renamingWeirdFiles(oldFileDir)
-                                #Still unsure what to do with these
+                                #This else statement is ready to add to the finalfilelist!
             else:
                 #These are the CDMSTestDaq folder...
                 #print(os.path.join(nestedDirPath,direc1)) 
