@@ -11,7 +11,7 @@ CSVPath = 'fileChecks/fileListPMTDAQ.csv'
 #Create a dataframe from it!
 df = pd.read_csv(CSVPath)
 
-def GeneralCommand(previousPlace, newPlace):
+def copyCommand(previousPlace, newPlace):
     dirpath, filename = os.path.split(newPlace)
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
@@ -26,7 +26,7 @@ for index, row in df.iterrows():
     oldpath = row['OldFile']
     newpath = row['NewFile']
    
-    GeneralCommand(oldpath, newpath)
+    copyCommand(oldpath, newpath)
     
     
 

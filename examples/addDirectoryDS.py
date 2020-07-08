@@ -14,9 +14,9 @@ def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataTyp
 			       filePath,
 			       facility,
 		   	       nFridgeRun,
-		      	       nDataType,
+		      	   nDataType,
 		   	       Series,
-		     	       nIsJunk)
+		     	   nIsJunk)
 	print('')
 	ds.info()
 	#dc.add(ds)
