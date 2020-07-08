@@ -22,6 +22,8 @@ orig3 = '/nfs/slac/g/supercdms/tf/northwestern/AnimalData/AR70/PMTDAQ'  #This on
 new1 = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R68/Raw/'
 new2 = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R70/Raw/' #Kinda ignore the root files for now...
 
+#Proper renaming scheme: facility
+
 def SeriesRename(notSeries):
     '''
     This renamed the date to a proper series number!
@@ -131,6 +133,8 @@ def copyThatFile(orig, dest):
     '''
     #This will return a list later that has all the filepaths that we want stored :)
     finalFileList = []
+    oldFilePaths = []
+    newFilePaths = []
 
     #Reads through the 'dated' directory (eg: 20190401)
     oDir = os.listdir(path = orig)
@@ -152,6 +156,9 @@ def copyThatFile(orig, dest):
                     if 'SIS' not in direc2:
                         myNewPath = renamingWeirdFiles(oldFileDir)
                         #These are 'not data files' even though they are! going to copy anyways
+                        
+                        oldFilePaths.extend(oldFileDir)
+                        newFilePaths.extend(myNewPath)
                     else:
                         noSISname = direc2[11:]
                         if noSISname.endswith('root'):
@@ -159,27 +166,35 @@ def copyThatFile(orig, dest):
                             if 'conf' in noSISname:
                                 #These are the configuration files
                                 myNewPath = renamingConfFiles(oldFileDir)
-                                #This if statement is ready to add to the finalfilelist!
-
+                                
+                                oldFilePaths.extend(oldFileDir)
+                                newFilePaths.extend(myNewPath)
                             else:
                                 #These are the actual data files
                                 myNewPath = renamingDataFiles(oldFileDir)
-                                #This else statement is ready to add to the finalfilelist!
 
+                                oldFilePaths.extend(oldFileDir)
+                                newFilePaths.extend(myNewPath)
                         else:
                             if not direc2.startswith('.'):
                                 #These are weirdos, but sort of weirdos... They're also data, but from the cdmstestdaq
                                 myNewPath = renamingDataFiles(oldFileDir)
                                 #This if statement is ready to add to the finalfilelist!
-
+                                
+                                oldFilePaths.extend(oldFileDir)
+                                newFilePaths.extend(myNewPath)
                             else:
                                 #These start with a dot and usually have a weird ending
                                 myNewPath = renamingWeirdFiles(oldFileDir)
-                                #This else statement is ready to add to the finalfilelist!
+
+                                oldFilePaths.extend(oldFileDir)
+                                newFilePaths.extend(myNewPath)
             else:
                 #These are the CDMSTestDaq folder...
                 #print(os.path.join(nestedDirPath,direc1)) 
                 pass
+            
+            return finalFileList
 
 #Get the list of all directories within the original directory
 oDirs1 = os.listdir(path = orig1)
@@ -187,20 +202,18 @@ oDirs2 = os.listdir(path = orig2)
 oDirs3 = os.listdir(path = orig3)
 
 #List the paths of all directories
-copyThatFile(orig3, new2)
-
 fileCheckPath = 'fileChecks/fileListPMT.csv'
-'''
+
 if os.path.exists(fileCheckPath):
     #If the file exists, then we'll bring in its data
     df = pd.read_csv(fileCheckPath)
     
 else:
     #Creates a list of files, old & new!
-    fileList = checkThatFile(orig3, new2)
+    fileList = copyThatFile(orig3, new2)
 
-    df = pd.DataFrame(fileList, columns = ['OldFile', 'NewFile', 'Series'])
+    df = pd.DataFrame(fileList, columns = ['OldFile', 'NewFile'])
 
     df.to_csv(fileCheckPath, index = False)
-'''
+
 print("All done!")
