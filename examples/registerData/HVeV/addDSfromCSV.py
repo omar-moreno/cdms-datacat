@@ -11,13 +11,6 @@ nDataTypes = {'Test' : -1, 'Bg' : 0, 'Co' : 1, 'Co LowR' : 2, 'Cf' : 3, 'Rand' :
             'Cs' : 8, 'Ba' : 9, 'YBe' : 12, 'SbBe' : 13, 'Y Blank' : 14, 'Sb Blank' : 15, 
             'laser' : 16,'beam' : 17, 'laser and beam' : 18, 'Fe' : 19, 'Co57' : 20, 'IV Curve' : 100, 'dIdV' : 101, 'NS Noise' : 102, 'SC Noise' : 103}
 
-HDF5_count = 0
-root_count = 0
-ok_count = 0
-log_count = 0
-pkl_count = 0
-joblib_count = 0
-
 def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment):
     ds = ContinuousRawData(fileName,
                 filePath,
@@ -40,21 +33,6 @@ def directorySweep(filePath, fileFormat, fileFacility, nFridgeRun, nDataType, nI
         name = os.path.basename(fileP)
         fileFormat = name.split('.')[1].upper()
 
-        #Counts the filetypes
-        if fileFormat == 'HDF5':
-            HDF5_count += 1
-        elif fileFormat == 'ROOT':
-            root_count += 1
-        elif fileFormat == 'OK':
-            ok_count += 1
-        elif fileFormat == 'PKL':
-            pkl_count += 1
-        elif fileFormat == 'JOBLIB':
-            joblib_count += 1
-        elif fileFormat == 'LOG':
-            log_count += 1
-        
-        
         #Gets the series information
         pathName = os.path.dirname(fileP)
         series = os.path.basename(pathName)
@@ -79,15 +57,12 @@ listofdirs = os.listdir(path = mainPath)
 #Print out the length of the column
 rowCount = df.shape[0]
 
-
 #Define some metadata
 myFileFormat = 'hdf5'
 nFridgeRun = 2
 facility = 'NEXUS'
 nIsJunk = 0
 do = 0
-
-checklist = ['hdf5','pkl', 'root', 'log', 'joblib', 'ok'] 
 
 #Create a for loop to iterate over the first column
 for i in range(rowCount):
@@ -109,9 +84,3 @@ for i in range(rowCount):
             newestPath = os.path.join(newPath,filename)
             directorySweep(newestPath, myFileFormat, facility, nFridgeRun, nDataTypes['laser'], nIsJunk, fileComment)
 
-print('Joblib Count: ', Joblib_count)
-print('log Count: ', log_count)
-print('ok Count: ', ok_count)
-print('hdf5 Count: ', HDF5_count)
-print('root Count: ', root_count)
-print('pkl count: ', pkl_count)

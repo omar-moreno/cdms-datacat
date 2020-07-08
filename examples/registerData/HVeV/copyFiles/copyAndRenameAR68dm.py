@@ -16,9 +16,9 @@ def GeneralCommand(previousPlace, newPlace):
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
         print(f"{os.path.basename(dirpath)} didnt exist, now it does")
-    
-    sht.copyfile(previousPlace, newPlace)
-    print(previousPlace, 'copied')
+    if not os.path.exists(newPlace):
+        sht.copyfile(previousPlace, newPlace)
+        print(previousPlace, 'copied')
 
 def SeriesRename(notSeries, facility = '27'):
     '''

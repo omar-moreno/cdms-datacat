@@ -22,10 +22,11 @@ orig3 = '/nfs/slac/g/supercdms/tf/northwestern/AnimalData/AR70/PMTDAQ'  #This on
 new1 = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R68/Raw/'
 new2 = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R70/Raw/' #Kinda ignore the root files for now...
 
-def SeriesRename(notSeries, facility = '27'):
+def SeriesRename(notSeries):
     '''
-    It renames the not-so-series to a standard series number
+    This renamed the date to a proper series number!
     '''
+    facility = '27'
 
     date = notSeries[2:8]
     hhmmss = notSeries[8:14]
@@ -33,6 +34,78 @@ def SeriesRename(notSeries, facility = '27'):
 
     return series
 
+def renamingConfFiles(origpath, newpath = new2):
+   
+    facility = '27'
+    basename = os.path.basename(origpath)
+       
+    #Example for this type of name: SIS3316Raw_20190712141426-conf.root
+    #This next block will do all the splitting of the name that's given!
+    noSISincluded = basename[11:]
+    fileFormat = noSISincluded.split('.')[1]
+    notSeriesAndDump = noSISincluded.split('.')[0]
+    notSeries = notSeriesAndDump.split('-')[0]
+    conf = 'conf'
+
+    #This will give us the proper series number
+    series = SeriesRename(notSeries)
+    
+    #new filename
+    basename = series + '-' + conf + '.' + fileFormat
+    
+    #gives us the newest path :D
+    newpath = os.path.join(newpath, series)
+    newpath = os.path.join(newpath, basename)
+
+    return newpath
+
+def renamingDataFiles(origpath, newpath = new2):
+    '''
+    This function renames the data files
+    '''
+    facility = '27'
+    basename = os.path.basename(origpath)
+
+    #Example for this type of name: SIS3316Raw_20190712213733_26.root & SIS3316Raw_20190629140451_1.bin 
+    
+    #This next block will do all the splitting of the name that's given!
+    noSISincluded = basename[11:]
+    fileFormat = noSISincluded.split('.')[1]
+    notSeriesAndDump = noSISincluded.split('.')[0]
+    notSeries = notSeriesAndDump.split('_')[0]
+    dump = notSeriesAndDump.split('_')[1]
+    
+    #Renames to proper series
+    series = SeriesRename(notSeries)
+    
+    #new filename
+    basename = series + '_' + dump + '.' + fileFormat
+
+    #new path that we want!
+    newpath = os.path.join(newpath, series)
+    newpath = os.path.join(newpath, basename)
+
+    return newpath
+
+def renamingWeirdFiles(origpath, newpath = new2):
+
+    facility = '27'
+    basename = os.path.basename(origpath)
+
+    #Example for this type of name: .SIS3316Raw_20190702210858_1.bin.NHVarN & nohup.out & PMTtest_Z_03_05.root  
+    if basename.startswith('PMT'):
+        series = 'PMTTest'
+        newpath = os.path.join(newpath, series)
+        newpath = os.path.join(newpath, basename)
+        print(newpath)
+
+        return newpath
+
+    elif basename.startswith('.SIS'):
+        basename = '.' + basename[12:]
+        print(basename)
+    else:
+        pass
 def copyThatFile(orig, dest):
     '''
     copies the directories from one place to another!
@@ -48,32 +121,45 @@ def copyThatFile(orig, dest):
         #This lists out the inards of the 'top directory'
         nestedDirPath = os.path.join(orig, direc)
         nestedDir = os.listdir(path = nestedDirPath)
-        
         for direc1 in nestedDir:
             #This goes thru the directory within each of the 'top directories'
             #And checks if there's a raw folder, if there is, it goes inside
             if 'raw' in direc1:
                 nestedDirPath1 = os.path.join(nestedDirPath, direc1)
                 nestedDir1 = os.listdir(path = nestedDirPath1)
-                
+            
                 for direc2 in nestedDir1:
                     oldFileDir = os.path.join(nestedDirPath1, direc2)
                     if 'SIS' not in direc2:
-                        #print(fileDir)
-                        #These are 'not data files' even though they are! not sure what to do here
-                        pass 
+                        myNewPath = renamingWeirdFiles(oldFileDir)
+                        #These are 'not data files' even though they are! going to copy anyways
                     else:
                         noSISname = direc2[11:]
-                        if not noSISname.endswith('root'):
-                            print(direc2)
-                        if 'conf' not in noSISname:
-                            #This filters out the configuration files
-                            newFileName = SeriesRename(noSISname) 
-                        
-                        #These are the data files we're looking for!
-                        
+                        if noSISname.endswith('root'):
+                            #These are the root files we want, some are configuration files!
+                            if 'conf' in noSISname:
+                                #These are the configuration files
+                                myNewPath = renamingConfFiles(oldFileDir)
+                                #This if statement is ready to add to the finalfilelist!
+
+                            else:
+                                #These are the actual data files
+                                myNewPath = renamingDataFiles(oldFileDir)
+                                #This else statement is ready to add to the finalfilelist!
+
+                        else:
+                            if not direc2.startswith('.'):
+                                #These are weirdos, but sort of weirdos... They're also data, but from the cdmstestdaq
+                                myNewPath = renamingDataFiles(oldFileDir)
+                                #This if statement is ready to add to the finalfilelist!
+
+                            else:
+                                #These start with a dot and usually have a weird ending
+                                myNewPath = renamingWeirdFiles(oldFileDir)
+                                #Still unsure what to do with these
             else:
-                #print(direc1, 'is not the raw directory')
+                #These are the CDMSTestDaq folder...
+                #print(os.path.join(nestedDirPath,direc1)) 
                 pass
 
 #Get the list of all directories within the original directory
