@@ -157,8 +157,8 @@ def copyThatFile(orig, dest):
                         myNewPath = renamingWeirdFiles(oldFileDir)
                         #These are 'not data files' even though they are! going to copy anyways
                         
-                        oldFilePaths.extend(oldFileDir)
-                        newFilePaths.extend(myNewPath)
+                        oldFilePaths.append(oldFileDir)
+                        newFilePaths.append(myNewPath)
                     else:
                         noSISname = direc2[11:]
                         if noSISname.endswith('root'):
@@ -167,33 +167,35 @@ def copyThatFile(orig, dest):
                                 #These are the configuration files
                                 myNewPath = renamingConfFiles(oldFileDir)
                                 
-                                oldFilePaths.extend(oldFileDir)
-                                newFilePaths.extend(myNewPath)
+                                oldFilePaths.append(oldFileDir)
+                                newFilePaths.append(myNewPath)
                             else:
                                 #These are the actual data files
                                 myNewPath = renamingDataFiles(oldFileDir)
 
-                                oldFilePaths.extend(oldFileDir)
-                                newFilePaths.extend(myNewPath)
+                                oldFilePaths.append(oldFileDir)
+                                newFilePaths.append(myNewPath)
                         else:
                             if not direc2.startswith('.'):
                                 #These are weirdos, but sort of weirdos... They're also data, but from the cdmstestdaq
                                 myNewPath = renamingDataFiles(oldFileDir)
                                 #This if statement is ready to add to the finalfilelist!
                                 
-                                oldFilePaths.extend(oldFileDir)
-                                newFilePaths.extend(myNewPath)
+                                oldFilePaths.append(oldFileDir)
+                                newFilePaths.append(myNewPath)
                             else:
                                 #These start with a dot and usually have a weird ending
                                 myNewPath = renamingWeirdFiles(oldFileDir)
 
-                                oldFilePaths.extend(oldFileDir)
-                                newFilePaths.extend(myNewPath)
+                                oldFilePaths.append(oldFileDir)
+                                newFilePaths.append(myNewPath)
             else:
                 #These are the CDMSTestDaq folder...
                 #print(os.path.join(nestedDirPath,direc1)) 
                 pass
-            
+            oldandnew = zip(oldFilePaths, newFilePaths)
+            oldandnew = tuple(oldandnew)
+            finalFileList.extend(oldandnew)
             return finalFileList
 
 #Get the list of all directories within the original directory
