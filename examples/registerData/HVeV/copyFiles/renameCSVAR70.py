@@ -39,18 +39,42 @@ for index, row in df.iterrows():
             newFileName = series + '_' + dump + '.' + fileFormat
             newFilePath = os.path.join(dirpath, newFileName)
 
-            newfilelist.append(newFileName)
-            oldfilelist.append(oldfilelist)
+            newfilelist.append(newFilePath)
+            oldfilelist.append(origpath)
+
+    elif filename.startswith('IV'):
+        datetime = filename[2:16]
+        fileFormat = filename.split('.')[1]
+
+        series = SeriesRename(datetime)
+
+        newFileName = 'IV' + series + '.' + fileFormat
+        newFilePath = os.path.join(dirpath, newFileName)
+
+        newfilelist.append(newFilePath)
+        oldfilelist.append(origpath)
+
+    elif filename.startswith('2019') and (filename.endswith('ok') or filename.endswith('log')):
+        datetime = filename.split('.')[0]
+        fileFormat = filename.split('.')[1]
+
+        series = SeriesRename(datetime)
+
+        newFileName = series + '.' + fileFormat
+        newFilePath = os.path.join(dirpath, newFileName)
+
+        newfilelist.append(newFilePath)
+        oldfilelist.append(origpath)
 
     else:
-        print(filename)
+        pass
 finalFileList = []
 oldandnew = zip(oldfilelist, newfilelist)
 oldandnew = tuple(oldandnew)
 
 finalFileList.extend(oldandnew)
 
-#newdf = pd.DataFrame(finalFileList, columns = ['OldFile', 'NewFile'])
+newdf = pd.DataFrame(finalFileList, columns = ['OldFile', 'NewFile'])
 
-#newdf.to_csv('fileChecks/newFileListAR70.csv', index = False)
+newdf.to_csv('fileChecks/newFileListAR70.csv', index = False)
 print('all done :)')
