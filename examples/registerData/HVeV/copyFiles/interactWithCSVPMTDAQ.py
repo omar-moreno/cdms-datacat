@@ -4,6 +4,7 @@
 import pandas as pd
 import os
 import shutil as sht
+import filecmp
 
 #Which CSV files would you like to look at
 CSVPath = 'fileChecks/fileListPMT.csv'
@@ -18,7 +19,16 @@ def copyCommand(previousPlace, newPlace):
         print(f"{os.path.basename(dirpath)} didnt exist, now it does")
     
     sht.copyfile(previousPlace, newPlace)
-    print(previousPlace, 'copied')
+    print(newPlace, 'copied')
+
+def fileCheckCommand(previousPlace, newPlace):
+    filename = os.path.basename(newPlace)
+    if filecmp.cmp(previousPlace, newPlace):
+        print(f"{filename} wasn't corrupted! yay!!") 
+    else:
+        sht.copyfile(previousPlace, newPlace)
+        print(f"{filename} wasn't good. Now it has been recopied and looks good now!!!")
+        fileCheckCommand(previousPlace, newPlace)
 
 #itereate through each row
 for index, row in df.iterrows():
@@ -26,7 +36,7 @@ for index, row in df.iterrows():
     oldpath = row['OldFile']
     newpath = row['NewFile']
    
-    copyCommand(oldpath, newpath)
+    fileCheckCommand(oldpath, newpath)
     
     
 
