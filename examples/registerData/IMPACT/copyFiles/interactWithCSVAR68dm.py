@@ -6,7 +6,7 @@ import os
 import shutil as sht
 
 #Which CSV files would you like to look at
-CSVPath = 'fileChecks/fileListPMTDAQ.csv'
+CSVPath = 'fileChecks/fileListAR68dm.csv'
 
 #Create a dataframe from it!
 df = pd.read_csv(CSVPath)
@@ -18,7 +18,7 @@ def copyCommand(previousPlace, newPlace):
         print(f"{os.path.basename(dirpath)} didnt exist, now it does")
     
     sht.copyfile(previousPlace, newPlace)
-    print(previousPlace, 'copied')
+    print(newPlace, 'copied')
 
 #itereate through each row
 for index, row in df.iterrows():
