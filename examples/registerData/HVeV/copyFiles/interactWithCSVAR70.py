@@ -4,6 +4,7 @@
 import pandas as pd
 import os
 import shutil as sht
+import filecmp
 
 #Which CSV files would you like to look at
 CSVPath = 'fileChecks/fileListAR70.csv'
@@ -20,13 +21,22 @@ def copyCommand(previousPlace, newPlace):
     sht.copyfile(previousPlace, newPlace)
     print(newPlace, 'copied')
 
+def fileCheckCommand(previousPlace, newPlace):
+    filename = os.path.basename(newPlace)
+    if filecmp.cmp(previousPlace, newPlace):
+        print(f"{filename} wasn't corrupted! yay!!") 
+    else:
+        sht.copyfile(previousPlace, newPlace)
+        print(f"{filename} wasn't good. Now it has been recopied and looks good now!!!")
+        fileCheckCommand(previousPlace, newPlace)
+
 #itereate through each row
 for index, row in df.iterrows():
     #Get the oldpath, newpath, and series
     oldpath = row['OldFile']
     newpath = row['NewFile']
    
-    copyCommand(oldpath, newpath)
+    fileCheckCommand(oldpath, newpath)
     
     
 
