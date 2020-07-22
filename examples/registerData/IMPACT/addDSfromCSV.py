@@ -11,6 +11,19 @@ nDataTypes = {'Test' : -1, 'Bg' : 0, 'Co' : 1, 'Co LowR' : 2, 'Cf' : 3, 'Rand' :
             'Cs' : 8, 'Ba' : 9, 'YBe' : 12, 'SbBe' : 13, 'Y Blank' : 14, 'Sb Blank' : 15, 
             'laser' : 16,'beam' : 17, 'laser and beam' : 18, 'Fe' : 19, 'Co57' : 20, 'IV Curve' : 100, 'dIdV' : 101, 'NS Noise' : 102, 'SC Noise' : 103}
 
+def SeriesRename(notSeries):
+    '''
+    This renamed the date to a proper series number!
+    '''
+    nFacility = '27'
+
+    date = notSeries[2:8]
+    hhmmss = notSeries[8:14]
+    series = nFacility + date + '_' + hhmmss
+
+    return series
+
+
 def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment):
     ds = ContinuousRawData(fileName,
                 filePath,
@@ -36,9 +49,11 @@ def directorySweep(filePath, fileFormat, fileFacility, nFridgeRun, nDataType, nI
         #Gets the series information
         pathName = os.path.dirname(fileP)
         series = os.path.basename(pathName)
-		
+
+        print(pathName)
+
         #Registers the data
-        #continuousRawDataRegister(name, fileP, fileFacility, nFridgeRun, nDataType, series, nIsJunk, comment)
+        continuousRawDataRegister(name, fileP, fileFacility, nFridgeRun, nDataType, series, nIsJunk, comment)
 
 #Read the CSV file
 df = pd.read_csv('data_list.csv')
@@ -49,7 +64,7 @@ df['note'] = df['note'].str.strip()
 print(df)
 
 #The main path we are working with
-mainPath = '/nfs/slac/g/supercdms/tf/northwestern/AnimalData/AR68dm/'
+mainPath = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R70/Raw/'
 
 #Create a list of directories we want to look at
 listofdirs = os.listdir(path = mainPath)
@@ -60,22 +75,34 @@ rowCount = df.shape[0]
 #Define some metadata
 myFileFormat = 'hdf5'
 nFridgeRun = 2
-facility = 'NEXUS'
+facility = 'ANIMAL'
 nIsJunk = 0
 do = 0
 
+#PDfileListAR68dm = pd.read_csv('copyFiles/fileChecks/fileListAR68dm.csv')
+PDfileListAR70 = pd.read_csv('copyFiles/fileChecks/fileListAR70.csv')
+#PDfileListPMT = pd.read_csv('copyFiles/fileChecks/fileListPMT.csv')
+
+#fileListPMT = [os.path.basename(os.path.dirname(row['NewFile'])) for index, row in PDfileListPMT.iterrows()]
+
 #Create a for loop to iterate over the first column
-for i in range(rowCount):
+for index, row in df.iterrows():
     #Gets the filename & type
-    filename = df.iloc[i,0]
-    fileType = df.iloc[i,2]
-    fileComment = df.iloc[i,3]
-
+    filename = row['filename']
+    fileType = row['type']
+    fileComment = row['note'] + ' Animal Fridge At NEXUS'
+    
+    series = SeriesRename(filename)
+    
+    selectedFiles = PDFileListAR70[PDFileListAR70['NewFile'].str.contains(series)]
+    #TO WORK ON: Loop through this, and then have it register the individual file(paths), whereas you are sweeping through multiple directories. This will allow you to do things from the CSV... making it reproducible/reusable!! yay!! 
+    
+    print(selectedFiles)
     #If the datestamp is correct...
-    if filename[0:8] in listofdirs:
+    if series in fileListAR70:
         #Create a new path, so we work in the directory with the correct date
-        newPath = os.path.join(mainPath,filename[0:8])
-
+        newPath = os.path.join(mainPath,SeriesRename(filename))
+        print(newPath)
         #New list of all the subdirectories within that directory
         newlistofdirs = os.listdir(path = newPath)
 
