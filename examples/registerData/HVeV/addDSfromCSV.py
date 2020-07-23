@@ -4,11 +4,13 @@
 import os
 from CDMSDataCatalog import *
 import pandas as pd
+import re
 
 #Create a dictionary of known datatypes!
-nDataTypes = {'Test' : -1, 'Bg' : 0, 'Co' : 1, 'Co LowR' : 2, 'Cf' : 3, 'Rand' : 4, 'Mon' : 7,
+nDataTypes = {'Test' : -1, 'dm' : 0, 'Co' : 1, 'Co LowR' : 2, 'Cf' : 3, 'Rand' : 4, 'Mon' : 7,
             'Cs' : 8, 'Ba' : 9, 'YBe' : 12, 'SbBe' : 13, 'Y Blank' : 14, 'Sb Blank' : 15, 
-            'laser' : 16,'beam' : 17, 'laser and beam' : 18, 'Fe' : 19, 'Co57' : 20, 'IV Curve' : 100, 'dIdV' : 101, 'NS Noise' : 102, 'SC Noise' : 103}
+            'laser' : 16,'beam' : 17, 'laser and beam' : 18, 'Fe55' : 19, 'Co57' : 20, 'IV Curve' : 100, 
+            'dIdV' : 101, 'NS Noise' : 102, 'noise_sc' : 103, 'noise_trans': 104}
 
 def SeriesRename(datetime):
     '''
@@ -23,7 +25,7 @@ def SeriesRename(datetime):
     return series
 
 
-def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment):
+def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment, dumpnum = None):
     '''
     Function: This will setup the dataset objects (Specifically continuous raw data) to be registered to the data catalog, print out the results, and then register the data to the data catalog.
     
@@ -76,7 +78,7 @@ alreadyRegisteredSeries = []
 for index, row in df.iterrows():
     #Gets the filename & type
     fileType = row['type']
-    fileComment = row['note'] + ' AnimalFridge@NEXUS'
+    fileComment = row['note'] + ' AnimalFridge@NorthWestern'
     
     series = SeriesRename(row['filename'])
 
@@ -85,15 +87,24 @@ for index, row in df.iterrows():
         #This adds the series to the list of already registered series so it doesn't do it again!
         alreadyRegisteredSeries.append(series)
         selectedFiles = PDFileList[PDFileList['NewFile'].str.contains(series)]
-        
         #This will iterate throught the selected files that are a part of the series we want
         for index1, row1 in selectedFiles.iterrows():
             #This pulls the filepath, filename, and format
             newpath = row1['NewFile']
             filename = os.path.basename(newpath)
             fileFormat = filename.split('.')[1]
+            
+            #Creates a regex search expression to look for the #######_#######_DUMP.FILEFORMAT pattern, and groups the dump number
+            dumpPattern = re.compile(r'\d*_\d*_(\d*).')
 
-            #This will register the files to the catalog! (See function above for info)
-            continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
+            #If it has a dump number, set the continuous raw with a dump num, otherwise, dont
+            if bool(dumpPattern.match(filename)):    
+                nDumpNum = dumpPattern.search(filename).group(1)
+                nDumpNum = int(nDumpNum)
+                
+                continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, dumpnum = nDumNum)
+                print(nDumpNum)
+            else:
+                continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
     
 

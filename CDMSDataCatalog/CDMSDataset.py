@@ -367,7 +367,8 @@ class ContinuousRawData(CDMSDataset):
 		dataLocation = 'SLAC',
 		fileFormat = 'hdf5',
 		commentStart = 'None',
-		commentEnd = 'None'):
+		commentEnd = 'None',
+        nDumpNum = None):
 		
 		'''
 		Constructor for raw data taken with continuous DAQ
@@ -379,6 +380,7 @@ class ContinuousRawData(CDMSDataset):
 		self.relativePath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
 		self.metadata["nFridgeRun"] = int(nFridgeRun)
 		self.metadata["nDataType"] = int(nDataType)
+        self.metadata["nDump"] = int(nDumpNum)
 		self.metadata["Series"] = series
 		self.metadata["nIsJunk"] = int(nIsJunk)
 		self.metadata["CommentStart"] = commentStart
