@@ -6,6 +6,9 @@ from CDMSDataCatalog import *
 import pandas as pd
 import re
 
+#Setup the CDMSDatacatalog object... thing
+dc = CDMSDataCatalog()
+
 #Create a dictionary of known datatypes!
 nDataTypes = {'Test' : -1, 'dm' : 0, 'Co' : 1, 'Co LowR' : 2, 'Cf' : 3, 'Rand' : 4, 'Mon' : 7,
             'Cs' : 8, 'Ba' : 9, 'YBe' : 12, 'SbBe' : 13, 'Y Blank' : 14, 'Sb Blank' : 15, 
@@ -48,9 +51,10 @@ def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataTyp
                 nDataType,
                 Series,
                 nIsJunk,
-                commentStart = theComment)
+                commentStart = theComment,
+                nDumpNum = dumpnum)
     ds.info()
-    #dc.add(ds)
+    dc.add(ds)
 
 #Read the CSV file
 df = pd.read_csv('data_list.csv')
@@ -101,10 +105,9 @@ for index, row in df.iterrows():
             if bool(dumpPattern.match(filename)):    
                 nDumpNum = dumpPattern.search(filename).group(1)
                 nDumpNum = int(nDumpNum)
-                
-                continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, dumpnum = nDumNum)
-                print(nDumpNum)
+                print(newpath)
+                continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, dumpnum = nDumpNum)
             else:
                 continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
-    
+                print(newpath)
 
