@@ -103,7 +103,7 @@ for index, row in df.iterrows():
             #Creates a regex search expression to look for the #######_#######_DUMP.FILEFORMAT pattern, and groups the dump number
             dumpPattern = re.compile(r'\d*_\d*_(\d*).')
             
-            if os.exists(newpath):
+            if os.path.exists(newpath):
                 print(f"{filename} exists on SLAC! now attempting to register to DataCat")
                 #If it has a dump number, set the continuous raw with a dump num, otherwise, dont
                 if bool(dumpPattern.match(filename)):    
