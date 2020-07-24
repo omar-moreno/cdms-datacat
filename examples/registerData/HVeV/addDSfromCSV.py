@@ -55,6 +55,8 @@ def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataTyp
                 nDumpNum = dumpnum)
     ds.info()
     dc.add(ds)
+    #New line to distinguish what's happeneing
+    print("")
 
 #Read the CSV file
 df = pd.read_csv('data_list.csv')
@@ -100,14 +102,16 @@ for index, row in df.iterrows():
             
             #Creates a regex search expression to look for the #######_#######_DUMP.FILEFORMAT pattern, and groups the dump number
             dumpPattern = re.compile(r'\d*_\d*_(\d*).')
-
-            #If it has a dump number, set the continuous raw with a dump num, otherwise, dont
-            if bool(dumpPattern.match(filename)):    
-                nDumpNum = dumpPattern.search(filename).group(1)
-                nDumpNum = int(nDumpNum)
-                print(newpath)
-                continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, dumpnum = nDumpNum)
+            
+            if os.exists(newpath):
+                print(f"{filename} exists on SLAC! now attempting to register to DataCat")
+                #If it has a dump number, set the continuous raw with a dump num, otherwise, dont
+                if bool(dumpPattern.match(filename)):    
+                    nDumpNum = dumpPattern.search(filename).group(1)
+                    nDumpNum = int(nDumpNum)
+                    
+                    continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, dumpnum = nDumpNum)
+                else:
+                    continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
             else:
-                continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
-                print(newpath)
-
+                print(f"{filename} does not exist on SLAC")
