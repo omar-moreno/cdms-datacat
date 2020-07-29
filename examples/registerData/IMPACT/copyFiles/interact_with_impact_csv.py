@@ -6,7 +6,7 @@ import os
 import shutil as sht
 
 #Which CSV files would you like to look at
-CSVPath = 'fileChecks/fileListAR70.csv'
+CSVPath = 'fileChecks/IMPACT.csv'
 
 #Create a dataframe from it!
 df = pd.read_csv(CSVPath)
