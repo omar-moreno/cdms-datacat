@@ -58,7 +58,7 @@ def generate_filelist(oldpath, newpath, toplevel=True):
     return filelist
 
 # Create filelist and turn it into a DataFrame
-df = pd.DataFrame(generate_filelist(oldfile_path, newfile_path))
+df = pd.DataFrame(generate_filelist(oldfile_path, newfile_path), columns=['OldFile', 'NewFile'])
 df.to_csv(output_path)
 
 # Notify user that operation is completed
