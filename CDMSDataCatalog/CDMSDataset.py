@@ -545,3 +545,38 @@ class ProcessedIVdIdVData(CDMSDataset):
         self.metadata["nStep"] = int(nStep)
         self.metadata["nTotalSteps"] = int(nTotalSteps)
         self.metadata["ProdVersion"] = prodVersion
+
+class MidasToolsData(CDMSDataset):
+
+    def __init__(self,
+                 fileName,
+                 filePath,
+                 facility,
+                 nFridgeRun,
+                 series,
+                 devices,
+                 tests,
+                 comment,
+                 dataLocation='SLAC',
+                 fileFormat='root',
+                 nIsJunk=0):
+
+        """
+        Constructor for the CDMS MidasTools dataset class
+        """
+
+        # instantiate CDMSDataset base object
+        CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation,
+                             fileFormat)
+
+        # Build Data catalog path
+        self.relativePath += ('/R' + str(nFridgeRun) + '/MidasTools')
+
+        # metadata
+        self.metadata["Facility"] = facility
+        self.metadata["nFridgeRun"] = int(nFridgeRun)
+        self.metadata["Series"] = series
+        self.metadata["Devices"] = devices
+        self.metadata["Tests"] = tests
+        self.metadata["Comment"] = comment
+        self.metadata["nIsJunk"] = int(nIsJunk)
