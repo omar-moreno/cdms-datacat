@@ -46,18 +46,58 @@ def checkThatFile(orig, dest):
         topDir = os.path.join(orig, i)
                 
         if os.path.isfile(topDir):
-            filenameOFResultsPattern = re.compile(r'OFResults_(\d*).pkl)'
+            filenameOFResultsPattern = re.compile(r'OFResults_(\d*).pkl')
             filenamePSDPattern = re.compile(r'PSDs_(\d*).pkl')
             filename = os.path.basename(topDir)
+            
+            #Checks if the patterns match
             if bool(filenameOFResultsPattern.match(filename)):
                 datetime = filenameOFResultsPattern.match(filename).group(1)
-                print(filename, datetime)
-            if bool(filenamePSDPattern.match(filename)):
+                series = SeriesRename('27', datetime)
+                #print(filename, series)
+            elif bool(filenamePSDPattern.match(filename)):
                 datetime = filenamePSDPattern.match(filename).group(1)
-                print(filename, datetime)
-                #print(os.path.basename(topDir))
+                series = SeriesRename('27', datetime)
+                #print(filename, series)
         elif os.path.isdir(topDir):
-            pass
+            nestedDirFiles = os.listdir(path = topDir)
+            for myFile in nestedDirFiles:
+                nestedDirFilePath = os.path.join(topDir, myFile)
+                if os.path.isfile(nestedDirFilePath):
+                    filenameOFResultsPattern = re.compile(r'OFResults_(\d*)_(\d*).(\w*)')
+                    filenameSuccessPattern = re.compile(r'success_(\d*).flag')
+                    filenameOutputPattern = re.compile(r'output_(\d*).log')
+                    filenameFailurePattern = re.compile(r'failure_(\d*).flag')
+                    filenamePSDPattern = re.compile(r'PSD_(\d*).png')
+
+                    if bool(filenameOFResultsPattern.match(myFile)):
+                        datetime = filenameOFResultsPattern.match(myFile).group(1)
+                        dumpNum = filenameOFResultsPattern.match(myFile).group(2)
+                        fileFormat = filenameOFResultsPattern.match(myFile).group(3)
+                        series = SeriesRename('27', datetime)
+                        #print(myFile, series)
+                    elif bool(filenameSuccessPattern.match(myFile)):
+                        datetime = filenameSuccessPattern.match(myFile).group(1)
+                        series = SeriesRename('27', datetime)
+                        #print(myFile, series)
+                    elif bool(filenameOutputPattern.match(myFile)):
+                        datetime = filenameOutputPattern.match(myFile).group(1)
+                        series = SeriesRename('27', datetime)
+                        #print(myFile, series)
+                    elif bool(filenameFailurePattern.match(myFile)):
+                        datetime = filenameFailurePattern.match(myFile).group(1)
+                        series = SeriesRename('27', datetime)
+                        #print(myFile, series)
+                    elif bool(filenamePSDPattern.match(myFile)):
+                        datetime = filenamePSDPattern.match(myFile).group(1)
+                        series = SeriesRename('27', datetime)
+                        #print(myFile, series)
+
+                    else:
+                        print(nestedDirFilePath)
+                elif os.path.isdir(nestedDirFilePath):
+                    print(myFile)
+                
             #print(os.path.basename(topDir))
 
 
