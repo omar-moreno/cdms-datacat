@@ -75,7 +75,7 @@ def checkThatFile(orig, dest):
                         dumpNum = filenameOFResultsPattern.match(myFile).group(2)
                         fileFormat = filenameOFResultsPattern.match(myFile).group(3)
                         series = SeriesRename('27', datetime)
-                        #print(myFile, series)
+                        print(myFile, series)
                     elif bool(filenameSuccessPattern.match(myFile)):
                         datetime = filenameSuccessPattern.match(myFile).group(1)
                         series = SeriesRename('27', datetime)
