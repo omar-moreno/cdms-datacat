@@ -67,7 +67,7 @@ df['note'] = df['note'].str.strip()
 print(df)
 
 #Define some metadata
-facility = 'Animal'
+facility = 'ANIMAL'
 nIsJunk = 0
 nFridgeRun = 68
 
