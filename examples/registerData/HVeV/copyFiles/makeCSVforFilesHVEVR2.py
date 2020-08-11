@@ -224,11 +224,10 @@ def checkThatFile(orig, dest):
             return finalFileList
 
 
-fileCheckPath = 'fileChecks/fileListAR68dm.csv'
+fileCheckPath = 'fileChecks/fileListHVeVR2.csv'
 
-fileList = checkThatFile(orig1, new1)
-print(filelist)
-'''
+
+
 if os.path.exists(fileCheckPath):
     #If the file exists, then we'll bring in its data
     df = pd.read_csv(fileCheckPath)
@@ -237,10 +236,10 @@ else:
     #Creates a list of files, old & new!
     fileList = checkThatFile(orig1, new1)
 
-    df = pd.DataFrame(fileList, columns = ['OldFile', 'NewFile', 'Series'])
+    df = pd.DataFrame(fileList, columns = ['OldFile', 'NewFile'])
 
     df.to_csv(fileCheckPath, index = False)
-'''
+
 #Example on how to iterate through the dataframe!
 #Iterate through each row to do the thing we want to do!
 #for index, row in df.iterrows():
