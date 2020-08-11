@@ -7,7 +7,7 @@ import pandas as pd
 import re
 
 #Setup the CDMSDatacatalog object... thing
-dc = CDMSDataCatalog()
+dc = CDMSDataCatalog(config_file='default.cfg')
 
 #Create a dictionary of known datatypes!
 nDataTypes = {'Test' : -1, 'dm' : 0, 'Co' : 1, 'Co LowR' : 2, 'Cf' : 3, 'Rand' : 4, 'Mon' : 7,
