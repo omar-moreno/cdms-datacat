@@ -54,7 +54,7 @@ def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataTyp
                 commentStart = theComment,
                 nDumpNum = dumpnum)
     ds.info()
-    dc.add(ds)
+    #dc.add(ds)
     #New line to distinguish what's happeneing
     print("")
 
@@ -71,11 +71,10 @@ facility = 'ANIMAL'
 nIsJunk = 0
 nFridgeRun = 68
 
-PDFileList = pd.read_csv('copyFiles/fileChecks/fileListAR68dm.csv')
+#PDFileList = pd.read_csv('copyFiles/fileChecks/fileListAR68dm.csv')
 #PDFileList = pd.read_csv('copyFiles/fileChecks/fileListAR70.csv')
 #PDFileList = pd.read_csv('copyFiles/fileChecks/fileListPMT.csv')
-
-#fileListPMT = [os.path.basename(os.path.dirname(row['NewFile'])) for index, row in PDfileListPMT.iterrows()]
+PDFileList = pd.read_csv('copyFiles/fileChecks/fileListHVeVR2.csv')
 
 #This list is to make sure if the series has already been registered, it's not registered again!
 alreadyRegisteredSeries = []
