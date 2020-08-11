@@ -54,7 +54,11 @@ def checkThatFile(orig, dest):
             if bool(filenameOFResultsPattern.match(filename)):
                 datetime = filenameOFResultsPattern.match(filename).group(1)
                 series = SeriesRename('27', datetime)
+                fileExtension = getFileExtension(topDir)
                 #print(filename, series)
+
+                filename = 'OFResults_' + series + '.' + fileExtension
+
             elif bool(filenamePSDPattern.match(filename)):
                 datetime = filenamePSDPattern.match(filename).group(1)
                 series = SeriesRename('27', datetime)
