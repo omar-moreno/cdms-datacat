@@ -53,7 +53,7 @@ def renamingConfFiles(origpath, newpath = new2):
     series = SeriesRename(notSeries)
     
     #new filename
-    basename = series + '-' + conf + '.' + fileFormat
+    basename = 'PMT_' + series + '-' + conf + '.' + fileFormat
     
     #gives us the newest path :D
     newpath = os.path.join(newpath, series)
@@ -81,7 +81,7 @@ def renamingDataFiles(origpath, newpath = new2):
     series = SeriesRename(notSeries)
     
     #new filename
-    basename = series + '_' + dump + '.' + fileFormat
+    basename = 'PMT_' + series + '_' + dump + '.' + fileFormat
 
     #new path that we want!
     newpath = os.path.join(newpath, series)
@@ -112,7 +112,7 @@ def renamingWeirdFiles(origpath, newpath = new2):
         
         series = SeriesRename(notSeries)
         
-        basename = '.' + series + '_' + dump + '.' + fileFormat + '.' + weirdEnding
+        basename = '.PMT_' + series + '_' + dump + '.' + fileFormat + '.' + weirdEnding
         
         newpath = os.path.join(newpath, series)
         newpath = os.path.join(newpath, basename)
@@ -138,7 +138,6 @@ def copyThatFile(orig, dest):
 
     #Reads through the 'dated' directory (eg: 20190401)
     oDir = os.listdir(path = orig)
-
     for direc in oDir:
         #This is the cdmsday0... that directory!
         #This lists out the inards of the 'top directory'
@@ -150,7 +149,6 @@ def copyThatFile(orig, dest):
             if 'raw' in direc1:
                 nestedDirPath1 = os.path.join(nestedDirPath, direc1)
                 nestedDir1 = os.listdir(path = nestedDirPath1)
-            
                 for direc2 in nestedDir1:
                     oldFileDir = os.path.join(nestedDirPath1, direc2)
                     if 'SIS' not in direc2:
@@ -193,10 +191,10 @@ def copyThatFile(orig, dest):
                 #These are the CDMSTestDaq folder...
                 #print(os.path.join(nestedDirPath,direc1)) 
                 pass
-            oldandnew = zip(oldFilePaths, newFilePaths)
-            oldandnew = tuple(oldandnew)
-            finalFileList.extend(oldandnew)
-            return finalFileList
+    oldandnew = zip(oldFilePaths, newFilePaths)
+    oldandnew = tuple(oldandnew)
+    finalFileList.extend(oldandnew)
+    return finalFileList
 
 #Get the list of all directories within the original directory
 oDirs1 = os.listdir(path = orig1)
@@ -217,5 +215,4 @@ else:
     df = pd.DataFrame(fileList, columns = ['OldFile', 'NewFile'])
 
     df.to_csv(fileCheckPath, index = False)
-
 print("All done!")
