@@ -74,7 +74,7 @@ print(df)
 facility = 'ANIMAL'
 nIsJunk = 0
 # Figure out what fridge run this is
-# nFridgeRun = 68
+nFridgeRun = 68
 
 PDFileList = pd.read_csv('copyFiles/fileChecks/IMPACT.csv')
 #PDFileList = pd.read_csv('copyFiles/fileChecks/fileListAR70.csv')
