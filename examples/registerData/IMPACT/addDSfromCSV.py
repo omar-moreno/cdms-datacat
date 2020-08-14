@@ -52,8 +52,11 @@ def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataTyp
                 nDataType,
                 Series,
                 nIsJunk,
-                commentStart = theComment,
-                nDumpNum = dumpnum)
+                commentStart = theComment)
+
+
+    if not dumpnum is None:
+        print("dumpnum: " + str(dumpnum)) 
     ds.info()
     # Only do after validity of code is confirmed
     # dc.add(ds)
@@ -90,7 +93,7 @@ for index, row in df.iterrows():
     #Gets the filename & type
     fileType = row['Type']
     # TODO, possibly add PMT as a comment
-    fileComment = row['Volt'] + ' AnimalFridge@NorthWestern'
+    fileComment = str(row['Volt']) + ' AnimalFridge@NorthWestern'
     
     series = SeriesRename(row['TES'])
 
@@ -110,7 +113,7 @@ for index, row in df.iterrows():
             dumpPattern = re.compile(r'\d*_\d*_(\d*).')
             
             if os.path.exists(newpath):
-                print(f"{filename} exists on SLAC! now attempting to register to DataCat")
+                print(filename + " exists on SLAC! now attempting to register to DataCat")
                 #If it has a dump number, set the continuous raw with a dump num, otherwise, dont
                 if bool(dumpPattern.match(filename)):    
                     nDumpNum = dumpPattern.search(filename).group(1)
@@ -120,4 +123,4 @@ for index, row in df.iterrows():
                 else:
                     continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
             else:
-                print(f"{filename} does not exist on SLAC")
+                print(filename + " does not exist on SLAC")
