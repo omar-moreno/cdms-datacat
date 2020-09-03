@@ -4,27 +4,47 @@
 import os
 from CDMSDataCatalog import *
 import pandas as pd
-import glob
+import re
+
+#Setup the CDMSDatacatalog object... thing
+dc = CDMSDataCatalog()
 
 #Create a dictionary of known datatypes!
-nDataTypes = {'Test' : -1, 'Bg' : 0, 'Co' : 1, 'Co LowR' : 2, 'Cf' : 3, 'Rand' : 4, 'Mon' : 7,
+# Capitalized 'laser' and 'beam', and changed 'laser and beam' to 'Beam + Laser', to fit with the information in this data_list.tsv
+nDataTypes = {'Test' : -1, 'dm' : 0, 'Co' : 1, 'Co LowR' : 2, 'Cf' : 3, 'Rand' : 4, 'Mon' : 7,
             'Cs' : 8, 'Ba' : 9, 'YBe' : 12, 'SbBe' : 13, 'Y Blank' : 14, 'Sb Blank' : 15, 
-            'laser' : 16,'beam' : 17, 'laser and beam' : 18, 'Fe' : 19, 'Co57' : 20, 'IV Curve' : 100, 'dIdV' : 101, 'NS Noise' : 102, 'SC Noise' : 103}
+            'Laser' : 16,'Beam' : 17, 'Beam + Laser' : 18, 'Fe55' : 19, 'Co57' : 20, 'IV Curve' : 100, 
+            'dIdV' : 101, 'NS Noise' : 102, 'noise_sc' : 103, 'noise_trans': 104}
 
-def SeriesRename(notSeries):
+def SeriesRename(datetime):
     '''
     This renamed the date to a proper series number!
     '''
     nFacility = '27'
 
-    date = notSeries[2:8]
-    hhmmss = notSeries[8:14]
+    date = datetime[2:8]
+    hhmmss = datetime[8:14]
     series = nFacility + date + '_' + hhmmss
 
     return series
 
 
-def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment):
+def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment, dumpnum = None):
+    '''
+    Function: This will setup the dataset objects (Specifically continuous raw data) to be registered to the data catalog, print out the results, and then register the data to the data catalog.
+    
+    Inputs: Filename, Filepath, Facility, nFridgeRun, nDataType, Series, nIsJunk, theComment
+    
+    Examples of the inputs:
+    Filename: 27190512_061605_5.hdf5
+    FilePath: /gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R68/Raw/27190429_164452/27190429_164452_149.hdf5
+    facility: 'ANIMAL'
+    nFridgeRun: 68
+    nDataType: 16 (see dictionary above)
+    Series: 27190512_061605
+    nIsJunk: 0
+    theComment: 50mK 60V 100Hz 500ns 150sec 11mA AnimalFridge@NEXUS
+    '''
     ds = ContinuousRawData(fileName,
                 filePath,
                 facility,
@@ -33,81 +53,74 @@ def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataTyp
                 Series,
                 nIsJunk,
                 commentStart = theComment)
+
+
+    if not dumpnum is None:
+        print("dumpnum: " + str(dumpnum)) 
     ds.info()
-    #dc.add(ds)
-
-def directorySweep(filePath, fileFormat, fileFacility, nFridgeRun, nDataType, nIsJunk, comment):
-    #Create globlist for every file within the directory (hence the *)
-    globList = glob.glob(filePath + '/*')
-    
-	#Print out the name of the files in globList
-    for fileP in globList:
-        #Gets the filename
-        name = os.path.basename(fileP)
-        fileFormat = name.split('.')[1].upper()
-
-        #Gets the series information
-        pathName = os.path.dirname(fileP)
-        series = os.path.basename(pathName)
-
-        print(pathName)
-
-        #Registers the data
-        continuousRawDataRegister(name, fileP, fileFacility, nFridgeRun, nDataType, series, nIsJunk, comment)
+    # Only do after validity of code is confirmed
+    # dc.add(ds)
+    #New line to distinguish what's happeneing
+    print("")
 
 #Read the CSV file
-df = pd.read_csv('data_list.csv')
-df['filename'] = df['filename'].astype(str)
-df['filename'] = df['filename'].str.strip()
-df['type'] = df['type'].str.strip()
-df['note'] = df['note'].str.strip()
+df = pd.read_csv('data_list.tsv', sep='\t')
+df['TES'] = df['TES'].astype(str)
+df['TES'] = df['TES'].str.strip()
+df['PMT'] = df['PMT'].astype(str)
+df['PMT'] = df['PMT'].str.strip()
+df['Type'] = df['Type'].str.strip()
+
 print(df)
 
-#The main path we are working with
-mainPath = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R70/Raw/'
-
-#Create a list of directories we want to look at
-listofdirs = os.listdir(path = mainPath)
-
-#Print out the length of the column
-rowCount = df.shape[0]
-
 #Define some metadata
-myFileFormat = 'hdf5'
-nFridgeRun = 2
 facility = 'ANIMAL'
 nIsJunk = 0
-do = 0
+# Figure out what fridge run this is
+nFridgeRun = 68
 
-#PDfileListAR68dm = pd.read_csv('copyFiles/fileChecks/fileListAR68dm.csv')
-PDfileListAR70 = pd.read_csv('copyFiles/fileChecks/fileListAR70.csv')
-#PDfileListPMT = pd.read_csv('copyFiles/fileChecks/fileListPMT.csv')
+PDFileList = pd.read_csv('copyFiles/fileChecks/IMPACT.csv')
+#PDFileList = pd.read_csv('copyFiles/fileChecks/fileListAR70.csv')
+#PDFileList = pd.read_csv('copyFiles/fileChecks/fileListPMT.csv')
 
 #fileListPMT = [os.path.basename(os.path.dirname(row['NewFile'])) for index, row in PDfileListPMT.iterrows()]
+
+#This list is to make sure if the series has already been registered, it's not registered again!
+alreadyRegisteredSeries = []
 
 #Create a for loop to iterate over the first column
 for index, row in df.iterrows():
     #Gets the filename & type
-    filename = row['filename']
-    fileType = row['type']
-    fileComment = row['note'] + ' Animal Fridge At NEXUS'
+    fileType = row['Type']
+    # TODO, possibly add PMT as a comment
+    fileComment = str(row['Volt']) + ' AnimalFridge@NorthWestern'
     
-    series = SeriesRename(filename)
-    
-    selectedFiles = PDFileListAR70[PDFileListAR70['NewFile'].str.contains(series)]
-    #TO WORK ON: Loop through this, and then have it register the individual file(paths), whereas you are sweeping through multiple directories. This will allow you to do things from the CSV... making it reproducible/reusable!! yay!! 
-    
-    print(selectedFiles)
-    #If the datestamp is correct...
-    if series in fileListAR70:
-        #Create a new path, so we work in the directory with the correct date
-        newPath = os.path.join(mainPath,SeriesRename(filename))
-        print(newPath)
-        #New list of all the subdirectories within that directory
-        newlistofdirs = os.listdir(path = newPath)
+    series = SeriesRename(row['TES'])
 
-        #If the specific filename is in the list of directories
-        if filename in newlistofdirs:
-            newestPath = os.path.join(newPath,filename)
-            directorySweep(newestPath, myFileFormat, facility, nFridgeRun, nDataTypes['laser'], nIsJunk, fileComment)
-
+    #If the series hasn't been registered yet, do this:
+    if series not in alreadyRegisteredSeries:
+        #This adds the series to the list of already registered series so it doesn't do it again!
+        alreadyRegisteredSeries.append(series)
+        selectedFiles = PDFileList[PDFileList['NewFile'].str.contains(series)]
+        #This will iterate throught the selected files that are a part of the series we want
+        for index1, row1 in selectedFiles.iterrows():
+            #This pulls the filepath, filename, and format
+            newpath = row1['NewFile']
+            filename = os.path.basename(newpath)
+            fileFormat = filename.split('.')[1]
+            
+            #Creates a regex search expression to look for the #######_#######_DUMP.FILEFORMAT pattern, and groups the dump number
+            dumpPattern = re.compile(r'\d*_\d*_(\d*).')
+            
+            if os.path.exists(newpath):
+                print(filename + " exists on SLAC! now attempting to register to DataCat")
+                #If it has a dump number, set the continuous raw with a dump num, otherwise, dont
+                if bool(dumpPattern.match(filename)):    
+                    nDumpNum = dumpPattern.search(filename).group(1)
+                    nDumpNum = int(nDumpNum)
+                    
+                    continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, dumpnum = nDumpNum)
+                else:
+                    continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
+            else:
+                print(filename + " does not exist on SLAC")
