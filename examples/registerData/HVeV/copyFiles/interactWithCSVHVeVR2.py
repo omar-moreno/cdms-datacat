@@ -7,7 +7,7 @@ import shutil as sht
 import filecmp
 
 #Which CSV files would you like to look at
-CSVPath = 'fileChecks/fileListPMT.csv'
+CSVPath = 'fileChecks/fileListHVeVR2.csv'
 
 #Create a dataframe from it!
 df = pd.read_csv(CSVPath)
@@ -17,7 +17,8 @@ def copyCommand(previousPlace, newPlace):
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
         print(f"{os.path.basename(dirpath)} didnt exist, now it does")
-        sht.copyfile(previousPlace, newPlace)
+    
+    sht.copyfile(previousPlace, newPlace)
     print(newPlace, 'copied')
 
 def fileCheckCommand(previousPlace, newPlace):
@@ -35,7 +36,8 @@ for index, row in df.iterrows():
     oldpath = row['OldFile']
     newpath = row['NewFile']
    
-    fileCheckCommand(oldpath, newpath) 
+    fileCheckCommand(oldpath, newpath)
+    
     
 
 print('All done!')
