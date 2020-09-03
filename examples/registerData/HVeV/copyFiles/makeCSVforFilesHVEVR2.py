@@ -36,15 +36,19 @@ def getFileExtension(path):
     filename = os.path.basename(path)
     try:
         #Opens the file, if it fails, see the exception part
-        something = joblib.load(path)
+        something = open(path, 'rb') 
+        pickleDict = pickle.load(something)
+        something.close()
+
         #Returns the proper file extension
-        fileExtension = 'joblib'
+        fileExtension = 'pkl'
         return fileExtension
     except:
         #Since we're here, the 'try' failed, meaning the file is a pkl file!
-        
+        joblibDict = joblib.load(path)
+        fileExtension = 'joblib'
+
         #Returns the file extension!
-        fileExtension = 'pkl'
         return fileExtension
     
 
@@ -131,8 +135,9 @@ def checkThatFile(orig, dest):
                 #Adds to the old and new path lists
                 oldFilePaths.append(topDir)
                 newFilePaths.append(newpath)
-
+        
         elif os.path.isdir(topDir):
+            pass
             nestedDirFiles = os.listdir(path = topDir)
             for myFile in nestedDirFiles:
                 nestedDirFilePath = os.path.join(topDir, myFile)
@@ -215,7 +220,6 @@ def checkThatFile(orig, dest):
                         #Adds to the old and new path lists
                         oldFilePaths.append(nestedDirFilePath)
                         newFilePaths.append(newpath)
-                
             #Builds the list of tuples (oldpath, newpath) and returns it
             oldandnew = zip(oldFilePaths, newFilePaths)
             oldandnew = tuple(oldandnew)

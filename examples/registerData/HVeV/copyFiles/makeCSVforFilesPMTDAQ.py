@@ -20,7 +20,7 @@ orig3 = '/nfs/slac/g/supercdms/tf/northwestern/AnimalData/AR70/PMTDAQ'  #This on
 
 #New
 new1 = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R68/Raw/'
-new2 = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R70/Raw/' #Kinda ignore the root files for now...
+new2 = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/ANIMAL/R70/Raw/' #Kinda ignore the root files for now...
 
 #Proper renaming scheme: facility
 
