@@ -20,9 +20,13 @@ def SeriesRename(facility, notSeries):
 filename = 'ImpactTunlData.csv'
 metaDataDF = pd.read_csv(filename)
 jsonComments = []
+
+#This list is to make sure that if the series has already been registeres, its not registered again!
+alreadyRegistered = []
+
 #This for loop will loop through every row
 for index, row in metaDataDF.iterrows():
-    seriesNumber = SeriesRename('27',str(row['Series Number']))
+    series = SeriesRename('27',str(row['Series Number']))
     Type = row['Type']
     Voltage = row['Voltage (V)']
     nTraces = row['#Traces (neutron assumed 3600)']
@@ -46,13 +50,19 @@ for index, row in metaDataDF.iterrows():
     Bias = row['Bias (percentage, CH2, CH3)']
     Comment = row['Comment']
 
-    jsonDict = {'Series Number' : seriesNumber, 'Type' : Type,
+    jsonDict = {'Series Number' : series, 'Type' : Type,
             'Voltage(V)' : Voltage, '#Traces (neutron assumed 3600)' : nTraces, 
             'Seconds of DAQ' : secOfDaq, 'Rad source?' : RadSource, 
             'Fridge Temp (mK)' : fridgeTemp, 'PMT Series' : PMTSeries,
-            'Beam Current (nA)' : nBeamCurrent, 'Beam B Field (mT)' : nBeamBField}
+            'Beam Current (nA)' : nBeamCurrent, 'Beam B Field (mT)' : nBeamBField,
+            'Location' : 'Impact@Tunl'}
 
     jsonString = json.dumps(jsonDict) 
     jsonComments.append(jsonString)
-
-print(jsonComments)
+    print(jsonString)
+    if PMTSeries is not None:
+        if not Type == 'Beam + Laser':
+            pass
+    elif PMTSeries is None:
+        #These are the things are not PMT data, so we're ignoring them!
+        pass 
