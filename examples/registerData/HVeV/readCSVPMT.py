@@ -1,6 +1,9 @@
 #The purpose of this file is to read and interact with the CSV File for TUNL data
 import pandas as pd
 import json
+import re
+import os
+
 #This function renames to the proper series convention
 def SeriesRename(facility, notSeries):
     '''
@@ -24,10 +27,14 @@ jsonComments = []
 #This list is to make sure that if the series has already been registeres, its not registered again!
 alreadyRegistered = []
 
+#This is the Pandas Dataframe of the CSV file with new / old file names!
+PDFileList = pd.read_csv('copyFiles/fileChecks/fileListPMT.csv')
+
 #This for loop will loop through every row
 for index, row in metaDataDF.iterrows():
+    #This next block goes thru the csv file and pulls all the metadata
     series = SeriesRename('27',str(row['Series Number']))
-    Type = row['Type']
+    Type = str(row['Type'])
     Voltage = row['Voltage (V)']
     nTraces = row['#Traces (neutron assumed 3600)']
     secOfDaq = row['Seconds of DAQ']
@@ -50,6 +57,7 @@ for index, row in metaDataDF.iterrows():
     Bias = row['Bias (percentage, CH2, CH3)']
     Comment = row['Comment']
 
+    #This is a dictionary of all the things that will go in a json comment (So we can have the metadata!)
     jsonDict = {'Series Number' : series, 'Type' : Type,
             'Voltage(V)' : Voltage, '#Traces (neutron assumed 3600)' : nTraces, 
             'Seconds of DAQ' : secOfDaq, 'Rad source?' : RadSource, 
@@ -57,12 +65,31 @@ for index, row in metaDataDF.iterrows():
             'Beam Current (nA)' : nBeamCurrent, 'Beam B Field (mT)' : nBeamBField,
             'Location' : 'Impact@Tunl'}
 
+    #This turns the jsonDict to a string which will be our main comment for registering 
     jsonString = json.dumps(jsonDict) 
     jsonComments.append(jsonString)
-    print(jsonString)
+    
     if PMTSeries is not None:
-        if not Type == 'Beam + Laser':
-            pass
+        if series not in alreadyRegistered:
+            #This adds the series to the list of already registered series so it wont do it again!
+            alreadyRegistered.append(series)
+
+            #This selects the files!
+            selectedFiles = PDFileList[PDFileList['NewFile'].str.contains(series)]
+
+            #This will iterate through that filelist
+            for index1, row1 in selectedFiles.iterrows():
+                #This will pull the filepath, filename, and fileformat
+                filepath = row1['NewFile']
+                filename = os.path.basename(filepath)
+                
+                #This will pull the fileformat, using regex that searches for words after the period
+                fileformatpattern = re.compile(r'\.(\w*)')
+                fileFormat = fileformatpattern.search(filename).group(1)
+                
+                #This will register the data
+                registerData(Series, Facility)
+        #This is the PMT series we are registering!
     elif PMTSeries is None:
         #These are the things are not PMT data, so we're ignoring them!
         pass 
