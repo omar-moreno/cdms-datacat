@@ -425,7 +425,7 @@ class ProcessedData(CDMSDataset):
         Constructor for the CDMS processed dataset class
         """
         # Some checks
-        prodSteps=['BatNoise','BatRoot','BatCalib','Cut']
+        prodSteps=['BatNoise','BatRoot','BatCalib','Cut', 'PyNoise', 'PyTemplate', 'PyPkl', 'PyPklRRQ']
         if(not prodStep in prodSteps):
             raise ValueError("Please specify data process level (prodStep), options are "+str(prodSteps))
  
