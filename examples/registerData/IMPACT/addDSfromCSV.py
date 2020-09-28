@@ -29,6 +29,43 @@ def SeriesRename(datetime):
     return series
 
 
+# TODO: Processed data register
+'''
+    fileName - Already have this
+    filePath - Already have this
+    datacatPath - Pretty much the relative path
+     facility - ANIMAL
+     nFridgeRun - 70
+     nDataType - In data_list.tsv
+     series - Already have this
+     prodStep - PyPklRRQ
+     prodTag - Default value is 'test'
+     prodType - Default value is 'test'
+     nMergeLevel - 1
+     dataLocation - 'SLAC'
+     fileFormat - 'pkl' (?)
+     commentStart - Comment goes here 
+     commentEnd - None (default value)
+     nIsJunk - Presumably 0
+     nDump - Presumably 0
+     noiseDumps - N/A
+     processing_config - Default value is None
+     analysis_config = Default value is None
+     calib_processing_config = N/A
+     calibration_config = N/A
+     nEventsAll = N/A
+     nEventsBORR = N/A
+     nEventsEORR= N/A
+     nEventsBORTS= N/A
+     nEventsEORTS= N/A
+     analysis = N/A
+     cutName = N/A
+     cutVersion = N/A
+     
+     *** N/A => Not applicable for this prodStep
+'''
+
+
 def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment, dumpnum = None):
     '''
     Function: This will setup the dataset objects (Specifically continuous raw data) to be registered to the data catalog, print out the results, and then register the data to the data catalog.
@@ -45,18 +82,22 @@ def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataTyp
     nIsJunk: 0
     theComment: 50mK 60V 100Hz 500ns 150sec 11mA AnimalFridge@NEXUS
     '''
-    ds = ContinuousRawData(fileName,
+    ds =   ProcessedData(fileName, filePath, datacatPath, facility, nFridgeRun, nDataType, series, prodStep, prodTag='Test', prodType='test',
+                         nMergeLevel=0, fileFormat=file_format, commentStart=theComment, analysis='All')
+    
+    #DatcatPath starts with /CDMS (ommits eveything beforehand)
+    #ProdStep TODO
+    
+    
+    '''ContinuousRawData(fileName,
                 filePath,
                 facility,
                 nFridgeRun,
                 nDataType,
                 Series,
                 nIsJunk,
-                commentStart = theComment)
-
-
-    if not dumpnum is None:
-        print("dumpnum: " + str(dumpnum)) 
+                commentStart = theComment
+                nDumNum = dumpnum) '''
     ds.info()
     # Only do after validity of code is confirmed
     # dc.add(ds)
@@ -77,7 +118,7 @@ print(df)
 facility = 'ANIMAL'
 nIsJunk = 0
 # Figure out what fridge run this is
-nFridgeRun = 68
+nFridgeRun = 70
 
 PDFileList = pd.read_csv('copyFiles/fileChecks/IMPACT.csv')
 #PDFileList = pd.read_csv('copyFiles/fileChecks/fileListAR70.csv')
@@ -93,7 +134,7 @@ for index, row in df.iterrows():
     #Gets the filename & type
     fileType = row['Type']
     # TODO, possibly add PMT as a comment
-    fileComment = str(row['Volt']) + ' AnimalFridge@NorthWestern'
+    fileComment = "Coincident with PMT " + row['PMT'] + ", " + str(row['Volt']) + 'V AnimalFridge@NorthWestern'
     
     series = SeriesRename(row['TES'])
 
