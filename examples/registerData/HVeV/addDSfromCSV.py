@@ -53,8 +53,9 @@ def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataTyp
                 nIsJunk,
                 commentStart = theComment,
                 nDumpNum = dumpnum)
-    ds.info()
-    #dc.add(ds)
+    if fileName.endswith('pkl'):
+        ds.info()
+        #dc.add(ds)
     #New line to distinguish what's happeneing
     print("")
 
@@ -100,17 +101,19 @@ for index, row in df.iterrows():
             fileFormat = filename.split('.')[1]
             
             #Creates a regex search expression to look for the #######_#######_DUMP.FILEFORMAT pattern, and groups the dump number
-            dumpPattern = re.compile(r'\d*_\d*_(\d*).')
+            dumpPattern = re.compile(r'\d*_\d*_(\d*).pkl')
             
             if os.path.exists(newpath):
-                print(f"{filename} exists on SLAC! now attempting to register to DataCat")
                 #If it has a dump number, set the continuous raw with a dump num, otherwise, dont
                 if bool(dumpPattern.match(filename)):    
+                    print(f"{filename} exists on SLAC! now attempting to register to DataCat")
                     nDumpNum = dumpPattern.search(filename).group(1)
                     nDumpNum = int(nDumpNum)
-                    
+                
                     continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, dumpnum = nDumpNum)
                 else:
-                    continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
+                    if filename.endswith('pkl'):
+                        print(f"{filename} exists on SLAC! now attempting to register to DataCat")
+                        continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
             else:
                 print(f"{filename} does not exist on SLAC")
