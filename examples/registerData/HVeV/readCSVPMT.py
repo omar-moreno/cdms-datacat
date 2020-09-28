@@ -58,24 +58,24 @@ for index, row in metaDataDF.iterrows():
     Comment = row['Comment']
 
     #This is a dictionary of all the things that will go in a json comment (So we can have the metadata!)
-    jsonDict = {'Series Number' : series, 'Type' : Type,
+    jsonDict = {'TES Series Number' : series, 'Type' : Type,
             'Voltage(V)' : Voltage, '#Traces (neutron assumed 3600)' : nTraces, 
             'Seconds of DAQ' : secOfDaq, 'Rad source?' : RadSource, 
             'Fridge Temp (mK)' : fridgeTemp, 'PMT Series' : PMTSeries,
             'Beam Current (nA)' : nBeamCurrent, 'Beam B Field (mT)' : nBeamBField,
-            'Location' : 'Impact@Tunl'}
+            'Location' : 'Animal @ TUNL'}
 
     #This turns the jsonDict to a string which will be our main comment for registering 
     jsonString = json.dumps(jsonDict) 
     jsonComments.append(jsonString)
     
     if PMTSeries is not None:
-        if series not in alreadyRegistered:
+        if PMTSeries not in alreadyRegistered:
             #This adds the series to the list of already registered series so it wont do it again!
-            alreadyRegistered.append(series)
+            alreadyRegistered.append(PMTSeries)
 
             #This selects the files!
-            selectedFiles = PDFileList[PDFileList['NewFile'].str.contains(series)]
+            selectedFiles = PDFileList[PDFileList['NewFile'].str.contains(PMTSeries)]
 
             #This will iterate through that filelist
             for index1, row1 in selectedFiles.iterrows():
@@ -84,11 +84,11 @@ for index, row in metaDataDF.iterrows():
                 filename = os.path.basename(filepath)
                 
                 #This will pull the fileformat, using regex that searches for words after the period
-                fileformatpattern = re.compile(r'\.(\w*)')
+                fileformatpattern = re.compile(r'\.(\w*)') 
                 fileFormat = fileformatpattern.search(filename).group(1)
                 
+                print(jsonString)        
                 #This will register the data
-                registerData(Series, Facility)
         #This is the PMT series we are registering!
     elif PMTSeries is None:
         #These are the things are not PMT data, so we're ignoring them!
