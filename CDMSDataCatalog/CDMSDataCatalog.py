@@ -279,7 +279,7 @@ class CDMSDataCatalog:
                                1 for 'Submerged',
                                2 for 'Merged'
             Series (str): series number as a string (including underscore)
-            ProdStep (str): One of 'BatNoise', 'BatRoot', 'BatCalib', 'Cut'
+            ProdStep (str): One of 'BatNoise', 'BatRoot', 'BatCalib', 'Cut', 'PyNoise', 'PyTemplate', 'PyPkl', 'PyPklRRQ'
             filename (str): the name of the actual file
             query (str): additional `datacat.client.Client.search` query.
                          See [here](https://github.com/slaclab/datacat/wiki/Search-Syntax)
