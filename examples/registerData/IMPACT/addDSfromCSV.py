@@ -34,33 +34,33 @@ def SeriesRename(datetime):
     fileName - Already have this
     filePath - Already have this
     datacatPath - Pretty much the relative path
-     facility - ANIMAL
-     nFridgeRun - 70
-     nDataType - In data_list.tsv
-     series - Already have this
-     prodStep - PyPklRRQ
-     prodTag - Default value is 'test'
-     prodType - Default value is 'test'
-     nMergeLevel - 1
-     dataLocation - 'SLAC'
-     fileFormat - 'pkl' (?)
-     commentStart - Comment goes here 
-     commentEnd - None (default value)
-     nIsJunk - Presumably 0
-     nDump - Presumably 0
-     noiseDumps - N/A
-     processing_config - Default value is None
-     analysis_config = Default value is None
-     calib_processing_config = N/A
-     calibration_config = N/A
-     nEventsAll = N/A
-     nEventsBORR = N/A
-     nEventsEORR= N/A
-     nEventsBORTS= N/A
-     nEventsEORTS= N/A
-     analysis = N/A
-     cutName = N/A
-     cutVersion = N/A
+    facility - ANIMAL
+    nFridgeRun - 70
+    nDataType - In data_list.tsv
+    series - Already have this
+    prodStep - PyPklRRQ
+    prodTag - Default value is 'test'
+    prodType - Default value is 'test'
+    nMergeLevel - 1
+    dataLocation - 'SLAC'
+    fileFormat - 'pkl' (?)
+    commentStart - Comment goes here 
+    commentEnd - None (default value)
+    nIsJunk - Presumably 0
+    nDump - Presumably 0
+    noiseDumps - N/A
+    processing_config - Default value is None
+    analysis_config = Default value is None
+    calib_processing_config = N/A
+    calibration_config = N/A
+    nEventsAll = N/A
+    nEventsBORR = N/A
+    nEventsEORR= N/A
+    nEventsBORTS= N/A
+    nEventsEORTS= N/A
+    analysis = N/A
+    cutName = N/A
+    cutVersion = N/A
      
      *** N/A => Not applicable for this prodStep
 '''
