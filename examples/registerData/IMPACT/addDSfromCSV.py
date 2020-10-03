@@ -7,7 +7,7 @@ import pandas as pd
 import re
 
 #Setup the CDMSDatacatalog object... thing
-dc = CDMSDataCatalog()
+dc = CDMSDataCatalog(config_file = 'default.cfg')
 
 #Create a dictionary of known datatypes!
 # Capitalized 'laser' and 'beam', and changed 'laser and beam' to 'Beam + Laser', to fit with the information in this data_list.tsv
