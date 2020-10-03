@@ -99,7 +99,7 @@ def dataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nI
                 nDumNum = dumpnum) '''
     ds.info()
     # Only do after validity of code is confirmed
-    # dc.add(ds)
+    dc.add(ds)
     #New line to distinguish what's happeneing
     print("")
 
