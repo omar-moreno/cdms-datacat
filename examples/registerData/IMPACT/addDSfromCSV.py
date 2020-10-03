@@ -83,7 +83,7 @@ def dataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nI
     theComment: 50mK 60V 100Hz 500ns 150sec 11mA AnimalFridge@NEXUS
     '''
     
-    dc_path = filePath[len('/gpfs/slac/staas/fs1/supercdms/data/'):]
+    dc_path = filePath[len('/gpfs/slac/staas/fs1/supercdms/data'):]
     
     ds =   ProcessedData(fileName, filePath, dc_path, facility, nFridgeRun, nDataType, series, prodStep = 'PyPklRRQ', prodTag='Test', 
                          prodType='test', nMergeLevel=1, fileFormat=file_format, commentStart=theComment, analysis='All')
