@@ -161,6 +161,6 @@ for index, row in df.iterrows():
                     
                     dataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, fileFormat, dumpnum = nDumpNum)
                 else:
-                    dataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, FileFormat)
+                    dataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, fileFormat)
             else:
                 print(filename + " does not exist on SLAC")
