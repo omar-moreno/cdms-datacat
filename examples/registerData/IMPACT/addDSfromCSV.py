@@ -66,7 +66,7 @@ def SeriesRename(datetime):
 '''
 
 
-def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment, dumpnum = None):
+def dataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment, dumpnum = None):
     '''
     Function: This will setup the dataset objects (Specifically continuous raw data) to be registered to the data catalog, print out the results, and then register the data to the data catalog.
     
@@ -82,12 +82,11 @@ def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataTyp
     nIsJunk: 0
     theComment: 50mK 60V 100Hz 500ns 150sec 11mA AnimalFridge@NEXUS
     '''
-    ds =   ProcessedData(fileName, filePath, datacatPath, facility, nFridgeRun, nDataType, series, prodStep, prodTag='Test', prodType='test',
-                         nMergeLevel=0, fileFormat=file_format, commentStart=theComment, analysis='All')
     
-    #DatcatPath starts with /CDMS (ommits eveything beforehand)
-    #ProdStep TODO
+    dc_path = filePath[len('/gpfs/slac/staas/fs1/supercdms/data/'):]
     
+    ds =   ProcessedData(fileName, filePath, dc_path, facility, nFridgeRun, nDataType, series, prodStep = 'PyPklRRQ', prodTag='Test', 
+                         prodType='test', nMergeLevel=1, fileFormat=file_format, commentStart=theComment, analysis='All')
     
     '''ContinuousRawData(fileName,
                 filePath,
@@ -160,8 +159,8 @@ for index, row in df.iterrows():
                     nDumpNum = dumpPattern.search(filename).group(1)
                     nDumpNum = int(nDumpNum)
                     
-                    continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, dumpnum = nDumpNum)
+                    dataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, dumpnum = nDumpNum)
                 else:
-                    continuousRawDataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
+                    dataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
             else:
                 print(filename + " does not exist on SLAC")
