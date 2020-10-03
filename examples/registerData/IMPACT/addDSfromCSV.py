@@ -147,7 +147,7 @@ for index, row in df.iterrows():
             #This pulls the filepath, filename, and format
             newpath = row1['NewFile']
             filename = os.path.basename(newpath)
-            fileFormat = filename.split('.')[1]
+            fileFormat = 'pickle'
             
             #Creates a regex search expression to look for the #######_#######_DUMP.FILEFORMAT pattern, and groups the dump number
             dumpPattern = re.compile(r'\d*_\d*_(\d*).')
