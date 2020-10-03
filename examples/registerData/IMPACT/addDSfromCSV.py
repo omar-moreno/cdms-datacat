@@ -66,7 +66,7 @@ def SeriesRename(datetime):
 '''
 
 
-def dataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment, dumpnum = None):
+def dataRegister(fileName, filePath, facility, nFridgeRun, nDataType, Series, nIsJunk, theComment, file_format, dumpnum = None):
     '''
     Function: This will setup the dataset objects (Specifically continuous raw data) to be registered to the data catalog, print out the results, and then register the data to the data catalog.
     
@@ -159,8 +159,8 @@ for index, row in df.iterrows():
                     nDumpNum = dumpPattern.search(filename).group(1)
                     nDumpNum = int(nDumpNum)
                     
-                    dataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, dumpnum = nDumpNum)
+                    dataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, fileFormat, dumpnum = nDumpNum)
                 else:
-                    dataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment)
+                    dataRegister(filename, newpath, facility, nFridgeRun, nDataTypes[fileType], series, nIsJunk,fileComment, FileFormat)
             else:
                 print(filename + " does not exist on SLAC")
