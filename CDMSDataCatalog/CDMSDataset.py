@@ -435,7 +435,7 @@ class ProcessedData(CDMSDataset):
         self.relativePath = datacatPath
       
         #add category to path
-        if (prodStep == 'BatNoise'):
+        if (prodStep == 'BatNoise') or (prodStep == 'PyNoise'):
             self.relativePath+='/Noise'
         elif (prodStep == 'Cut'):
             self.relativePath+='/Cuts'
