@@ -9,7 +9,7 @@ output_path = './copyFiles/fileChecks/IMPACT.csv'
 # The files that need to be renamed are prefixed with "coincident_TES_PMT_"
 oldfile_path = '/nfs/slac/g/supercdms/tf/northwestern/AnimalData/AR70/processing_coinc_v0701/'
 # Path of newFile
-newfile_path = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R70/Processed/Releases/ProdCoinc0701/Submerged/'
+newfile_path = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/ANIMAL/R70/Processed/Releases/ProdCoinc0701/Submerged/'
 # Site ID
 ID = '27'
 # Prefix of data files
