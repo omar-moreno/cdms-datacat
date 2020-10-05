@@ -66,3 +66,14 @@ pip install --user --edit .
 If you change your code, the 'build' is updated automatically, allowing you to run your update without having to rebuild the package
 
 Use git flow while working on this repository.
+
+
+Data Registering
+----------------
+When registering data, follow these steps to make sure the data gets registered
+(There is an issue that the DataCat won't find your data, this is a temporary work-around)
+*Only follow these steps when you are in the final steps to register to the Data Catalog*
+1. Copy the default.cfg file from DataCat/CDMSDataCatalog/cfg/default.cfg to your working directory
+2. Open the copied default.cfg (in your working directory) and uncomment every line (delete the # from the start of each line) and save it 
+3. In your data-registering file, replace dc = CDMSDataCatalog() with dc = CDMSDataCatalog(config_file = '/path/to/your/copied/config.cfg')
+4. Now you're ready to register :)
