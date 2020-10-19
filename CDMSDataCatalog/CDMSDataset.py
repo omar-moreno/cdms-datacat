@@ -427,7 +427,7 @@ class ProcessedData(CDMSDataset):
         # Some checks
         prodSteps=['BatNoise','BatRoot','BatCalib','Cut', 'PyNoise', 'PyTemplate', 'PyPkl', 'PyPklRRQ']
         if(not prodStep in prodSteps):
-            raise ValueError("Please specify data process level (prodStep), options are "+str(prodSteps))
+                raise ValueError("Please specify data process level (prodStep), options are "+str(prodSteps))
  
 
         # instantiate CDMSDataset base object
