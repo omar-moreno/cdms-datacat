@@ -7,10 +7,10 @@ from CDMSDataCatalog import *
 
 dc = CDMSDataCatalog(config_file = 'default.cfg')
 
-nDataTypes = {'Test' : -1, 'dm' : 0, 'Co' : 1, 'Co LowR' : 2, 'Cf' : 3, 'Rand' : 4, 'Mon' : 7,
-            'Cs' : 8, 'Ba' : 9, 'YBe' : 12, 'SbBe' : 13, 'Y Blank' : 14, 'Sb Blank' : 15, 
-            'Laser' : 16,'Beam' : 17, 'Beam + Laser' : 18, 'Fe55 source' : 19, 'Co57' : 20, 'IV curve' : 100, 
-            'dIdV' : 101, 'NS Noise' : 102, 'SC noise' : 103, 'TS noise': 104}
+nDataTypes = {'Test' : -1, 'Background' : 0, 'Co' : 1, 'Co LowR' : 2, 'Cf' : 3, 'Rand' : 4, 'Mon' : 7,
+            'Cs source' : 8, 'Ba' : 9, 'YBe' : 12, 'SbBe' : 13, 'Y Blank' : 14, 'Sb Blank' : 15, 
+            'Laser' : 16,'Beam' : 17, 'Beam + Laser' : 18, 'Fe55 source' : 19, 'Fe55' : 19, 'Co57' : 20, 'IV curve' : 100, 
+            'dIdV' : 101, 'NM noise' : 102, 'SC noise' : 103, 'TS noise': 104}
 
 #This function renames to the proper series convention
 def SeriesRename(facility, notSeries):
@@ -54,7 +54,7 @@ def continuousRawDataRegister(fileName, filePath, facility, nFridgeRun, nDataTyp
                 commentStart = theComment,
                 nDumpNum = dumpnum)
     ds.info()
-    #dc.add(ds)
+    dc.add(ds)
     #New line to distinguish what's happeneing
     print("")
 
@@ -108,40 +108,38 @@ for index, row in metaDataDF.iterrows():
     jsonString = json.dumps(jsonDict) 
     jsonComments.append(jsonString)
     
-    if PMTSeries is None:
-        if series not in alreadyRegistered:
-            #This adds the series to the list of already registered series so it wont do it again!
-            alreadyRegistered.append(series)
+    if (series not in alreadyRegistered) and (series is not None):
+        #This adds the series to the list of already registered series so it wont do it again!
+        alreadyRegistered.append(series)
 
-            #This selects the files!
-            selectedFiles = PDFileList[PDFileList['NewFile'].str.contains(series)]
 
-            #This will iterate through that filelist
-            for index1, row1 in selectedFiles.iterrows():
-                #This will pull the filepath, filename, and fileformat
-                filepath = row1['NewFile']
-                filename = os.path.basename(filepath)
-                
-                #This will pull the fileformat, using regex that searches for words after the period
-                filenameSearchPattern = re.compile(r'(\d*_\d*)_(\d*).(\w*)') 
-                filenameSearchPattern1 = re.compile(r'(\d*_\d*).(\w*)')
+        #This selects the files!
+        print(f'Searching for series: {series}')
+        selectedFiles = PDFileList[PDFileList['NewFile'].str.contains(series)]
 
-                facility = 'ANIMAL'
-                nFridgeRun = 70
-                nDataType = nDataTypes[Type]
-                nIsJunk = 0
-    
-                if filenameSearchPattern.match(filename):
-                    fileFormat = filenameSearchPattern.search(filename).group(3)
-                    nDump = int(filenameSearchPattern.search(filename).group(2))
-                
-                    continuousRawDataRegister(filename, filepath, facility, nFridgeRun, nDataType,series, nIsJunk, jsonString, dumpnum = nDump)
-                
-                elif filenameSearchPattern1.match(filename):
-                   fileFormat = filenameSearchPattern1.search(filename).group(2)
-                   continuousRawDataRegister(filename, filepath, facility, nFridgeRun, nDataType,series, nIsJunk, jsonString)
-                #This will register the data
-        #This is the PMT series we are registering!
-    elif PMTSeries is not None:
-        #These are the things are not PMT data, so we're ignoring them!
-        pass 
+        #This will iterate through that filelist
+        for index1, row1 in selectedFiles.iterrows():
+            #This will pull the filepath, filename, and fileformat
+            filepath = row1['NewFile']
+            filename = os.path.basename(filepath)
+            
+            #This will pull the fileformat, using regex that searches for words after the period
+            filenameSearchPattern = re.compile(r'(\d*_\d*)_(\d*).(\w*)') 
+            filenameSearchPattern1 = re.compile(r'(\d*_\d*).(\w*)')
+
+            facility = 'ANIMAL'
+            nFridgeRun = 70
+            nDataType = nDataTypes[Type]
+            nIsJunk = 0
+
+            if filenameSearchPattern.match(filename):
+                fileFormat = filenameSearchPattern.search(filename).group(3)
+                nDump = int(filenameSearchPattern.search(filename).group(2))
+            
+                continuousRawDataRegister(filename, filepath, facility, nFridgeRun, nDataType,series, nIsJunk, jsonString, dumpnum = nDump)
+            
+            elif filenameSearchPattern1.match(filename):
+               fileFormat = filenameSearchPattern1.search(filename).group(2)
+               continuousRawDataRegister(filename, filepath, facility, nFridgeRun, nDataType,series, nIsJunk, jsonString)
+            #This will register the data
+    #This is the PMT series we are registering!
