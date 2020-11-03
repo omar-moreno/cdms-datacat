@@ -2,5 +2,5 @@
 from CDMSDataCatalog import CDMSDataCatalog
 
 dc = CDMSDataCatalog()
-path = '/CDMS/ANIMAL/R70/Processed/Releases/ProdCoinc0701'
+path = '/CDMS/ANIMAL/R70/Processed/Releases/ProdCoinc0701/Merged/'
 dc.rm(path, recursive = True)
