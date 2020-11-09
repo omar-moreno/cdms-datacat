@@ -122,7 +122,8 @@ class CDMSDataCatalog:
         if(recursive):
             try:
                 if(type(self.client.path(path)) == datacat.model.Dataset):
-                    self.client.rmds(path)
+                    response = self.client.rmds(path)
+                    print(response)
                     return
             except Exception:
                 print("Couldn't delete %s" % path)
@@ -139,7 +140,8 @@ class CDMSDataCatalog:
                 if(verbose):
                     print(path)
                 try:
-                    self.client.rmdir(path, type=ctype)
+                    response = self.client.rmdir(path, type=ctype)
+                    print(response)
                 except Exception:
                     print("Couldn't delete %s" % path)
                 return
