@@ -122,7 +122,8 @@ class CDMSDataCatalog:
         if(recursive):
             try:
                 if(type(self.client.path(path)) == datacat.model.Dataset):
-                    self.client.rmds(path)
+                    response = self.client.rmds(path)
+                    print(response)
                     return
             except Exception:
                 print("Couldn't delete %s" % path)
@@ -139,7 +140,8 @@ class CDMSDataCatalog:
                 if(verbose):
                     print(path)
                 try:
-                    self.client.rmdir(path, type=ctype)
+                    response = self.client.rmdir(path, type=ctype)
+                    print(response)
                 except Exception:
                     print("Couldn't delete %s" % path)
                 return
@@ -279,7 +281,7 @@ class CDMSDataCatalog:
                                1 for 'Submerged',
                                2 for 'Merged'
             Series (str): series number as a string (including underscore)
-            ProdStep (str): One of 'BatNoise', 'BatRoot', 'BatCalib', 'Cut'
+            ProdStep (str): One of 'BatNoise', 'BatRoot', 'BatCalib', 'Cut', 'PyNoise', 'PyTemplate', 'PyPkl', 'PyPklRRQ'
             filename (str): the name of the actual file
             query (str): additional `datacat.client.Client.search` query.
                          See [here](https://github.com/slaclab/datacat/wiki/Search-Syntax)
