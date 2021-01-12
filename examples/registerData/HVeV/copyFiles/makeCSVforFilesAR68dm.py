@@ -26,6 +26,12 @@ new2 = '/gpfs/slac/staas/fs1/supercdms/data/CDMS/Animal/R70/Raw/' #Kinda ignore 
 def SeriesRename(facility, notSeries):
     '''
     It renames the not-so-series to a standard series number
+
+    Inputs:
+        Facility (str): the facility number in string format, i.e. '27' for animal data
+        notSeries (str): this is the timestamp/filename, i.e. '20190404144522', or anything with the format 'YYYYMMDDHHMMSS'
+    Outputs:
+        series (str): Returns the proper series number i.e. '27190405_030442' 
     '''
 
     date = notSeries[2:8]
