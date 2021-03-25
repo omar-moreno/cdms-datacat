@@ -25,15 +25,18 @@ class CDMSDataset:
                  'txt': 'CDMSTXT', 'png': 'CDMSDMCPNG', 'epot': 'CDMSEPOT',
                  'supersim': 'CDMSHISTOGRAMS', 'midas': 'CDMSMIDAS',
                  'cdmsraw': 'CDMSSOUDANRAW', 'numpy': 'CDMSNUMPY',
-                 'pickle': 'CDMSPICKLE', 'hdf5':'CDMSHDF5',
-                 'error':'ERROR', None:'ERROR'}
+                 'pickle': 'CDMSPICKLE', 'hdf5': 'CDMSHDF5',
+                 'pmtroot': 'CDMSPMTROOT',
+                 'error': 'ERROR', None:'ERROR'}
 
     """ List of allowed file types """
     
     fileFormats = {'m': 'm', 'mat': 'mat', 'root': 'root', 'txt': 'txt',
                    'epot': 'mat', 'supersim': 'root', 'png': 'png',
                    'pdf': 'pdf', 'midas': 'midas', 'cdmsraw': 'cdmsraw',
-                   'numpy': 'npz', 'pickle': 'pickle','hdf5':'hdf5', 'error':None, None:None}
+                   'numpy': 'npz', 'pickle': 'pickle','hdf5':'hdf5',
+                   'pmtroot': 'root',
+                   'error':None, None:None}
     """ List of allowed file formats (map type: suffix) """
     
 
@@ -353,34 +356,36 @@ class RawData(CDMSDataset):
 
 class ContinuousRawData(CDMSDataset):
 
-	def __init__(self,
-		fileName,
-		filePath,
-		facility,
-		nFridgeRun,
-		nDataType,
-		series,
-		nIsJunk,
-		dataLocation = 'SLAC',
-		fileFormat = 'hdf5',
-		commentStart = 'None',
-		commentEnd = 'None'):
+    def __init__(self,
+        fileName,
+        filePath,
+        facility,
+        nFridgeRun,
+        nDataType,
+        series,
+        nIsJunk,
+        dataLocation = 'SLAC',
+        fileFormat = 'hdf5',
+        commentStart = 'None',
+        commentEnd = 'None',
+        nDumpNum = None):
 		
-		'''
-		Constructor for raw data taken with continuous DAQ
-		'''
+        '''
+        Constructor for raw data taken with continuous DAQ
+	    '''
 
-        	#Instantiate CDMSDataset Base Object
-		CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation, fileFormat)
-
-		self.relativePath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
-		self.metadata["nFridgeRun"] = int(nFridgeRun)
-		self.metadata["nDataType"] = int(nDataType)
-		self.metadata["Series"] = series
-		self.metadata["nIsJunk"] = int(nIsJunk)
-		self.metadata["CommentStart"] = commentStart
-		self.metadata["CommentEnd"] = commentEnd
-
+        #Instantiate CDMSDataset Base Object
+        CDMSDataset.__init__(self, fileName, filePath, facility, dataLocation, fileFormat)
+        
+        self.relativePath += '/R' + str(nFridgeRun) + '/Raw/' + str(series)
+        self.metadata["nFridgeRun"] = int(nFridgeRun)
+        self.metadata["nDataType"] = int(nDataType)
+        self.metadata["Series"] = series
+        self.metadata["nIsJunk"] = int(nIsJunk)
+        self.metadata["CommentStart"] = commentStart
+        self.metadata["CommentEnd"] = commentEnd
+        if nDumpNum is not None:
+            self.metadata["nDump"] = int(nDumpNum)
 
 class ProcessedData(CDMSDataset):
 
@@ -420,9 +425,9 @@ class ProcessedData(CDMSDataset):
         Constructor for the CDMS processed dataset class
         """
         # Some checks
-        prodSteps=['BatNoise','BatRoot','BatCalib','Cut']
+        prodSteps=['BatNoise','BatRoot','BatCalib','Cut', 'PyNoise', 'PyTemplate', 'PyPkl', 'PyPklRRQ']
         if(not prodStep in prodSteps):
-            raise ValueError("Please specify data process level (prodStep), options are "+str(prodSteps))
+                raise ValueError("Please specify data process level (prodStep), options are "+str(prodSteps))
  
 
         # instantiate CDMSDataset base object
@@ -430,7 +435,7 @@ class ProcessedData(CDMSDataset):
         self.relativePath = datacatPath
       
         #add category to path
-        if (prodStep == 'BatNoise'):
+        if (prodStep == 'BatNoise') or (prodStep == 'PyNoise'):
             self.relativePath+='/Noise'
         elif (prodStep == 'Cut'):
             self.relativePath+='/Cuts'
