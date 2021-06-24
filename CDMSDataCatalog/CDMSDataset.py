@@ -331,7 +331,9 @@ class RawData(CDMSDataset):
                  dataLocation='SLAC',
                  fileFormat='midas',
                  commentStart='None',
-                 commentEnd='None'):
+                 commentEnd='None',
+                 nFirstTriggerId=-1,
+                 nLastTriggerId=-1,):
         '''
         Constructor for the CDMS RawData dataset class
         '''
@@ -354,6 +356,8 @@ class RawData(CDMSDataset):
         self.metadata["CommentStart"] = commentStart
         self.metadata["CommentEnd"] = commentEnd
         self.metadata["nIsJunk"] = int(nIsJunk)
+        self.metadata["nFirstTriggerId"] = int(nFirstTriggerId)
+        self.metadata["nLastTriggerId"] = int(nLastTriggerId)
 
 class ContinuousRawData(CDMSDataset):
 
