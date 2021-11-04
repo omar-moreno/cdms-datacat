@@ -336,7 +336,7 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
                     if dataset.site == 'SLAC':
                         download_web(dataset, target, baseurl, _callback)
-                    elif dataset.site == 'OpenStorageNetwork':
+                    elif dataset.site == 'OSN':
                         download_osn(dataset, target, endpointurl, bucketname, osn_access_key, osn_secret_key)
 
                 except BaseException as e:
