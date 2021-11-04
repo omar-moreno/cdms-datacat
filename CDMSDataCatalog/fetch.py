@@ -264,11 +264,12 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     _expand_query(req)
             except TypeError:
                 raise TypeError(f"Unhandled type {type(request)} for fetch")
-
+    print("expanding query")
     _expand_query(path)
 
     allresults = tocheck + errors
     todownload = []
+    print("allresults", allresults)
     success = []
 
     # now that we have a flat list of `CDMSDataset`s, check each one
@@ -301,12 +302,12 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
     for dataset in tocheck:
         _check_local(dataset, errifnotfound=False)
     tocheck = []
-
+    print("To Download", todownload)
     # now download any required files
     # TODO: should we skip download if there are errors already?
     dlsize = sum(dataset.size for dataset in todownload)
-    dodownload = checkonly is not True and dlsize > 0
-    if dlsize > 0:
+    dodownload = checkonly is not True and dlsize >= 0
+    if dlsize >= 0:
         print("Need to download", print_filesize(dlsize),
               "(", len(todownload), "files ) from catalog")
         if checkonly is not True and dlsize > checkonly*1000000:
@@ -334,6 +335,7 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     # we need to actually do the download
                     targetDir = os.path.dirname(target)
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
+                    print("Checking place to download")
                     if dataset.site == 'SLAC':
                         download_web(dataset, target, baseurl, _callback)
                     elif dataset.site == 'OSN':
