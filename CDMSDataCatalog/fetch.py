@@ -337,7 +337,8 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     if dataset.site == 'SLAC':
                         download_web(dataset, target, baseurl, _callback)
                     elif dataset.site == 'OSN':
-                        download_osn(dataset, target, endpointurl, bucketname, osn_access_key, osn_secret_key)
+                        print('DOWNLOADING OSN NOW')
+                        download_osn(dataset, target)
 
                 except BaseException as e:
                     dataset.fetchError = f"Exception during download: {e}"
