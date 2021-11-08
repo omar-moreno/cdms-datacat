@@ -306,11 +306,14 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
     # now download any required files
     # TODO: should we skip download if there are errors already?
     dlsize = sum(dataset.size for dataset in todownload)
+    dlsize = 123
     dodownload = checkonly is not True and dlsize >= 0
     if dlsize >= 0:
         print("Need to download", print_filesize(dlsize),
               "(", len(todownload), "files ) from catalog")
         if checkonly is not True and dlsize > checkonly*1000000:
+            print(f'checkonly: {checkonly}')
+            print(f'dlsize: {dlsize}')
             confirm = input("Do you want to proceed? (y/n): ")
             dodownload = confirm[0] in 'Yy'
 
