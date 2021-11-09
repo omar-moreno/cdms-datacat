@@ -152,6 +152,7 @@ def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bu
      Returns:
          target (str): The target filepath of the file downloaded from the OSN
      """
+     print('USING THE DOWNLOADOSN FUNCTION')
      # More set up (this requires you to import boto3)
      AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
                                  aws_secret_access_key=osn_secret_key,
@@ -343,7 +344,7 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                         download_web(dataset, target, baseurl, _callback)
                     elif dataset.site == 'OSN':
                         print('DOWNLOADING OSN NOW')
-                        download_OSN(dataset, target)
+                        download_OSN(dataset.filepath, target)
 
                 except BaseException as e:
                     dataset.fetchError = f"Exception during download: {e}"
