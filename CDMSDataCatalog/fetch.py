@@ -343,7 +343,7 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                         download_web(dataset, target, baseurl, _callback)
                     elif dataset.site == 'OSN':
                         print('DOWNLOADING OSN NOW')
-                        download_osn(dataset, target)
+                        download_OSN(dataset, target)
 
                 except BaseException as e:
                     dataset.fetchError = f"Exception during download: {e}"
