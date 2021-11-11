@@ -13,8 +13,8 @@ import logging
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from .CDMSDataset import CDMSDataset
-import boto3
-#from OSNTools import OSNTools
+#import boto3
+from OSNTools import OSNTools
 
 log = logging.getLogger(__name__)
 
@@ -154,19 +154,19 @@ def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bu
      """
      print('USING THE DOWNLOADOSN FUNCTION')
      # More set up (this requires you to import boto3)
-     AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
-                                 aws_secret_access_key=osn_secret_key,
-                                 endpoint_url = endpointurl)
+     #AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
+     #                            aws_secret_access_key=osn_secret_key,
+     #                            endpoint_url = endpointurl)
 
      # Download the specified file
-     AWSClient.download_file(bucketname, dataset, target)
+     #AWSClient.download_file(bucketname, dataset, target)
      
      # Or an altrenate way of doing this which won't need you to import boto3
      # For this we would have to import OSNTools at the beginning
      # Also would not need enpointurl and bucketname as arguments
      
-     # OSNTool = OSNTools(osn_access_key, osn_secret_key)
-     # OSNTool.downloadData(dataset/target)
+      OSNTool = OSNTools(osn_access_key, osn_secret_key)
+      OSNTool.downloadData(dataset/target)
 
      return target
 
