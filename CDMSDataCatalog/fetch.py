@@ -353,6 +353,8 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                 return dataset
             
             pool = ThreadPoolExecutor(max_workers=maxthreads)
+
+            print(todownload)
             dls = pool.map(_get, todownload)
             try:
                 pool.shutdown()
