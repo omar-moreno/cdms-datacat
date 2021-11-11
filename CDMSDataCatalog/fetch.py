@@ -165,8 +165,8 @@ def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bu
      # For this we would have to import OSNTools at the beginning
      # Also would not need enpointurl and bucketname as arguments
      
-      OSNTool = OSNTools(osn_access_key, osn_secret_key)
-      OSNTool.downloadData(dataset/target)
+     OSNTool = OSNTools(osn_access_key, osn_secret_key)
+     OSNTool.downloadData(dataset/target)
 
      return target
 
