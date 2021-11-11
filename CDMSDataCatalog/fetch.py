@@ -342,7 +342,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     print("Checking place to download")
                     print('Dataset.site')
                     print(dataset.site)
-                    print(dataset.filepath)
                     if dataset.site == 'SLAC':
                         download_web(dataset, target, baseurl, _callback)
                     elif dataset.site == 'OSN':
