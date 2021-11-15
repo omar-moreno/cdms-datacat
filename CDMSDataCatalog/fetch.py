@@ -153,13 +153,14 @@ def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bu
          target (str): The target filepath of the file downloaded from the OSN
      """
      print('USING THE DOWNLOADOSN FUNCTION')
+     print('baseurl;', baseurl)
      # More set up (this requires you to import boto3)
      AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
                                  aws_secret_access_key=osn_secret_key,
                                  endpoint_url = endpointurl)
 
      # Download the specified file
-     AWSClient.download_file(bucketname, dataset, target)
+     AWSClient.download_file(bucketname, dataset.relativePath, target)
      
      # Or an altrenate way of doing this which won't need you to import boto3
      # For this we would have to import OSNTools at the beginning
@@ -278,6 +279,7 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
         target = get_fetch_path(dataset, dest, destRelative)
         if target:
             targetexists = os.path.isfile(target)
+            print("targetexists: ", targetexists) 
             if targetexists:
                 size = os.path.getsize(target)
                 if dataset.size and size != dataset.size:
@@ -340,15 +342,15 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     targetDir = os.path.dirname(target)
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
                     print("Checking place to download")
-                    print('Dataset.site')
-                    print(dataset.site)
+                    print('Dataset.site: ', dataset.site)
                     if dataset.site == 'SLAC':
                         download_web(dataset, target, baseurl, _callback)
                     elif dataset.site == 'OSN':
                         print('DOWNLOADING OSN NOW')
-                        print('Filepath:', dataset.filePath)
-                        print('Target',target)
-                        download_OSN(dataset.filePath, target)
+                        print('Filepath: ', dataset.filePath)
+                        print('Target: ', target)
+                        print("Relative file path: ", dataset.relativePath)
+                        download_OSN(dataset, target)
 
                 except BaseException as e:
                     dataset.fetchError = f"Exception during download: {e}"
