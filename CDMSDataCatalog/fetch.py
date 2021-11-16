@@ -143,33 +143,32 @@ def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
 
 
 def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bucketname = 'supercdms-data', osn_access_key = os.environ.get('OSN_ACCESS_KEY'), osn_secret_key = os.environ.get('OSN_SECRET_KEY')):
-     """ Download a single dataset over rsync
-     Args:
-         dataset (CDMSDataset): the dataset (file) to download
-         target (str): path and filename to save as
-         access_key (str): the access key to the open storage network, the default is OSN_ACCESS_KEY
-         secret_key (str): the secret key to the open storage network, the default is OSN_SECRET_KEY
-     Returns:
-         target (str): The target filepath of the file downloaded from the OSN
-     """
-     print('USING THE DOWNLOADOSN FUNCTION')
-     print('baseurl;', baseurl)
-     # More set up (this requires you to import boto3)
-     AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
-                                 aws_secret_access_key=osn_secret_key,
-                                 endpoint_url = endpointurl)
+    """ Download a single dataset over rsync
+    Args:
+        dataset (CDMSDataset): the dataset (file) to download
+        target (str): path and filename to save as
+        access_key (str): the access key to the open storage network, the default is OSN_ACCESS_KEY
+        secret_key (str): the secret key to the open storage network, the default is OSN_SECRET_KEY
+    Returns:
+        target (str): The target filepath of the file downloaded from the OSN
+    """
+    print('USING THE DOWNLOADOSN FUNCTION')
+    # More set up (this requires you to import boto3)
+    AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
+                                aws_secret_access_key=osn_secret_key,
+                                endpoint_url = endpointurl)
 
-     # Download the specified file
-     AWSClient.download_file(bucketname, dataset.relativePath, target)
+    # Download the specified file
+    AWSClient.download_file(bucketname, dataset.relativePath, target)
      
-     # Or an altrenate way of doing this which won't need you to import boto3
-     # For this we would have to import OSNTools at the beginning
-     # Also would not need enpointurl and bucketname as arguments
+    # Or an altrenate way of doing this which won't need you to import boto3
+    # For this we would have to import OSNTools at the beginning
+    # Also would not need enpointurl and bucketname as arguments
      
-     #OSNTool = OSNTools(osn_access_key, osn_secret_key)
-     #OSNTool.downloadData(dataset/target)
+    #OSNTool = OSNTools(osn_access_key, osn_secret_key)
+    #OSNTool.downloadData(dataset/target)
 
-     return target
+    return target
 
 def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
               maxthreads=None, force=False):
@@ -370,9 +369,9 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     errors.append(dl)
                 else:
                     _check_local(dl, errifnotfound=True)
-                
+
+        print("dataset.fetchError: ", dataset.fetchError)        
         tqdm.write("Download finished")
-    
     elif todownload:
         print("Skipping download")
         for dataset in todownload:
