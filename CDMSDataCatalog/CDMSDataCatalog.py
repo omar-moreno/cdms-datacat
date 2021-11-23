@@ -232,56 +232,30 @@ class CDMSDataCatalog:
                     print('Skipping existing dataset:', path, '/',
                           CDMSds.datasetName)
 
-            if(not DSexists or replace):
-                self.client.mkds(path,
-                                 CDMSds.datasetName,
-                                 CDMSds.fileType,
-                                 CDMSds.fileFormat,
-                                 versionMetadata=CDMSds.metadata,
-                                 resource=CDMSds.filePath,
-                                 site=CDMSds.site)
-                                
-            ####################
-            #This is if we can get size and checksum as metadata
+           #####################
+           # This is to try and get size and checksum for files that are not at SLAC (as metadata)
 
-            # Maybe a Cleaner way to implement if Crawler is before this (which I do not think it is)
-            #if(scan_result = {"scanStatus": "MISSING"}) 
-            if(CDMSds.site =! 'SLAC' or CDMSds.dataLocation =! 'SLAC'):
-                try: 
-                    # Creating metadata we would like to patch information
-                    Patch_metadata = {"size": CDMSds.metadata["Size"]),
-                                    "checksum": CDMSds.metadata["CheckSum"]}
-                    # Updating the metadata
-                    CDMSds.versionMetadata.update(Patch_metadata)
-                    # Patching the metadata, this assumes we are updating the "current" version and that we can pass scan result
-                    patched_ds = client.patch_dataset(path, scan_result, site=CDMSds.site)
-                    print("Patched dataset at: ", path)
-                except: 
-                    print("Could not Patch the following dataset: ", path)
-                    #print("Size given is: ", size)
-                    #print("CheckSum given is: ", checksum)
-
-            ####################
-            #This is for manual input from the user
-
-            # Maybe a Cleaner way to implement if Crawler is before this (which I do not think it is)
-            #if(scan_result = {"scanStatus": "MISSING"}) 
-            #if(CDMSds.site =! 'SLAC' or CDMSds.dataLocation =! 'SLAC'):
-            #    try: 
-            #        Newsize = int(input("Enter Dataset size in bytes: "))
-            #        Newchecksum = int(input("Enter Dataset's location's checksum: "))
-                    # Creating metadata we would like to patch information
-            #        Patch_metadata = {"size": Newsize),
-            #                        "checksum": Newchecksum}
-                    # Updating the metadata
-            #        CDMSds.versionMetadata.update(Patch_metadata)
-                    # Patching the metadata, this assumes we are updating the "current" version and that we can pass scan result
-            #        patched_ds = client.patch_dataset(path, scan_result, site=CDMSds.site)
-            #        print("Patched dataset at: ", path)
-            #    except: 
-            #        print("Could not Patch the following dataset: ", path)
-                    #print("Size given is: ", size)
-                    #print("CheckSum given is: ", checksum)
+           if(not DSexists or replace):
+           # Maybe a Cleaner way to implement if Crawler is before this (which I do not think it is)
+           #if(scan_result =! {"scanStatus": "MISSING"}):
+               if(CDMSds.site = 'SLAC' or CDMSds.dataLocation = 'SLAC'):
+                   self.client.mkds(path,
+                                    CDMSds.datasetName,
+                                    CDMSds.fileType,
+                                    CDMSds.fileFormat,
+                                    versionMetadata=CDMSds.metadata,
+                                    resource=CDMSds.filePath,
+                                    site=CDMSds.site)
+               else:
+                   self.client.mkds(path,
+                                    CDMSds.datasetName,
+                                    CDMSds.fileType,
+                                    CDMSds.fileFormat,
+                                    versionMetadata=CDMSds.metadata,
+                                    resource=CDMSds.filePath,
+                                    site=CDMSds.site,
+                                    size=CDMSds.metadata["Size"],
+                                    checksum=CDMSds.metadata["CheckSum"])
 
         except Exception as e:
             if catch_errors:
