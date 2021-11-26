@@ -333,7 +333,9 @@ class RawData(CDMSDataset):
                  commentStart='None',
                  commentEnd='None',
                  nFirstTriggerId=-1,
-                 nLastTriggerId=-1,):
+                 nLastTriggerId=-1,
+                 fileSize = None,
+                 checksum = None):
         '''
         Constructor for the CDMS RawData dataset class
         '''
@@ -358,6 +360,13 @@ class RawData(CDMSDataset):
         self.metadata["nIsJunk"] = int(nIsJunk)
         self.metadata["nFirstTriggerId"] = int(nFirstTriggerId)
         self.metadata["nLastTriggerId"] = int(nLastTriggerId)
+
+        if fileSize is not None:
+            self.metadata["Size"] = fileSize
+        if checksum is not None:
+            self.metadata["Checksum"] = checksum
+
+        
 
 class ContinuousRawData(CDMSDataset):
 
