@@ -152,7 +152,6 @@ def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bu
     Returns:
         target (str): The target filepath of the file downloaded from the OSN
     """
-    print('USING THE DOWNLOADOSN FUNCTION')
     # More set up (this requires you to import boto3)
     AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
                                 aws_secret_access_key=osn_secret_key,
@@ -265,12 +264,12 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     _expand_query(req)
             except TypeError:
                 raise TypeError(f"Unhandled type {type(request)} for fetch")
-    print("expanding query")
+    
     _expand_query(path)
 
     allresults = tocheck + errors
     todownload = []
-    print("allresults", allresults)
+
     success = []
 
     # now that we have a flat list of `CDMSDataset`s, check each one
@@ -278,7 +277,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
         target = get_fetch_path(dataset, dest, destRelative)
         if target:
             targetexists = os.path.isfile(target)
-            print("targetexists: ", targetexists) 
             if targetexists:
                 size = os.path.getsize(target)
                 if dataset.size and size != dataset.size:
@@ -304,18 +302,15 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
     for dataset in tocheck:
         _check_local(dataset, errifnotfound=False)
     tocheck = []
-    print("To Download", todownload)
+
     # now download any required files
     # TODO: should we skip download if there are errors already?
     dlsize = sum(dataset.size for dataset in todownload)
     dodownload = checkonly is not True and dlsize > 0
     if dlsize > 0:
-        print(dlsize)
         print("Need to download", print_filesize(dlsize),
               "(", len(todownload), "files ) from catalog")
         if checkonly is not True and dlsize > checkonly*1000000:
-            print(f'checkonly: {checkonly}')
-            print(f'dlsize: {dlsize}')
             confirm = input("Do you want to proceed? (y/n): ")
             dodownload = confirm[0] in 'Yy'
 
@@ -340,15 +335,9 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     # we need to actually do the download
                     targetDir = os.path.dirname(target)
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
-                    print("Checking place to download")
-                    print('Dataset.site: ', dataset.site)
                     if dataset.site == 'SLAC':
                         download_web(dataset, target, baseurl, _callback)
                     elif dataset.site == 'OSN':
-                        print('DOWNLOADING OSN NOW')
-                        print('Filepath: ', dataset.filePath)
-                        print('Target: ', target)
-                        print("Relative file path: ", dataset.relativePath)
                         download_OSN(dataset, target)
 
                 except BaseException as e:
@@ -356,8 +345,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                 return dataset
             
             pool = ThreadPoolExecutor(max_workers=maxthreads)
-
-            print(todownload)
             dls = pool.map(_get, todownload)
             try:
                 pool.shutdown()
@@ -369,9 +356,9 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     errors.append(dl)
                 else:
                     _check_local(dl, errifnotfound=True)
-
-        print("dataset.fetchError: ", dataset.fetchError)        
+        
         tqdm.write("Download finished")
+
     elif todownload:
         print("Skipping download")
         for dataset in todownload:
