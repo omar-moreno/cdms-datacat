@@ -2,7 +2,7 @@ CDMS Data Catalog Interface
 ===========================
 Installation
 ------------
-`pip install git+ssh://nero.stanford.edu/data/git/DataHandling/DataCat#egg=CDMSDataCatalog`
+`pip install git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
 
 Note: This command assumes that you have your ssh config setup as the following link suggests:
 [SSH Config Setup](http://titus.stanford.edu:8080/git/blob/?f=ssh_SUF.md&r=cdms_docs.git&h=master)
