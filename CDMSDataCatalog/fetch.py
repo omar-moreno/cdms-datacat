@@ -13,6 +13,8 @@ import logging
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from .CDMSDataset import CDMSDataset
+import boto3
+#from OSNTools import OSNTools
 
 log = logging.getLogger(__name__)
 
@@ -140,6 +142,26 @@ def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
     return subprocess.run(['rsync', '-a', sourceurl, target])
 
 
+def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bucketname = 'supercdms-data', osn_access_key = os.environ.get('OSN_ACCESS_KEY'), osn_secret_key = os.environ.get('OSN_SECRET_KEY')):
+    """ Download a single dataset over rsync
+    Args:
+        dataset (CDMSDataset): the dataset (file) to download
+        target (str): path and filename to save as
+        access_key (str): the access key to the open storage network, the default is OSN_ACCESS_KEY
+        secret_key (str): the secret key to the open storage network, the default is OSN_SECRET_KEY
+    Returns:
+        target (str): The target filepath of the file downloaded from the OSN
+    """
+    # More set up (this requires you to import boto3)
+    AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
+                                aws_secret_access_key=osn_secret_key,
+                                endpoint_url = endpointurl)
+
+    # Download the specified file
+    AWSClient.download_file(bucketname, dataset.relativePath, target)
+     
+    return target
+
 def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
               maxthreads=None, force=False):
     """Download a copy of the files pointed by path to the local system, only
@@ -235,11 +257,12 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     _expand_query(req)
             except TypeError:
                 raise TypeError(f"Unhandled type {type(request)} for fetch")
-
+    
     _expand_query(path)
 
     allresults = tocheck + errors
     todownload = []
+
     success = []
 
     # now that we have a flat list of `CDMSDataset`s, check each one
@@ -305,7 +328,11 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     # we need to actually do the download
                     targetDir = os.path.dirname(target)
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
-                    download_web(dataset, target, baseurl, _callback)
+                    if dataset.site == 'OSN':
+                        download_OSN(dataset, target)
+                    elif dataset.site == 'SLAC':
+                        download_web(dataset, target, baseurl, _callback)
+
                 except BaseException as e:
                     dataset.fetchError = f"Exception during download: {e}"
                 return dataset
@@ -322,9 +349,9 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     errors.append(dl)
                 else:
                     _check_local(dl, errifnotfound=True)
-                
+        
         tqdm.write("Download finished")
-    
+
     elif todownload:
         print("Skipping download")
         for dataset in todownload:
