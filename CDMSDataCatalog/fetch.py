@@ -160,13 +160,6 @@ def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bu
     # Download the specified file
     AWSClient.download_file(bucketname, dataset.relativePath, target)
      
-    # Or an altrenate way of doing this which won't need you to import boto3
-    # For this we would have to import OSNTools at the beginning
-    # Also would not need enpointurl and bucketname as arguments
-     
-    #OSNTool = OSNTools(osn_access_key, osn_secret_key)
-    #OSNTool.downloadData(dataset/target)
-
     return target
 
 def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
@@ -335,10 +328,10 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     # we need to actually do the download
                     targetDir = os.path.dirname(target)
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
-                    if dataset.site == 'SLAC':
-                        download_web(dataset, target, baseurl, _callback)
-                    elif dataset.site == 'OSN':
+                    if dataset.site == 'OSN':
                         download_OSN(dataset, target)
+                    elif dataset.site == 'SLAC':
+                        download_web(dataset, target, baseurl, _callback)
 
                 except BaseException as e:
                     dataset.fetchError = f"Exception during download: {e}"

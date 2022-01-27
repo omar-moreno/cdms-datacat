@@ -254,7 +254,8 @@ class CDMSDataCatalog:
                                     versionMetadata=CDMSds.metadata,
                                     resource=CDMSds.filePath,
                                     site=CDMSds.site,
-                                    size=CDMSds.metadata["Size"]) # checksum=CDMSds.metadata["checksum"])
+                                    size=CDMSds.metadata["Size"],
+                                    checksum=CDMSds.metadata["checksum"])
 
         except Exception as e:
             if catch_errors:
