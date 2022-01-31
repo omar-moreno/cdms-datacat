@@ -263,6 +263,42 @@ class CDMSDataCatalog:
                 print("Could not create dataset")
             else:
                 raise
+    
+    def addLoc(self, CDMSds, catch_errors=True):
+        """Add a new dataset location to an existing registered dataset
+        Args:
+            CDMSds (CDMSDataset): The new dataset to add, this assumes that the dataset resource path at the given site
+            and the target Dataset path is the same
+        Return:
+            A representation of the dataset that was just created.
+        """
+        try:
+            path = corrPathCDMS(CDMSds.filePath)
+            site = CDMSds.site
+            resource = CDMSds.filePath
+            DSexists = self.client.exists(path) 
+            if(DSexists):
+                if(CDMSds.metadata['Size'] != None and CDMSds.metadata['checksum'] != None):
+                    self.client.mkloc(path, site, resource, size=CDMSds.metadata["Size"], checksum=CDMSds.metadata["checksum"])
+                else:
+                    answer = None
+                    while answer not in ("y", "n"):
+                        answer = input("No filesize and/or checksum, would you like to continue, y/n?: ")
+                        if answer == "y":
+                            self.client.mkloc(path, site, resource)
+                        elif answer == "n":
+                            print("Did not add new data location") 
+                        else:
+                            print("Please enter y/n.")
+            else:
+                print("Dataset does not exist")
+
+        except Exception as e:
+            if catch_errors:
+                print(e)
+                print("Could not add data location to Dataset")
+            else:
+                raise
 
     def fetch(self, path, **kwargs):
         """ fetch (download) dataset at `path`.
