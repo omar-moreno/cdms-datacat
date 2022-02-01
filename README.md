@@ -2,25 +2,30 @@ CDMS Data Catalog Interface
 ===========================
 Installation
 ------------
-`pip install git+ssh://nero.stanford.edu/data/git/DataHandling/DataCat#egg=CDMSDataCatalog`
+As with most python packages, you have basically 4 options for installation, in order of recommendation:
+#### Use the offline release
+The data catalog is built into the offline release; follow the instructions here: https://confluence.slac.stanford.edu/display/CDMS/Using+CDMS+Offline+Software+Releases
 
-Note: This command assumes that you have your ssh config setup as the following link suggests:
-[SSH Config Setup](http://titus.stanford.edu:8080/git/blob/?f=ssh_SUF.md&r=cdms_docs.git&h=master)
+#### Install in a virtual environment
+Follow the instructions [here](https://confluence.slac.stanford.edu/display/CDMS/Python+Packaging+Guide) for setting up and activating your 
+virtual environment, then call
 
-For use on SLAC server (or any server with CVMFS mounted):
+`pip install git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
 
-Step 1) Check the version(s) mounted using:
+Note that this will not play well with offline releases!
 
-```
-/cvmfs/cdms.opensciencegrid.org/setup_cdms.sh -L 
-```
+#### Install in your user environment
+This will install the client under $HOME, so it will be always available (no need to activate venv) and doesn't require elevated privileges. 
 
-Step 2) Using the version you'd like, enter:
-```
-source /cvmfs/cdms.opensciencegrid.org/setup_cdms.sh V03-00`
-```
+`pip install --user git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
 
-Step 3) All good to go!
+Note that this will not play well with offline releases!
+
+#### Install at system level
+If you have root privileges or write access to your python install (e.g. anaconda installed in your home directory) you can simply do
+
+`pip install git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
+
 
 Documentation
 -------------
