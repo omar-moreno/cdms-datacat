@@ -264,32 +264,23 @@ class CDMSDataCatalog:
             else:
                 raise
     
-    def addLoc(self, CDMSds, catch_errors=True):
+    def addLoc(self, path, site, resource, catch_errors=True):
         """Add a new dataset location to an existing registered dataset
         Args:
-            CDMSds (CDMSDataset): The new dataset to add, this assumes that the dataset resource path at the given site
-            and the target Dataset path is the same
+            path (str): Target Dataset path in the DataCatalog
+            site (str): The site where the dataset physically resides (OSN, SLAC, ...)
+            resource (str): The file resource path at the given site
         Return:
             A representation of the dataset that was just created.
         """
         try:
-            path = corrPathCDMS(CDMSds.filePath)
-            site = CDMSds.site
-            resource = CDMSds.filePath
             DSexists = self.client.exists(path) 
             if(DSexists):
-                if(CDMSds.metadata['Size'] != None and CDMSds.metadata['checksum'] != None):
-                    self.client.mkloc(path, site, resource, size=CDMSds.metadata["Size"], checksum=CDMSds.metadata["checksum"])
-                else:
-                    answer = None
-                    while answer not in ("y", "n"):
-                        answer = input("No filesize and/or checksum, would you like to continue, y/n?: ")
-                        if answer == "y":
-                            self.client.mkloc(path, site, resource)
-                        elif answer == "n":
-                            print("Did not add new data location") 
-                        else:
-                            print("Please enter y/n.")
+                ds_check = self.client.path(path, versionId="current")
+                dsaddLoc = self.client.mkloc(path, site, resource)
+                ds_return = self.client.path(path, versionId="current") 
+                print("AddLoc Result: ", dsaddLoc)
+                print("Dataset location(s): ",ds_return.locations)  
             else:
                 print("Dataset does not exist")
 
