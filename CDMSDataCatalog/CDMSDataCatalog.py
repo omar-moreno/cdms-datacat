@@ -232,14 +232,31 @@ class CDMSDataCatalog:
                     print('Skipping existing dataset:', path, '/',
                           CDMSds.datasetName)
 
+           #####################
+           # This is to try and get size and checksum for files that are not at SLAC (as metadata)
+
             if(not DSexists or replace):
-                self.client.mkds(path,
-                                 CDMSds.datasetName,
-                                 CDMSds.fileType,
-                                 CDMSds.fileFormat,
-                                 versionMetadata=CDMSds.metadata,
-                                 resource=CDMSds.filePath,
-                                 site=CDMSds.site)
+            # Maybe a Cleaner way to implement if Crawler is before this (which I do not think it is)
+            #if(scan_result =! {"scanStatus": "MISSING"}):
+                if(CDMSds.site == 'SLAC'):
+                    self.client.mkds(path,
+                                    CDMSds.datasetName,
+                                    CDMSds.fileType,
+                                    CDMSds.fileFormat,
+                                    versionMetadata=CDMSds.metadata,
+                                    resource=CDMSds.filePath,
+                                    site=CDMSds.site)
+                else:
+                    self.client.mkds(path,
+                                    CDMSds.datasetName,
+                                    CDMSds.fileType,
+                                    CDMSds.fileFormat,
+                                    versionMetadata=CDMSds.metadata,
+                                    resource=CDMSds.filePath,
+                                    site=CDMSds.site,
+                                    size=CDMSds.metadata["Size"],
+                                    checksum=CDMSds.metadata["checksum"])
+
         except Exception as e:
             if catch_errors:
                 print(e)
