@@ -43,6 +43,8 @@ def getpath_processed(Facility, nFridgeRun, ProdType, ProdTag, nMergeLevel=None,
         mergepath = {0: 'Unmerged', 
                      1: 'Submerged', 
                      2: 'Merged'} [nMergeLevel]
+    else:
+        mergepath = '*'
     if mergepath is not None:
         path = '/'.join((path, mergepath))
     
