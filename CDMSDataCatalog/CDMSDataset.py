@@ -364,7 +364,7 @@ class RawData(CDMSDataset):
         if fileSize is not None:
             self.metadata["Size"] = fileSize
         if checksum is not None:
-            self.metadata["checksum"] = checksum
+            self.metadata["Checksum"] = checksum
 
         
 
