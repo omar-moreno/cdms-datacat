@@ -142,7 +142,7 @@ def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
     return subprocess.run(['rsync', '-a', sourceurl, target])
 
 
-def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bucketname = 'supercdms-data', osn_access_key = os.environ.get('OSN_ACCESS_KEY'), osn_secret_key = os.environ.get('OSN_SECRET_KEY')):
+def download_OSN(dataset, target, endpointurl = None, bucketname = None, osn_access_key = None, osn_secret_key = None):
     """ Download a single dataset over rsync
     Args:
         dataset (CDMSDataset): the dataset (file) to download
@@ -152,6 +152,14 @@ def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bu
     Returns:
         target (str): The target filepath of the file downloaded from the OSN
     """
+    # Set default arguments
+    endpointurl = 'https://ncsa.osn.xsede.org'
+    bucketname = 'supercdms-data'
+
+    # Get OSN keys
+    osn_access_key = os.environ.get('OSN_ACCESS_KEY')
+    osn_secret_key = os.environ.get('OSN_SECRET_KEY')
+
     # More set up (this requires you to import boto3)
     AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
                                 aws_secret_access_key=osn_secret_key,
