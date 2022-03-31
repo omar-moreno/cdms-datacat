@@ -160,6 +160,7 @@ def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucke
     osn_access_key = os.environ.get('OSN_ACCESS_KEY')
     osn_secret_key = os.environ.get('OSN_SECRET_KEY')
 
+    
     # More set up (this requires you to import boto3)
     AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
                                 aws_secret_access_key=osn_secret_key,
@@ -170,7 +171,7 @@ def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucke
             fout = CallbackIOWrapper(progcallback, fout, "write")
         # Download the specified file
         AWSClient.download_fileobj(bucketname, dataset.relativePath, fout)
-     
+    
     return target
 
 def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
@@ -340,7 +341,7 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     targetDir = os.path.dirname(target)
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
                     if dataset.site == 'OSN':
-                        download_OSN(dataset, target)
+                        download_OSN(dataset, target, _callback)
                     elif dataset.site == 'SLAC':
                         download_web(dataset, target, baseurl, _callback)
 
