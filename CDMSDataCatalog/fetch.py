@@ -142,7 +142,7 @@ def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
     return subprocess.run(['rsync', '-a', sourceurl, target])
 
 
-def download_OSN(dataset, target, endpointurl = None, bucketname = None, osn_access_key = None, osn_secret_key = None):
+def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucketname = None, osn_access_key = None, osn_secret_key = None):
     """ Download a single dataset over rsync
     Args:
         dataset (CDMSDataset): the dataset (file) to download
@@ -164,9 +164,12 @@ def download_OSN(dataset, target, endpointurl = None, bucketname = None, osn_acc
     AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
                                 aws_secret_access_key=osn_secret_key,
                                 endpoint_url = endpointurl)
-
-    # Download the specified file
-    AWSClient.download_file(bucketname, dataset.relativePath, target)
+    
+    with open(target, 'wb') as fout:
+        if progcallback:
+            fout = CallbackIOWrapper(progcallback, fout, "write")
+        # Download the specified file
+        AWSClient.download_fileobj(bucketname, dataset.relativePath, fout)
      
     return target
 
