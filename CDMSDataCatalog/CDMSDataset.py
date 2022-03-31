@@ -349,7 +349,7 @@ class RawData(CDMSDataset):
         self.metadata["nFridgeRun"] = int(nFridgeRun)
         self.metadata["nDataType"] = int(nDataType)
         self.metadata["Series"] = series
-        self.metadata["nDump"] = int(nDump)
+        if nDump is not None: self.metadata["nDump"] = int(nDump)
         self.metadata["nEvAll"] = int(nEventsAll)
         self.metadata["nEvBORR"] = int(nEventsBORR)
         self.metadata["nEvEORR"] = int(nEventsEORR)
