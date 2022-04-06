@@ -2,25 +2,30 @@ CDMS Data Catalog Interface
 ===========================
 Installation
 ------------
-`pip install git+ssh://nero.stanford.edu/data/git/DataHandling/DataCat#egg=CDMSDataCatalog`
+As with most python packages, you have basically 4 options for installation, in order of recommendation:
+#### Use the offline release
+The data catalog is built into the offline release; follow the instructions here: https://confluence.slac.stanford.edu/display/CDMS/Using+CDMS+Offline+Software+Releases
 
-Note: This command assumes that you have your ssh config setup as the following link suggests:
-[SSH Config Setup](http://titus.stanford.edu:8080/git/blob/?f=ssh_SUF.md&r=cdms_docs.git&h=master)
+#### Install in a virtual environment
+Follow the instructions [here](https://confluence.slac.stanford.edu/display/CDMS/Python+Packaging+Guide) for setting up and activating your 
+virtual environment, then call
 
-For use on SLAC server (or any server with CVMFS mounted):
+`pip install git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
 
-Step 1) Check the version(s) mounted using:
+Note that this will not play well with offline releases!
 
-```
-/cvmfs/cdms.opensciencegrid.org/setup_cdms.sh -L 
-```
+#### Install in your user environment
+This will install the client under $HOME, so it will be always available (no need to activate venv) and doesn't require elevated privileges. 
 
-Step 2) Using the version you'd like, enter:
-```
-source /cvmfs/cdms.opensciencegrid.org/setup_cdms.sh V03-00`
-```
+`pip install --user git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
 
-Step 3) All good to go!
+Note that this will not play well with offline releases!
+
+#### Install at system level
+If you have root privileges or write access to your python install (e.g. anaconda installed in your home directory) you can simply do
+
+`pip install git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
+
 
 Documentation
 -------------
@@ -77,3 +82,11 @@ When registering data, follow these steps to make sure the data gets registered
 2. Open the copied default.cfg (in your working directory) and uncomment every line (delete the # from the start of each line) and save it 
 3. In your data-registering file, replace dc = CDMSDataCatalog() with dc = CDMSDataCatalog(config_file = '/path/to/your/copied/config.cfg')
 4. Now you're ready to register :)
+
+Downloading from the OSN
+------------------------
+If you are downloading from the OSN using the "fetch" function, then you must have access keys for the OSN. Please follow these steps to get the OSN access keys: 
+1. Clone OSN_secrets from [OSNSecrets Repository](https://gitlab.com/supercdms/DataHandling/osn_secrets)
+2. Source osn_secrets/OSN_creds.sh
+
+After completing these steps, you should have the appropriate permissions to download from the OSN. If you are interested in the OSN and want to learn more, see the [OSNTransfer repoistory](https://gitlab.com/supercdms/DataHandling/OSNTransfer/-/tree/master).
