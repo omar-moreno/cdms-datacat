@@ -82,3 +82,11 @@ When registering data, follow these steps to make sure the data gets registered
 2. Open the copied default.cfg (in your working directory) and uncomment every line (delete the # from the start of each line) and save it 
 3. In your data-registering file, replace dc = CDMSDataCatalog() with dc = CDMSDataCatalog(config_file = '/path/to/your/copied/config.cfg')
 4. Now you're ready to register :)
+
+Downloading from the OSN
+------------------------
+If you are downloading from the OSN using the "fetch" function, then you must have access keys for the OSN. Please follow these steps to get the OSN access keys: 
+1. Clone OSN_secrets from [OSNSecrets Repository](https://gitlab.com/supercdms/DataHandling/osn_secrets)
+2. Source osn_secrets/OSN_creds.sh
+
+After completing these steps, you should have the appropriate permissions to download from the OSN. If you are interested in the OSN and want to learn more, see the [OSNTransfer repoistory](https://gitlab.com/supercdms/DataHandling/OSNTransfer/-/tree/master).
