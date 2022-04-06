@@ -89,8 +89,9 @@ class CDMSDataCatalog:
         """
         path = corrPathCDMS(path)
         try:
-            for child in self.client.children(path):
-                print(child.path)
+            return list(map(lambda child:child.path, self.client.children(path)))
+            #for child in self.client.children(path):
+                #print( child.path)
         except TypeError:
             print("Cannot ls, %s is a dataset" % path)
         except BaseException:
@@ -280,7 +281,7 @@ class CDMSDataCatalog:
                 dsaddLoc = self.client.mkloc(path, site, resource)
                 ds_return = self.client.path(path, versionId="current") 
                 print("AddLoc Result: ", dsaddLoc)
-                print("Dataset location(s): ",ds_return.locations)  
+                # print("Dataset location(s): ",ds_return.locations)  
             else:
                 print("Dataset does not exist")
 
