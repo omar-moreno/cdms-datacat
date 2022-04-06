@@ -42,7 +42,7 @@ def get_default_fetchdir():
     """
     # first look for official tier 1/2 locations
     # todo: do this by hostname!
-    testpaths = ['/gpfs/slac/staas/fs1/supercdms/data', #SLAC
+    testpaths = ['/sdf/group/supercdms/data', 		#SLAC
                  '/scratch/m/mdiamond/mdiamond/data',   #Niagara
                  '/scratch/group/mitchcomp/CDMS/data',  #TAMU HPRC
                  '/scratch/group/cdms/data',            #ManeFrame
@@ -142,7 +142,7 @@ def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
     return subprocess.run(['rsync', '-a', sourceurl, target])
 
 
-def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bucketname = 'supercdms-data', osn_access_key = os.environ.get('OSN_ACCESS_KEY'), osn_secret_key = os.environ.get('OSN_SECRET_KEY')):
+def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucketname = None, osn_access_key = None, osn_secret_key = None):
     """ Download a single dataset over rsync
     Args:
         dataset (CDMSDataset): the dataset (file) to download
@@ -152,14 +152,26 @@ def download_OSN(dataset, target, endpointurl = 'https://ncsa.osn.xsede.org', bu
     Returns:
         target (str): The target filepath of the file downloaded from the OSN
     """
+    # Set default arguments
+    endpointurl = 'https://ncsa.osn.xsede.org'
+    bucketname = 'supercdms-data'
+
+    # Get OSN keys
+    osn_access_key = os.environ.get('OSN_ACCESS_KEY')
+    osn_secret_key = os.environ.get('OSN_SECRET_KEY')
+
+    
     # More set up (this requires you to import boto3)
     AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
                                 aws_secret_access_key=osn_secret_key,
                                 endpoint_url = endpointurl)
-
-    # Download the specified file
-    AWSClient.download_file(bucketname, dataset.relativePath, target)
-     
+    
+    with open(target, 'wb') as fout:
+        if progcallback:
+            fout = CallbackIOWrapper(progcallback, fout, "write")
+        # Download the specified file
+        AWSClient.download_fileobj(bucketname, dataset.relativePath, fout)
+    
     return target
 
 def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
@@ -329,7 +341,7 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     targetDir = os.path.dirname(target)
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
                     if dataset.site == 'OSN':
-                        download_OSN(dataset, target)
+                        download_OSN(dataset, target, _callback)
                     elif dataset.site == 'SLAC':
                         download_web(dataset, target, baseurl, _callback)
 
