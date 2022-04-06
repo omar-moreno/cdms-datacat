@@ -74,6 +74,8 @@ class CDMSDataset:
         self.relativePath = '/CDMS/' + dataType if dataType else None
         self.metadata = Metadata()
         self.fetchError = None
+        self.filesize = None 
+        self.crcchecksum = None        
 
     @staticmethod
     def findLocation(rawds, site=None):
@@ -362,9 +364,9 @@ class RawData(CDMSDataset):
         self.metadata["nLastTriggerId"] = int(nLastTriggerId)
 
         if fileSize is not None:
-            self.metadata["Size"] = fileSize
+            self.filesize = fileSize
         if checksum is not None:
-            self.metadata["Checksum"] = checksum
+            self.crcchecksum = checksum
 
         
 
