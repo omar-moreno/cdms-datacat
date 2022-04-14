@@ -277,11 +277,14 @@ class CDMSDataCatalog:
         try:
             DSexists = self.client.exists(path) 
             if(DSexists):
-                ds_check = self.client.path(path, versionId="current")
-                dsaddLoc = self.client.mkloc(path, site, resource)
+                # ds_check = self.client.path(path, versionId="current")
+                # dsaddLoc = self.client.mkloc(path, site, resource)
                 ds_return = self.client.path(path, versionId="current") 
-                print("AddLoc Result: ", dsaddLoc)
-                # print("Dataset location(s): ",ds_return.locations)  
+                # print("AddLoc Result: ", dsaddLoc)
+                try:
+                    print("Dataset location(s): ",ds_return.location)  
+                except:
+                    print('this dataset has no registered location')
             else:
                 print("Dataset does not exist")
 
