@@ -176,7 +176,8 @@ class CDMSDataset:
                     for loc in self.rawDataset.locations}
         except AttributeError:
             pass
-        locs[self.site] = self.filePath
+        if self.filePath:
+            locs[self.site] = self.filePath
         return locs
 
     def __str__(self):
