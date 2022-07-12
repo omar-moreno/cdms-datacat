@@ -74,6 +74,8 @@ class CDMSDataset:
         self.relativePath = '/CDMS/' + dataType if dataType else None
         self.metadata = Metadata()
         self.fetchError = None
+        self.filesize = None 
+        self.crcchecksum = None        
 
     @staticmethod
     def findLocation(rawds, site=None):
@@ -331,7 +333,11 @@ class RawData(CDMSDataset):
                  dataLocation='SLAC',
                  fileFormat='midas',
                  commentStart='None',
-                 commentEnd='None'):
+                 commentEnd='None',
+                 nFirstTriggerId=-1,
+                 nLastTriggerId=-1,
+                 fileSize = None,
+                 checksum = None):
         '''
         Constructor for the CDMS RawData dataset class
         '''
@@ -345,7 +351,7 @@ class RawData(CDMSDataset):
         self.metadata["nFridgeRun"] = int(nFridgeRun)
         self.metadata["nDataType"] = int(nDataType)
         self.metadata["Series"] = series
-        self.metadata["nDump"] = int(nDump)
+        if nDump is not None: self.metadata["nDump"] = int(nDump)
         self.metadata["nEvAll"] = int(nEventsAll)
         self.metadata["nEvBORR"] = int(nEventsBORR)
         self.metadata["nEvEORR"] = int(nEventsEORR)
@@ -354,6 +360,15 @@ class RawData(CDMSDataset):
         self.metadata["CommentStart"] = commentStart
         self.metadata["CommentEnd"] = commentEnd
         self.metadata["nIsJunk"] = int(nIsJunk)
+        self.metadata["nFirstTriggerId"] = int(nFirstTriggerId)
+        self.metadata["nLastTriggerId"] = int(nLastTriggerId)
+
+        if fileSize is not None:
+            self.filesize = fileSize
+        if checksum is not None:
+            self.crcchecksum = checksum
+
+        
 
 class ContinuousRawData(CDMSDataset):
 
