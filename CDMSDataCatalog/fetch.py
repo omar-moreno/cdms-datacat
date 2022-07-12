@@ -13,6 +13,8 @@ import logging
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from .CDMSDataset import CDMSDataset
+import boto3
+#from OSNTools import OSNTools
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ def get_default_fetchdir():
     """
     # first look for official tier 1/2 locations
     # todo: do this by hostname!
-    testpaths = ['/gpfs/slac/staas/fs1/supercdms/data', #SLAC
+    testpaths = ['/sdf/group/supercdms/data', 		#SLAC
                  '/scratch/m/mdiamond/mdiamond/data',   #Niagara
                  '/scratch/group/mitchcomp/CDMS/data',  #TAMU HPRC
                  '/scratch/group/cdms/data',            #ManeFrame
@@ -140,6 +142,38 @@ def download_rsync(dataset, target, host='centos7.slac.stanford.edu'):
     return subprocess.run(['rsync', '-a', sourceurl, target])
 
 
+def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucketname = None, osn_access_key = None, osn_secret_key = None):
+    """ Download a single dataset over rsync
+    Args:
+        dataset (CDMSDataset): the dataset (file) to download
+        target (str): path and filename to save as
+        access_key (str): the access key to the open storage network, the default is OSN_ACCESS_KEY
+        secret_key (str): the secret key to the open storage network, the default is OSN_SECRET_KEY
+    Returns:
+        target (str): The target filepath of the file downloaded from the OSN
+    """
+    # Set default arguments
+    endpointurl = 'https://ncsa.osn.xsede.org'
+    bucketname = 'supercdms-data'
+
+    # Get OSN keys
+    osn_access_key = os.environ.get('OSN_ACCESS_KEY')
+    osn_secret_key = os.environ.get('OSN_SECRET_KEY')
+
+    
+    # More set up (this requires you to import boto3)
+    AWSClient = boto3.client('s3', aws_access_key_id=osn_access_key,
+                                aws_secret_access_key=osn_secret_key,
+                                endpoint_url = endpointurl)
+    
+    with open(target, 'wb') as fout:
+        if progcallback:
+            fout = CallbackIOWrapper(progcallback, fout, "write")
+        # Download the specified file
+        AWSClient.download_fileobj(bucketname, dataset.relativePath, fout)
+    
+    return target
+
 def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
               maxthreads=None, force=False):
     """Download a copy of the files pointed by path to the local system, only
@@ -235,11 +269,12 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     _expand_query(req)
             except TypeError:
                 raise TypeError(f"Unhandled type {type(request)} for fetch")
-
+    
     _expand_query(path)
 
     allresults = tocheck + errors
     todownload = []
+
     success = []
 
     # now that we have a flat list of `CDMSDataset`s, check each one
@@ -305,7 +340,11 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     # we need to actually do the download
                     targetDir = os.path.dirname(target)
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
-                    download_web(dataset, target, baseurl, _callback)
+                    if dataset.site == 'OSN':
+                        download_OSN(dataset, target, _callback)
+                    elif dataset.site == 'SLAC':
+                        download_web(dataset, target, baseurl, _callback)
+
                 except BaseException as e:
                     dataset.fetchError = f"Exception during download: {e}"
                 return dataset
@@ -322,9 +361,9 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     errors.append(dl)
                 else:
                     _check_local(dl, errifnotfound=True)
-                
+        
         tqdm.write("Download finished")
-    
+
     elif todownload:
         print("Skipping download")
         for dataset in todownload:
