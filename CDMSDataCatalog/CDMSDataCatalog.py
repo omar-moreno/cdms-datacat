@@ -89,8 +89,9 @@ class CDMSDataCatalog:
         """
         path = corrPathCDMS(path)
         try:
-            for child in self.client.children(path):
-                print(child.path)
+            return list(map(lambda child:child.path, self.client.children(path)))
+            #for child in self.client.children(path):
+                #print( child.path)
         except TypeError:
             print("Cannot ls, %s is a dataset" % path)
         except BaseException:
@@ -232,18 +233,65 @@ class CDMSDataCatalog:
                     print('Skipping existing dataset:', path, '/',
                           CDMSds.datasetName)
 
+           #####################
+           # This is to try and get size and checksum for files that are not at SLAC (as metadata)
+
             if(not DSexists or replace):
-                self.client.mkds(path,
-                                 CDMSds.datasetName,
-                                 CDMSds.fileType,
-                                 CDMSds.fileFormat,
-                                 versionMetadata=CDMSds.metadata,
-                                 resource=CDMSds.filePath,
-                                 site=CDMSds.site)
+            # Maybe a Cleaner way to implement if Crawler is before this (which I do not think it is)
+            #if(scan_result =! {"scanStatus": "MISSING"}):
+                if(CDMSds.site == 'SLAC'):
+                    self.client.mkds(path,
+                                    CDMSds.datasetName,
+                                    CDMSds.fileType,
+                                    CDMSds.fileFormat,
+                                    versionMetadata=CDMSds.metadata,
+                                    resource=CDMSds.filePath,
+                                    site=CDMSds.site)
+                else:
+                    self.client.mkds(path,
+                                    CDMSds.datasetName,
+                                    CDMSds.fileType,
+                                    CDMSds.fileFormat,
+                                    versionMetadata=CDMSds.metadata,
+                                    resource=CDMSds.filePath,
+                                    site=CDMSds.site,
+                                    size=CDMSds.filesize,
+                                    checksum=CDMSds.crcchecksum)
+
         except Exception as e:
             if catch_errors:
                 print(e)
                 print("Could not create dataset")
+            else:
+                raise
+    
+    def addLoc(self, path, site, resource, catch_errors=True):
+        """Add a new dataset location to an existing registered dataset
+        Args:
+            path (str): Target Dataset path in the DataCatalog
+            site (str): The site where the dataset physically resides (OSN, SLAC, ...)
+            resource (str): The file resource path at the given site
+        Return:
+            A representation of the dataset that was just created.
+        """
+        try:
+            DSexists = self.client.exists(path) 
+            if(DSexists):
+                ds_check = self.client.path(path, versionId="current")
+                dsaddLoc = self.client.mkloc(path, site, resource)
+                ds_return = self.client.path(path, versionId="current") 
+                try:
+                    for loc in ds_return.locations:
+                        print("Dataset site: %s at location %s "%(loc.site, loc.resource))
+                except:
+                    print('Dataset location cannot be found')
+            else:
+                print("Dataset does not exist")
+
+        except Exception as e:
+            if catch_errors:
+                print(e)
+                print("Could not add data location to Dataset")
             else:
                 raise
 
