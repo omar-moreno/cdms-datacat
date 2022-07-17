@@ -6,7 +6,7 @@ from glob import glob
 setup(name='CDMSDataCatalog',
       version='0.7.1',
       packages=['CDMSDataCatalog'],
-      install_requires=['datacat @ git+https://github.com/slaclab/datacat.git#subdirectory=client/python',
+      install_requires=['datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git#subdirectory=client/python',
                         'requests',
                         'tqdm',
                         'boto3'],
