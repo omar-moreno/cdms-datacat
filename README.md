@@ -10,21 +10,21 @@ The data catalog is built into the offline release; follow the instructions here
 Follow the instructions [here](https://confluence.slac.stanford.edu/display/CDMS/Python+Packaging+Guide) for setting up and activating your 
 virtual environment, then call
 
-`pip install git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
+`pip install git+ssh://git@gitlab.com/supercdms/DataHandling/DataCat.git`
 
 Note that this will not play well with offline releases!
 
 #### Install in your user environment
 This will install the client under $HOME, so it will be always available (no need to activate venv) and doesn't require elevated privileges. 
 
-`pip install --user git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
+`pip install --user git+ssh://git@gitlab.com/supercdms/DataHandling/DataCat.git`
 
 Note that this will not play well with offline releases!
 
 #### Install at system level
 If you have root privileges or write access to your python install (e.g. anaconda installed in your home directory) you can simply do
 
-`pip install git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
+`pip install git+ssh://git@gitlab.com/supercdms/DataHandling/DataCat.git`
 
 
 Documentation
