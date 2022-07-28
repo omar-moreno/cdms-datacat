@@ -172,13 +172,13 @@ def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucke
         # Download the specified file
         ############## Portion to fix
         # Option 1: Assume all dataset.relativePath from data registered on the DataCatalog the have a leading "/"
-        AWSClient.download_fileobj(bucketname, dataset.relativePath[1:], fout)
+        # AWSClient.download_fileobj(bucketname, dataset.relativePath[1:], fout)
 
         # Option 2: Not making the assumption made in "Option 1", while also preserving the dataset.relativePath property
-        #if dataset.relativePath[0] == "/":
-        #    AWSClient.download_fileobj(bucketname, dataset.relativePath[1:], fout)
-        #else:
-        #    AWSClient.download_fileobj(bucketname, dataset.relativePath, fout)
+        if dataset.relativePath[0] == "/":
+            AWSClient.download_fileobj(bucketname, dataset.relativePath[1:], fout)
+        else:
+            AWSClient.download_fileobj(bucketname, dataset.relativePath, fout)
         ##############
     return target
 
