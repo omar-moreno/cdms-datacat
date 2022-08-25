@@ -7,7 +7,7 @@ This folder contains the scripts used to register the NEXUS R13 Unblinded datase
 
 ## Inputs
 
-* `metadata/input_metadata.csv`: Backup of the [Google Sheet](https://docs.google.com/spreadsheets/d/1YklUMHrcqeEHhJtmiXgvCnb2B_SaIt99sZ-T6u1Kszc/edit#gid=0) with all the metadata that should be registered.
+* `metadata/input_metadata.csv.bz2`: Backup of the [Google Sheet](https://docs.google.com/spreadsheets/d/1YklUMHrcqeEHhJtmiXgvCnb2B_SaIt99sZ-T6u1Kszc/edit#gid=0) with all the metadata that should be registered.
 * `metadata/NEXUS_R13_unblinded_raw_files.txt.bz2`: List of all the files on disk, necessary for doing the registration without having access to the filesystem at SLAC.
 
 ## Preprocess metadata
