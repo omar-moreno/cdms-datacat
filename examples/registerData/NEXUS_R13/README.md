@@ -22,3 +22,9 @@ The notebook `register_files.ipynb` loads the CSV created by the first notebook,
 The files registered were 6708, it took 2 or 3 hours.
 
 See one of the registered files: [Link on datacat](https://supercdms-dev.slac.stanford.edu/datacat-v0.6/display/datasets/CDMS/NEXUS/R13/Raw/25220319_095807/25220319_095807_F1200.mid.gz)
+
+## Debugging
+
+During the debugging process, it is very useful to be able to print out what are the exact parameters passed to the `mkds` function, which is the actual code doing the registration.
+
+I have therefore created a simple module `debug_datacat.py`: just call `debug_add` instead of calling the `add` function of the catalog to print out all the arguments to `mkds`.
