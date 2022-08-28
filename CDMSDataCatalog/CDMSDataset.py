@@ -276,6 +276,60 @@ class DMCData(CDMSDataset):
         self.metadata["EnergyMin"] = '-1'
         self.metadata["NoiseProfile"] = 'NA'
         self.metadata["WIMPmass"] = "-1"
+class SimulatedData(CDMSDataset):
+
+    def __init__(self,
+                 filename,
+                 filePath,
+                 source, # previously DMCType
+                 processStep,
+                 experiment,
+                 implement,
+                 detector,
+                 facility,
+                 analysis,
+                 WIMPmass,
+                 nevents,
+                 comment,
+                 site='SLAC',
+                 fileFormat='root'):
+        """Constructor for the CDMS simulated dataset class
+        filename     - dataset name
+        filePath     - physical path to file exclusing the filename
+        source  - 'Cf','Ba','WIMP',...
+        processStep - 'Constants', 'SuperSim', 'Raw', 'Preprocessed',
+                      'Postprocessed' 
+        experiment  - 'Soudan', 'SNOLAB', 'TestDevices'
+        implement   - 'MATLAB' (default), 'Geant'
+        detector    - e.g. 'All', 'T1Z1'
+        analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133'
+        WIMPmass    - mass in GeV
+        nevents     - number of events
+        comments    - additional comments as json
+        site        - e.g. 'SLAC' (default)
+        fileFormat  - 'root'(default) , 'mat', 'txt'
+        """ 
+        CDMSDataset.__init__(self, filename, filePath,'NoLab', site,
+                             fileFormat)
+        self.processStep = processStep
+        self.implement = implement
+        self.relativePath += '/' + detector +'/Simulated/DMC'
+        self.relativePath += '/' + analysis #+'/'+ filename
+        self.metadata["Detector"] = detector
+        self.metadata["DMCImpl"] = implement
+        self.metadata["Source"] = source
+        self.metadata["nevents"] = nevents
+        self.metadata["WIMPmass"] = WIMPmass
+        self.metadata["Comments"] = comment
+        self.metadata["ProcessStep"] = processStep
+        self.metadata["NoiseProfile"] = 'NA'
+        self.metadata["Experiment"] = experiment
+        self.metadata["Facility"] = facility
+        self.metadata["Analysis"] = analysis
+#         self.metadata["SourceLoc"] =
+#         self.metadata["EnergyMax"] =
+#         self.metadata["EnergyMin"] = 
+#         self.metadata["DMCversion"] = DMCVersion
 
 
 class SuperSimData(CDMSDataset):
@@ -311,7 +365,7 @@ class SuperSimData(CDMSDataset):
         self.relativePath += '/' + SuperSimType + '/' + SuperSimVersion
 
         self.metadata["SuperSimType"] = SuperSimType
-        self.metadata["SuperSimVersion"] = SuperSimVersion
+        self.metadata["SuperSimVersion"] = SuperSimVersion 
 
 
 class RawData(CDMSDataset):
