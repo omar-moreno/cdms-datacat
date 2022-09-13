@@ -276,20 +276,40 @@ class DMCData(CDMSDataset):
         self.metadata["EnergyMin"] = '-1'
         self.metadata["NoiseProfile"] = 'NA'
         self.metadata["WIMPmass"] = "-1"
-class SimulatedData(CDMSDataset):
+        
+
+class DMCintermediate(CDMSDataset):
 
     def __init__(self,
                  filename,
                  filePath,
-                 source, # previously DMCType
+                 #source, # previously DMCType
                  processStep,
                  experiment,
                  implement,
                  detector,
-                 facility,
+                 #facility,
                  analysis,
                  WIMPmass,
-                 nevents,
+                 #nevents,
+                 SimWorkFlowTools,
+                 SimProdMacros,
+                 Geant4,
+                 ROOT,
+                 WimpSim,
+                 EPotFiles,
+                 SuperSim,
+                 G4CMP,
+                 cvode,
+                 Filetype,
+                 SimStage,
+                 ProcessedEvents,
+                 SOURCE,
+                 FACILITY,
+                 DETTYPE,
+                 EVENTS,   
+                 VOLUME,
+                 MASS,
                  comment,
                  site='SLAC',
                  fileFormat='root'):
@@ -317,15 +337,32 @@ class SimulatedData(CDMSDataset):
         self.relativePath += '/' + analysis #+'/'+ filename
         self.metadata["Detector"] = detector
         self.metadata["DMCImpl"] = implement
-        self.metadata["Source"] = source
-        self.metadata["nevents"] = nevents
+        #self.metadata["Source"] = source
+        #self.metadata["nevents"] = nevents
         self.metadata["WIMPmass"] = WIMPmass
-        self.metadata["Comments"] = comment
         self.metadata["ProcessStep"] = processStep
         self.metadata["NoiseProfile"] = 'NA'
         self.metadata["Experiment"] = experiment
-        self.metadata["Facility"] = facility
+        #self.metadata["Facility"] = facility
         self.metadata["Analysis"] = analysis
+        self.metadata["Geant4"] = Geant4
+        self.metadata["WimpSim"] = WimpSim
+        self.metadata["EPotFiles"] = EPotFiles
+        self.metadata["SuperSim"] = SuperSim
+        self.metadata["G4CMP"] = G4CMP
+        self.metadata["cvode"] = cvode
+        self.metadata["Filetype"] = Filetype
+        self.metadata["SimStage"] = SimStage
+        self.metadata["ProcessedEvents"] = ProcessedEvents
+        self.metadata["SOURCE"] = SOURCE
+        self.metadata["FACILITY"] = FACILITY
+        self.metadata["DETTYPE"] = DETTYPE
+        self.metadata["EVENTS"] = EVENTS
+        self.metadata["VOLUME"] = VOLUME
+        self.metadata["MASS"] = MASS       
+        
+        self.metadata["Comments"] = comment
+
 #         self.metadata["SourceLoc"] =
 #         self.metadata["EnergyMax"] =
 #         self.metadata["EnergyMin"] = 
