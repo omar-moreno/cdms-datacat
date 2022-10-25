@@ -13,7 +13,6 @@ import logging
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from .CDMSDataset import CDMSDataset
-import boto3
 #from OSNTools import OSNTools
 
 log = logging.getLogger(__name__)
@@ -152,6 +151,7 @@ def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucke
     Returns:
         target (str): The target filepath of the file downloaded from the OSN
     """
+    import boto3
     # Set default arguments
     endpointurl = 'https://ncsa.osn.xsede.org'
     bucketname = 'supercdms-data'
