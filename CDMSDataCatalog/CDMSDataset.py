@@ -287,9 +287,9 @@ class DMCintermediate(CDMSDataset):
                  processStep,
                  experiment,
                  implement,
-                 detector,
+                 Detector,
                  #facility,
-                 analysis,
+                 Analysis,
                  WIMPmass,
                  #nevents,
                  SimWorkFlowTools,
@@ -310,7 +310,7 @@ class DMCintermediate(CDMSDataset):
                  EVENTS,   
                  VOLUME,
                  MASS,
-                 comment,
+                 Comments,
                  site='SLAC',
                  fileFormat='root'):
         """Constructor for the CDMS simulated dataset class
