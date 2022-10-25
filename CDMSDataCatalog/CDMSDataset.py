@@ -1,5 +1,6 @@
 """ Provides the base CDMSDataset class as well as some derived ones"""
 import os
+import inspect
 from datacat.model import Metadata
 
 
@@ -311,6 +312,8 @@ class DMCintermediate(CDMSDataset):
                  VOLUME,
                  MASS,
                  Comments,
+                 SimulationsProduction,
+                 OfflineReleases,
                  site='SLAC',
                  fileFormat='root'):
         """Constructor for the CDMS simulated dataset class
@@ -333,40 +336,20 @@ class DMCintermediate(CDMSDataset):
                              fileFormat)
         self.processStep = processStep
         self.implement = implement
-        self.relativePath += '/' + detector +'/Simulated/DMC'
-        self.relativePath += '/' + analysis #+'/'+ filename
-        self.metadata["Detector"] = detector
-        self.metadata["DMCImpl"] = implement
-        #self.metadata["Source"] = source
-        #self.metadata["nevents"] = nevents
-        self.metadata["WIMPmass"] = WIMPmass
-        self.metadata["ProcessStep"] = processStep
-        self.metadata["NoiseProfile"] = 'NA'
-        self.metadata["Experiment"] = experiment
-        #self.metadata["Facility"] = facility
-        self.metadata["Analysis"] = analysis
-        self.metadata["Geant4"] = Geant4
-        self.metadata["WimpSim"] = WimpSim
-        self.metadata["EPotFiles"] = EPotFiles
-        self.metadata["SuperSim"] = SuperSim
-        self.metadata["G4CMP"] = G4CMP
-        self.metadata["cvode"] = cvode
-        self.metadata["Filetype"] = Filetype
-        self.metadata["SimStage"] = SimStage
-        self.metadata["ProcessedEvents"] = ProcessedEvents
-        self.metadata["SOURCE"] = SOURCE
-        self.metadata["FACILITY"] = FACILITY
-        self.metadata["DETTYPE"] = DETTYPE
-        self.metadata["EVENTS"] = EVENTS
-        self.metadata["VOLUME"] = VOLUME
-        self.metadata["MASS"] = MASS       
-        
-        self.metadata["Comments"] = comment
+        self.relativePath += '/' + Detector +'/Simulated/DMC'
+        self.relativePath += '/' + Analysis #+'/'+ filename
 
-#         self.metadata["SourceLoc"] =
-#         self.metadata["EnergyMax"] =
-#         self.metadata["EnergyMin"] = 
-#         self.metadata["DMCversion"] = DMCVersion
+        parameters = inspect.signature(DMCintermediate.__init__).parameters.keys()
+
+        local_variables = locals()
+        # Loop through function parameter names
+        # save all of them to the metadata dict except the list provided
+        for parameter in parameters:
+            if parameter not in ["self", "filename", "filePath", "site"]:
+                self.metadata[parameter] = local_variables[parameter]
+
+        self.metadata["DMCImpl"] = implement
+        self.metadata["NoiseProfile"] = 'NA'
 
 
 class SuperSimData(CDMSDataset):
