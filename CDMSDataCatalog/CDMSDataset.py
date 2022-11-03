@@ -282,32 +282,29 @@ class DMCData(CDMSDataset):
 class DMCintermediate(CDMSDataset):
 
     def __init__(self,
-                 filename,
-                 filePath,
-                 #source, # previously DMCType
-                 processStep,
-                 experiment,
-                 implement,
-                 Detector,
-                 #facility,
-                 Analysis,
-                 #nevents,
-                 SimWorkFlowTools,
-                 SimProdMacros,
-                 Geant4,
-                 ROOT,
-                 EPotFiles,
-                 SuperSim,
-                 G4CMP,
-                 cvode,
-                 Filetype,
-                 SimStage,
-                 ProcessedEvents,
-                 Comments,
-                 SimulationsProduction,
-                 OfflineReleases,
-                 site='SLAC',
-                 fileFormat='root'):
+                 filename: str,
+                 filePath: str,
+                 processStep: str,
+                 experiment: str,
+                 implement: str,
+                 Detector: str,
+                 Analysis: str,
+                 SimWorkFlowTools: str,
+                 SimProdMacros: str,
+                 Geant4: str,
+                 ROOT: str,
+                 EPotFiles: str,
+                 SuperSim: str,
+                 G4CMP: str,
+                 cvode: str,
+                 Filetype: str,
+                 SimStage: str,
+                 ProcessedEvents: int,
+                 Comments: str,
+                 SimulationsProduction: str,
+                 OfflineReleases: str,
+                 site:str='SLAC',
+                 fileFormat:str='root'):
         """Constructor for the CDMS simulated dataset class
         filename     - dataset name
         filePath     - physical path to file exclusing the filename
@@ -316,11 +313,10 @@ class DMCintermediate(CDMSDataset):
                       'Postprocessed' 
         experiment  - 'Soudan', 'SNOLAB', 'TestDevices'
         implement   - 'MATLAB' (default), 'Geant'
-        detector    - e.g. 'All', 'T1Z1'
-        analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133'
-        WIMPmass    - mass in GeV
-        nevents     - number of events
-        comments    - additional comments as json
+        Detector    - e.g. 'All', 'T1Z1'
+        Analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133'
+        ProcessedEvents     - number of events
+        Comments    - additional comments as json
         site        - e.g. 'SLAC' (default)
         fileFormat  - 'root'(default) , 'mat', 'txt'
         """ 
