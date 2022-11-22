@@ -3,7 +3,7 @@
 import click
 import inspect
 
-from CDMSDataCatalog import DMCintermediate
+from CDMSDataCatalog import DMCintermediate, CDMSDataCatalog
 
 
 def options_from_class(cls):
@@ -22,16 +22,22 @@ def options_from_class(cls):
 
 
 @click.group()
-def cli():
-    pass
+@click.option("-c", "--cfg", default="./default.cfg", help="specify DataCatalog config file")
+@click.pass_context
+def cli(ctx, cfg):
+    ctx.ensure_object(dict)
+    ctx.obj['cfg'] = cfg
 
 
 @cli.command()
 @options_from_class(DMCintermediate)
-def dmcintermediate(**kwargs):
+@click.pass_context
+def dmcintermediate(ctx, **kwargs):
     click.echo("Creating DMCintermediate with arguments: {}".format(kwargs))
     dataset = DMCintermediate(**kwargs)
+    click.echo("Creating connection with data catalog with {}".format(ctx.obj["cfg"]))
+    dc = CDMSDataCatalog(ctx.obj["cfg"])
 
 
 if __name__ == "__main__":
-    cli()
+    cli(obj={})
