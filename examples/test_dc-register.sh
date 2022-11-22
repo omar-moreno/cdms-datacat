@@ -1,0 +1,24 @@
+./bin/dc-register --cfg ./CDMSDataCatalog/cfg/prod.cfg dmcintermediate \
+                   --filename 'WIMP_zip_Zip_iZIP7_51220523_0000.txt' \
+                   --filePath '/sdf/group/supercdms/workarea/simulations/sample_Hanno/WIMP/Ge_iZip/hits/single/Ge_2GeV/output/WIMP_zip_Zip_iZIP7_51220523_0000.txt' \
+                   --processStep 'DMCintermidiate'  \
+                   --experiment 'SNOLAB_single' \
+                   --implement 'G4DMC' \
+                   --Detector 'iZIP7_bare' \
+                   --Analysis 'TriggerStudies_v01.00' \
+                   --SimWorkFlowTools 'V3.5.0' \
+                   --SimProdMacros 'V01-06-00' \
+                   --Geant4 '10-06-patch-02' \
+                   --ROOT '6.18/02' \
+                   --EPotFiles 'v00-00-06-0-gf513e20' \
+                   --SuperSim 'v09-01-01' \
+                   --G4CMP 'g4cmp-V08-00-01' \
+                   --cvode '5.1.0' \
+                   --Filetype 'ROOT' \
+                   --SimStage 'G4DMC' \
+                   --ProcessedEvents 2000 \
+                   --Comments "A long string" \
+                   --site 'SLAC' \
+                   --OfflineReleases "N/A" \
+                   --SimulationsProduction "N/A" \
+                   --fileFormat 'txt' &> dc-register.log
