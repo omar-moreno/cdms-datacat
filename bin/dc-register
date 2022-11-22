@@ -37,6 +37,7 @@ def dmcintermediate(ctx, **kwargs):
     dataset = DMCintermediate(**kwargs)
     click.echo("Creating connection with data catalog with {}".format(ctx.obj["cfg"]))
     dc = CDMSDataCatalog(ctx.obj["cfg"])
+    dc.add(dataset)
 
 
 if __name__ == "__main__":
