@@ -240,24 +240,24 @@ class CDMSDataCatalog:
             # Maybe a Cleaner way to implement if Crawler is before this (which I do not think it is)
             #if(scan_result =! {"scanStatus": "MISSING"}):
                 if(CDMSds.site == 'SLAC'):
-                    self.client.mkds(path,
-                                    CDMSds.datasetName,
-                                    CDMSds.fileType,
-                                    CDMSds.fileFormat,
-                                    versionMetadata=CDMSds.metadata,
-                                    resource=CDMSds.filePath,
-                                    site=CDMSds.site)
+                    ds = self.client.mkds(path,
+                                          CDMSds.datasetName,
+                                          CDMSds.fileType,
+                                          CDMSds.fileFormat,
+                                          versionMetadata=CDMSds.metadata,
+                                          resource=CDMSds.filePath,
+                                          site=CDMSds.site)
                 else:
-                    self.client.mkds(path,
-                                    CDMSds.datasetName,
-                                    CDMSds.fileType,
-                                    CDMSds.fileFormat,
-                                    versionMetadata=CDMSds.metadata,
-                                    resource=CDMSds.filePath,
-                                    site=CDMSds.site,
-                                    size=CDMSds.filesize,
-                                    checksum=CDMSds.crcchecksum)
-
+                    ds = self.client.mkds(path,
+                                          CDMSds.datasetName,
+                                          CDMSds.fileType,
+                                          CDMSds.fileFormat,
+                                          versionMetadata=CDMSds.metadata,
+                                          resource=CDMSds.filePath,
+                                          site=CDMSds.site,
+                                          size=CDMSds.filesize,
+                                          checksum=CDMSds.crcchecksum)
+                CDMSds.rawDataset = ds
         except Exception as e:
             if catch_errors:
                 print(e)
