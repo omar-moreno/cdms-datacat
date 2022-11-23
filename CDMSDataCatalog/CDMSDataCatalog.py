@@ -302,6 +302,90 @@ class CDMSDataCatalog:
         kwargs.setdefault('dest', self.default_fetchdir)
         return fetchdata(self, path, **kwargs)
 
+    def getDependents(self, dep_container, dep_type, max_depth, chunk_size, **kwargs):
+        """
+        Retrieves dependents up to the provided "chunk_size" at a time, subject to "max_depth".
+
+        :param dep_container: Parent container to get dependents from.
+        :param dep_type: Type of dependents to get.
+        :param max_depth: Depth of dependency chain.
+        :param chunk_size: Total amount of dependents retrieved.
+        :return: List of retrieved dependents.
+        """
+        if isinstance(dep_container, CDMSDataset):
+            try:
+                dep_container = dep_container.rawDataset
+            except Exception as e:
+                print('Unqualified dataset dependency container')
+                raise
+        return self.client.get_dependents(dep_container, dep_type, max_depth, chunk_size, **kwargs)
+
+    def getNextDependents(self, dep_container, **kwargs):
+        """
+         Retrieve next dependents attached to container object.
+        :param dep_container: Parent container object you wish to get next dependents from
+        :return: List of dependent objects attached to container object
+        """
+        if isinstance(dep_container, CDMSDataset):
+            try:
+                dep_container = dep_container.rawDataset
+            except Exception as e:
+                print('Unqualified dataset dependency container')
+                raise
+        return self.client.get_next_dependents(dep_container, **kwargs)
+
+    def addDependents(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
+        """
+         Attach new dependents to container object.
+        :param dep_container: Parent container object to add dependents to
+        :param dep_type: Type of dependents to add
+        :param dep_datasets: The datasets we wish to use as children of the parent container.
+        VersionPKs are required for each dependent dataset.
+        :param dep_groups: The groups we wish to use as children of the parent container
+        """
+        if isinstance(dep_container, CDMSDataset):
+            try:
+                dep_container = dep_container.rawDataset
+            except Exception as e:
+                print('Unqualified dataset dependency container')
+                raise
+        dep_dss = []
+        for dataset in dep_datasets:
+            if isinstance(dataset, CDMSDataset):
+                try:
+                    dep_dss.append(dataset.rawDataset)
+                except Exception as e:
+                    print('Unqualified dataset as dependent')
+                    raise
+            else:
+                dep_dss.append(dataset)
+        return self.client.add_dependents(dep_container, dep_type, dep_dss, dep_groups, **kwargs)
+
+    def removeDependents(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
+        """
+        Remove dependents from container object provided
+        :param dep_container: Parent container object to remove dependents from
+        :param dep_type: Type of dependents to remove
+        :param dep_datasets: The datasets we wish to remove from the parent container
+        :param dep_groups: The groups we wish to remove from the parent container
+        """
+        if isinstance(dep_container, CDMSDataset):
+            try:
+                dep_container = dep_container.rawDataset
+            except Exception as e:
+                print('Unqualified dataset dependency container')
+                raise
+        dep_dss = []
+        for dataset in dep_datasets:
+            if isinstance(dataset, CDMSDataset):
+                try:
+                    dep_dss.append(dataset.rawDataset)
+                except Exception as e:
+                    print('Unqualified dataset as dependent')
+                    raise
+            else:
+                dep_dss.append(dataset)
+        return self.client.remove_dependents(dep_container, dep_type, dep_datasets, dep_groups, **kwargs)
 
     def buildDataSearch(self, Facility='*', nFridgeRun='*', ProdType='*', 
                         ProdTag='*', nMergeLevel=None, Series='*', 
