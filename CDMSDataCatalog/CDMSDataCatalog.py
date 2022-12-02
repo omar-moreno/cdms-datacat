@@ -314,11 +314,17 @@ class CDMSDataCatalog:
         """
         if isinstance(dep_container, CDMSDataset):
             try:
-                dep_container = dep_container.rawDataset
+                container = dep_container.rawDataset
+                if hasattr(container, "versionMetadata"):
+                    dep_path = container.versionMetadata.get("dependencyName");
+                    if dep_path:
+                        container = self.client.path(container.path, versionId=container.versionId, site='All')
             except Exception as e:
                 print('Unqualified dataset dependency container')
                 raise
-        return self.client.get_dependents(dep_container, dep_type, max_depth, chunk_size, **kwargs)
+        else:
+            container = dep_container
+        return self.client.get_dependents(container, dep_type, max_depth, chunk_size, **kwargs)
 
     def getNextDependents(self, dep_container, **kwargs):
         """
@@ -345,10 +351,12 @@ class CDMSDataCatalog:
         """
         if isinstance(dep_container, CDMSDataset):
             try:
-                dep_container = dep_container.rawDataset
+                container = dep_container.rawDataset
             except Exception as e:
                 print('Unqualified dataset dependency container')
                 raise
+        else:
+            container = dep_container
         dep_dss = []
         for dataset in dep_datasets:
             if isinstance(dataset, CDMSDataset):
@@ -359,7 +367,10 @@ class CDMSDataCatalog:
                     raise
             else:
                 dep_dss.append(dataset)
-        return self.client.add_dependents(dep_container, dep_type, dep_dss, dep_groups, **kwargs)
+        ret = self.client.add_dependents(container, dep_type, dep_dss, dep_groups, **kwargs)
+        if container != dep_container:
+            # update with newly added dependents info
+            dep_container.rawDataset = ret
 
     def removeDependents(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
         """
@@ -371,10 +382,12 @@ class CDMSDataCatalog:
         """
         if isinstance(dep_container, CDMSDataset):
             try:
-                dep_container = dep_container.rawDataset
+                container = dep_container.rawDataset
             except Exception as e:
                 print('Unqualified dataset dependency container')
                 raise
+        else:
+            container = dep_container
         dep_dss = []
         for dataset in dep_datasets:
             if isinstance(dataset, CDMSDataset):
@@ -385,7 +398,9 @@ class CDMSDataCatalog:
                     raise
             else:
                 dep_dss.append(dataset)
-        return self.client.remove_dependents(dep_container, dep_type, dep_datasets, dep_groups, **kwargs)
+        ret = self.client.remove_dependents(container, dep_type, dep_datasets, dep_groups, **kwargs)
+        if container != dep_container:
+            dep_container.rawDataset = ret
 
     def buildDataSearch(self, Facility='*', nFridgeRun='*', ProdType='*', 
                         ProdTag='*', nMergeLevel=None, Series='*', 
