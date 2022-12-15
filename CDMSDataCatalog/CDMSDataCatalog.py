@@ -8,6 +8,7 @@ import logging
 
 from .fetch import fetchdata, get_default_fetchdir
 from .CDMSDataset import CDMSDataset
+from .CDMSGroup import CDMSGroup
 from . import paths
 
 __all__ = ['CDMSDataCatalog']
@@ -155,6 +156,22 @@ class CDMSDataCatalog:
             except Exception as e:
                 print(e)
                 raise IOError("Couldn't delete "+path)
+
+    def mkgroup(self, path, parents=False, metadata=None):
+        """ Create a new group"
+        Args:
+            path(str): full path to the new group
+            parents(bool): create any missing higher-level groups on the way
+            metadata(dict): additional metadata
+        """
+        self.client.mkgroup(path, parents=parents, metadata=metadata)
+        return
+
+    def getgroup(self, path, site='All'):
+        """Convert a path (string) to a full CDMSGroup object"""
+        path = corrPathCDMS(path)
+        rawgroup = self.client.path(path, site=site)
+        return CDMSGroup.fromGroup(rawgroup)
 
     def mkdir(self, path, parents=False):
         """ Create a new directory
@@ -316,12 +333,20 @@ class CDMSDataCatalog:
             try:
                 container = dep_container.rawDataset
                 if hasattr(container, "versionMetadata"):
-                    dep_path = container.versionMetadata.get("dependencyName");
-                    if dep_path:
+                    if container.versionMetadata.get("dependencyName"):
+                        # refresh container for latest
                         container = self.client.path(container.path, versionId=container.versionId, site='All')
-            except Exception as e:
-                print('Unqualified dataset dependency container')
-                raise
+            except Exception:
+                raise ValueError('Unqualified dataset passed as dependency container')
+        elif isinstance(dep_container, CDMSGroup):
+            try:
+                container = dep_container.rawGroup
+                if hasattr(container, "metadata"):
+                    if container.metadata.get("dependencyName"):
+                        # refresh container for latest
+                        container = self.client.path(container.path)
+            except Exception:
+                raise ValueError("qualified group passed as dependency container")
         else:
             container = dep_container
         return self.client.get_dependents(container, dep_type, max_depth, chunk_size, **kwargs)
@@ -334,11 +359,15 @@ class CDMSDataCatalog:
         """
         if isinstance(dep_container, CDMSDataset):
             try:
-                dep_container = dep_container.rawDataset
-            except Exception as e:
-                print('Unqualified dataset dependency container')
-                raise
-        return self.client.get_next_dependents(dep_container, **kwargs)
+                container = dep_container.rawDataset
+            except Exception:
+                raise ValueError('Unqualified dataset passed as dependency container')
+        elif isinstance(dep_container, CDMSGroup):
+            try:
+                container = dep_container.rawGroup
+            except Exception:
+                raise ValueError("Unqualified group passed as dependency container")
+        return self.client.get_next_dependents(container, **kwargs)
 
     def addDependents(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
         """
@@ -352,25 +381,38 @@ class CDMSDataCatalog:
         if isinstance(dep_container, CDMSDataset):
             try:
                 container = dep_container.rawDataset
-            except Exception as e:
-                print('Unqualified dataset dependency container')
-                raise
+            except Exception:
+                raise ValueError('Unqualified CDMSDataset passed as dependency container')
+        elif isinstance(dep_container, CDMSGroup):
+            try:
+                container = dep_container.rawGroup
+            except Exception:
+                raise ValueError('Unqualified CDMSGroup passed as dependency container')
         else:
             container = dep_container
+        dep_grps = []
+        for group in (dep_groups or []):
+            if isinstance(group, CDMSGroup):
+                try:
+                    dep_grps.append(group.rawGroup)
+                except Exception:
+                    raise ValueError('Unqualified group passed as dependent')
+            else:
+                dep_grps.append(group)
         dep_dss = []
-        for dataset in dep_datasets:
+        for dataset in (dep_datasets or []):
             if isinstance(dataset, CDMSDataset):
                 try:
                     dep_dss.append(dataset.rawDataset)
-                except Exception as e:
-                    print('Unqualified dataset as dependent')
-                    raise
+                except Exception:
+                    raise ValueError('Unqualified dataset passed as dependent')
             else:
                 dep_dss.append(dataset)
-        ret = self.client.add_dependents(container, dep_type, dep_dss, dep_groups, **kwargs)
-        if container != dep_container:
-            # update with newly added dependents info
+        ret = self.client.add_dependents(container, dep_type, dep_dss, dep_grps, **kwargs)
+        if isinstance(dep_container, CDMSDataset):
             dep_container.rawDataset = ret
+        elif isinstance(dep_container, CDMSGroup):
+            dep_container.rawGroup = ret
 
     def removeDependents(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
         """
@@ -383,24 +425,38 @@ class CDMSDataCatalog:
         if isinstance(dep_container, CDMSDataset):
             try:
                 container = dep_container.rawDataset
-            except Exception as e:
-                print('Unqualified dataset dependency container')
-                raise
+            except Exception:
+                raise ValueError('Unqualified dataset passed as dependency container')
+        elif isinstance(dep_container, CDMSGroup):
+            try:
+                container = dep_container.rawGroup
+            except Exception:
+                raise ValueError('Unqualified group passed as dependency container')
         else:
             container = dep_container
+        dep_grps = []
+        for group in (dep_groups or []):
+            if isinstance(group, CDMSGroup):
+                try:
+                    dep_grps.append(group.rawGroup)
+                except Exception:
+                    raise ValueError('Unqualified group passed as dependent')
+            else:
+                dep_grps.append(group)
         dep_dss = []
-        for dataset in dep_datasets:
+        for dataset in (dep_datasets or []):
             if isinstance(dataset, CDMSDataset):
                 try:
                     dep_dss.append(dataset.rawDataset)
-                except Exception as e:
-                    print('Unqualified dataset as dependent')
-                    raise
+                except Exception:
+                    raise ValueError('Unqualified dataset passed as dependent')
             else:
                 dep_dss.append(dataset)
-        ret = self.client.remove_dependents(container, dep_type, dep_datasets, dep_groups, **kwargs)
-        if container != dep_container:
+        ret = self.client.remove_dependents(container, dep_type, dep_dss, dep_grps, **kwargs)
+        if isinstance(dep_container, CDMSDataset):
             dep_container.rawDataset = ret
+        elif isinstance(dep_container, CDMSGroup):
+            dep_container.rawGroup = ret
 
     def buildDataSearch(self, Facility='*', nFridgeRun='*', ProdType='*', 
                         ProdTag='*', nMergeLevel=None, Series='*', 
