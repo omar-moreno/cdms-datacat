@@ -8,6 +8,7 @@ import logging
 
 from .fetch import fetchdata, get_default_fetchdir
 from .CDMSDataset import CDMSDataset
+from .CDMSGroup import CDMSGroup
 from . import paths
 
 __all__ = ['CDMSDataCatalog']
@@ -156,6 +157,22 @@ class CDMSDataCatalog:
                 print(e)
                 raise IOError("Couldn't delete "+path)
 
+    def mkgroup(self, path, parents=False, metadata=None):
+        """ Create a new group"
+        Args:
+            path(str): full path to the new group
+            parents(bool): create any missing higher-level groups on the way
+            metadata(dict): additional metadata
+        """
+        self.client.mkgroup(path, parents=parents, metadata=metadata)
+        return
+
+    def getgroup(self, path, site='All'):
+        """Convert a path (string) to a full CDMSGroup object"""
+        path = corrPathCDMS(path)
+        rawgroup = self.client.path(path, site=site)
+        return CDMSGroup.fromGroup(rawgroup)
+
     def mkdir(self, path, parents=False):
         """ Create a new directory
         Args:
@@ -240,24 +257,24 @@ class CDMSDataCatalog:
             # Maybe a Cleaner way to implement if Crawler is before this (which I do not think it is)
             #if(scan_result =! {"scanStatus": "MISSING"}):
                 if(CDMSds.site == 'SLAC'):
-                    self.client.mkds(path,
-                                    CDMSds.datasetName,
-                                    CDMSds.fileType,
-                                    CDMSds.fileFormat,
-                                    versionMetadata=CDMSds.metadata,
-                                    resource=CDMSds.filePath,
-                                    site=CDMSds.site)
+                    ds = self.client.mkds(path,
+                                          CDMSds.datasetName,
+                                          CDMSds.fileType,
+                                          CDMSds.fileFormat,
+                                          versionMetadata=CDMSds.metadata,
+                                          resource=CDMSds.filePath,
+                                          site=CDMSds.site)
                 else:
-                    self.client.mkds(path,
-                                    CDMSds.datasetName,
-                                    CDMSds.fileType,
-                                    CDMSds.fileFormat,
-                                    versionMetadata=CDMSds.metadata,
-                                    resource=CDMSds.filePath,
-                                    site=CDMSds.site,
-                                    size=CDMSds.filesize,
-                                    checksum=CDMSds.crcchecksum)
-
+                    ds = self.client.mkds(path,
+                                          CDMSds.datasetName,
+                                          CDMSds.fileType,
+                                          CDMSds.fileFormat,
+                                          versionMetadata=CDMSds.metadata,
+                                          resource=CDMSds.filePath,
+                                          site=CDMSds.site,
+                                          size=CDMSds.filesize,
+                                          checksum=CDMSds.crcchecksum)
+                CDMSds.rawDataset = ds
         except Exception as e:
             if catch_errors:
                 print(e)
@@ -302,6 +319,144 @@ class CDMSDataCatalog:
         kwargs.setdefault('dest', self.default_fetchdir)
         return fetchdata(self, path, **kwargs)
 
+    def getDependents(self, dep_container, dep_type, max_depth, chunk_size, **kwargs):
+        """
+        Retrieves dependents up to the provided "chunk_size" at a time, subject to "max_depth".
+
+        :param dep_container: Parent container to get dependents from.
+        :param dep_type: Type of dependents to get.
+        :param max_depth: Depth of dependency chain.
+        :param chunk_size: Total amount of dependents retrieved.
+        :return: List of retrieved dependents.
+        """
+        if isinstance(dep_container, CDMSDataset):
+            try:
+                container = dep_container.rawDataset
+                if hasattr(container, "versionMetadata"):
+                    if container.versionMetadata.get("dependencyName"):
+                        # refresh container for latest
+                        container = self.client.path(container.path, versionId=container.versionId, site='All')
+            except Exception:
+                raise ValueError('Unqualified dataset passed as dependency container')
+        elif isinstance(dep_container, CDMSGroup):
+            try:
+                container = dep_container.rawGroup
+                if hasattr(container, "metadata"):
+                    if container.metadata.get("dependencyName"):
+                        # refresh container for latest
+                        container = self.client.path(container.path)
+            except Exception:
+                raise ValueError("qualified group passed as dependency container")
+        else:
+            container = dep_container
+        return self.client.get_dependents(container, dep_type, max_depth, chunk_size, **kwargs)
+
+    def getNextDependents(self, dep_container, **kwargs):
+        """
+         Retrieve next dependents attached to container object.
+        :param dep_container: Parent container object you wish to get next dependents from
+        :return: List of dependent objects attached to container object
+        """
+        if isinstance(dep_container, CDMSDataset):
+            try:
+                container = dep_container.rawDataset
+            except Exception:
+                raise ValueError('Unqualified dataset passed as dependency container')
+        elif isinstance(dep_container, CDMSGroup):
+            try:
+                container = dep_container.rawGroup
+            except Exception:
+                raise ValueError("Unqualified group passed as dependency container")
+        return self.client.get_next_dependents(container, **kwargs)
+
+    def addDependents(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
+        """
+         Attach new dependents to container object.
+        :param dep_container: Parent container object to add dependents to
+        :param dep_type: Type of dependents to add
+        :param dep_datasets: The datasets we wish to use as children of the parent container.
+        VersionPKs are required for each dependent dataset.
+        :param dep_groups: The groups we wish to use as children of the parent container
+        """
+        if isinstance(dep_container, CDMSDataset):
+            try:
+                container = dep_container.rawDataset
+            except Exception:
+                raise ValueError('Unqualified CDMSDataset passed as dependency container')
+        elif isinstance(dep_container, CDMSGroup):
+            try:
+                container = dep_container.rawGroup
+            except Exception:
+                raise ValueError('Unqualified CDMSGroup passed as dependency container')
+        else:
+            container = dep_container
+        dep_grps = []
+        for group in (dep_groups or []):
+            if isinstance(group, CDMSGroup):
+                try:
+                    dep_grps.append(group.rawGroup)
+                except Exception:
+                    raise ValueError('Unqualified group passed as dependent')
+            else:
+                dep_grps.append(group)
+        dep_dss = []
+        for dataset in (dep_datasets or []):
+            if isinstance(dataset, CDMSDataset):
+                try:
+                    dep_dss.append(dataset.rawDataset)
+                except Exception:
+                    raise ValueError('Unqualified dataset passed as dependent')
+            else:
+                dep_dss.append(dataset)
+        ret = self.client.add_dependents(container, dep_type, dep_dss, dep_grps, **kwargs)
+        if isinstance(dep_container, CDMSDataset):
+            dep_container.rawDataset = ret
+        elif isinstance(dep_container, CDMSGroup):
+            dep_container.rawGroup = ret
+
+    def removeDependents(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
+        """
+        Remove dependents from container object provided
+        :param dep_container: Parent container object to remove dependents from
+        :param dep_type: Type of dependents to remove
+        :param dep_datasets: The datasets we wish to remove from the parent container
+        :param dep_groups: The groups we wish to remove from the parent container
+        """
+        if isinstance(dep_container, CDMSDataset):
+            try:
+                container = dep_container.rawDataset
+            except Exception:
+                raise ValueError('Unqualified dataset passed as dependency container')
+        elif isinstance(dep_container, CDMSGroup):
+            try:
+                container = dep_container.rawGroup
+            except Exception:
+                raise ValueError('Unqualified group passed as dependency container')
+        else:
+            container = dep_container
+        dep_grps = []
+        for group in (dep_groups or []):
+            if isinstance(group, CDMSGroup):
+                try:
+                    dep_grps.append(group.rawGroup)
+                except Exception:
+                    raise ValueError('Unqualified group passed as dependent')
+            else:
+                dep_grps.append(group)
+        dep_dss = []
+        for dataset in (dep_datasets or []):
+            if isinstance(dataset, CDMSDataset):
+                try:
+                    dep_dss.append(dataset.rawDataset)
+                except Exception:
+                    raise ValueError('Unqualified dataset passed as dependent')
+            else:
+                dep_dss.append(dataset)
+        ret = self.client.remove_dependents(container, dep_type, dep_dss, dep_grps, **kwargs)
+        if isinstance(dep_container, CDMSDataset):
+            dep_container.rawDataset = ret
+        elif isinstance(dep_container, CDMSGroup):
+            dep_container.rawGroup = ret
 
     def buildDataSearch(self, Facility='*', nFridgeRun='*', ProdType='*', 
                         ProdTag='*', nMergeLevel=None, Series='*', 
