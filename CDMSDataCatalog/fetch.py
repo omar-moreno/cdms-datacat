@@ -96,6 +96,7 @@ def print_filesize(num, suffix='B'):
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
+
 def download_web(dataset, target, baseurl, progcallback=None):
     """ Download a file through the data catalog web interface
     Args:
@@ -108,7 +109,7 @@ def download_web(dataset, target, baseurl, progcallback=None):
     # determine the URL for the file
     baseparsed = urllib.parse.urlparse(baseurl)
     url = urllib.parse.urlunparse((baseparsed[0], baseparsed[1],
-                                   'DataCatalog/get', '', '', ''))
+                                   baseparsed[2]+'/DataCatalog/get', '', '', ''))
     # need to get raw dataset to determine url
     locationPk = dataset.locationPk
     if locationPk is None:
@@ -380,8 +381,7 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
 
     # we're finally done!
     if errors:
-        log.warn(f"DataCat WARNING: Failed to fetch {len(errors)}/{len(allresults)} datasets!")
+        log.warning(f"DataCat WARNING: Failed to fetch {len(errors)}/{len(allresults)} datasets!")
         #for err in errors:
-            #warn(f"\t{str(err)}: {err.fetchError}")
+            #warning(f"\t{str(err)}: {err.fetchError}")
     return allresults
-    
