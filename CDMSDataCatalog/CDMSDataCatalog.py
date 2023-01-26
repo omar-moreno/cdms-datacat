@@ -1217,4 +1217,30 @@ class CDMSDataCatalog:
                 pass
 
         return last_run
-        
+
+from .CDMSDataset import ParticleHits, DMCintermediate, RawSim, ProcessedSim
+
+def register(dict_metadata, cfg_prod):
+    dc = CDMSDataCatalog(cfg_prod)
+
+    dataset = None
+    ds_is_valid = False
+    if 'SimStage' in dict_metadata.keys():
+        if   dict_metadata['SimStage'] == 'ParticleHits':
+            dataset = ParticleHits(**dict_metadata)
+            ds_is_valid = dataset.check_conventions()
+        elif dict_metadata['SimStage'] == 'DMCintermediate':
+            dataset = DMCintermediate(**dict_metadata)
+            dataset.link_to_ancestor(dc)
+            ds_is_valid = dataset.check_conventions()
+        elif dict_metadata['SimStage'] == 'Raw':
+            dataset = RawSim(**dict_metadata)
+            dataset.link_to_ancestor(dc)
+            ds_is_valid = dataset.check_conventions()
+        elif dict_metadata['SimStage'] == 'Processed':
+            dataset = ProcessedSim(**dict_metadata)
+            dataset.link_to_ancestor(dc)
+            ds_is_valid = dataset.check_conventions()
+            
+    if ds_is_valid:
+        dc.add(dataset)

@@ -1,6 +1,5 @@
 """ Provides the base CDMSDataset class as well as some derived ones"""
 import os
-import inspect
 from datacat.model import Metadata
 
 
@@ -279,65 +278,233 @@ class DMCData(CDMSDataset):
         self.metadata["WIMPmass"] = "-1"
         
 
-class DMCintermediate(CDMSDataset):
+class ProdSimDataset(CDMSDataset):
 
     def __init__(self,
-                 filename: str,
-                 filePath: str,
-                 processStep: str,
-                 experiment: str,
-                 implement: str,
-                 Detector: str,
-                 Analysis: str,
-                 SimWorkFlowTools: str,
-                 SimProdMacros: str,
-                 Geant4: str,
-                 ROOT: str,
-                 EPotFiles: str,
-                 SuperSim: str,
-                 G4CMP: str,
-                 cvode: str,
-                 Filetype: str,
-                 SimStage: str,
-                 ProcessedEvents: int,
-                 Comments: str,
-                 SimulationsProduction: str,
-                 OfflineReleases: str,
-                 site:str='SLAC',
-                 fileFormat:str='root'):
-        """Constructor for the CDMS simulated dataset class
-        filename     - dataset name
-        filePath     - physical path to file exclusing the filename
-        source  - 'Cf','Ba','WIMP',...
-        processStep - 'Constants', 'SuperSim', 'Raw', 'Preprocessed',
-                      'Postprocessed' 
-        experiment  - 'Soudan', 'SNOLAB', 'TestDevices'
-        implement   - 'MATLAB' (default), 'Geant'
-        Detector    - e.g. 'All', 'T1Z1'
-        Analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133'
-        ProcessedEvents     - number of events
-        Comments    - additional comments as json
-        site        - e.g. 'SLAC' (default)
-        fileFormat  - 'root'(default) , 'mat', 'txt'
+                 filename, filePath, dataType, site, fileFormat, # Required by constructor of CDMSDataset base class
+                 SimStage, nProcessedEvents, # General output metadata
+                 SimulationsProduction, SimWorkFlowTools, SimProdMacros, OfflineRelease, # General software metadata
+                 descriptor, prodVersion, # Required to define folder in Data Catalog
+                 Ancestorpath, # Predecessor information
+                 **kwargs): # Specific metadata
+        """Constructor for the CDMS DMCintermediate dataset class
+        filename         - Dataset name
+        filePath         - Full path to actual file, including file name
+        dataType         - Required values: 'NoLab', 'SNOLAB'
+        site             - For example, 'SLAC'
+        fileFormat       - For example, 'root' or 'txt'
+        SimStage         - Required values: 'ParticleHits', 'DMCintermediate', 'DAQSim', 'Processed'
+        nProcessedEvents - Number of events
         """ 
-        CDMSDataset.__init__(self, filename, filePath,'NoLab', site,
-                             fileFormat)
-        self.processStep = processStep
-        self.implement = implement
-        self.relativePath += '/' + Detector +'/Simulated/DMC'
-        self.relativePath += '/' + Analysis #+'/'+ filename
+        CDMSDataset.__init__(self, filename, filePath, dataType, site, fileFormat)
+        self.relativePath_common = self.relativePath.replace(dataType, 'Simulations/'+dataType)+'/'+descriptor
+        self.relativePath = self.relativePath_common+'/'+SimStage+'/'+prodVersion
+        self.path_is_valid = True
+        print('relativePath:', self.relativePath)
 
-        parameters = inspect.signature(DMCintermediate.__init__).parameters.keys()
-
+        self.metadata['Filetype'             ] = str(fileFormat) # Value already constrained by constructor of CDMSDataset base class
+        self.metadata['SimStage'             ] = str(SimStage)
+        self.metadata['nProcessedEvents'     ] = int(nProcessedEvents)
+        self.metadata['SimulationsProduction'] = str(SimulationsProduction)
+        self.metadata['SimWorkFlowTools'     ] = str(SimWorkFlowTools)
+        self.metadata['SimProdMacros'        ] = str(SimProdMacros)
+        self.metadata['OfflineRelease'       ] = str(OfflineRelease)
         local_variables = locals()
-        # Loop through function parameter names
-        # save all of them to the metadata dict except the list provided
-        for parameter in parameters:
-            if parameter not in ["self", "filename", "filePath", "site"]:
-                self.metadata[parameter] = local_variables[parameter]
+        max_len_param = max([len(parameter) for parameter in local_variables['kwargs'].keys()])
+        for parameter in local_variables['kwargs'].keys():
+            print(parameter.ljust(max_len_param), local_variables['kwargs'][parameter])
+            if parameter[0] == 'n' and parameter[1].isupper():
+                self.metadata[parameter] = int(local_variables['kwargs'][parameter])
+            else:
+                self.metadata[parameter] = str(local_variables['kwargs'][parameter])
 
-        self.metadata["DMCImpl"] = implement
-        self.metadata["NoiseProfile"] = 'NA'
+        self.required_values = {} # New, to be also filled in the constructor of each specific class, if necessary
+        self.required_values['dataType'] = ['ANIMAL',
+                                            'CUTE'  ,
+                                            'NEXUS' ,
+                                            'NoLab' ,
+                                            'SLAC'  ,
+                                            'SNOLAB',
+                                            'Soudan',
+                                            'TRIUMF',
+                                            'UCB'   ,
+                                            'UMN'   ]
+        self.required_values['SimStage'] = ['ParticleHits'   ,
+                                            'DMCintermediate',
+                                            'Raw'            , 
+                                            'Processed'      ]
+
+        self.Ancestorpath = Ancestorpath
+        self.ancestor_is_valid = False
+
+    def link_to_ancestor(self, dc):
+        if type(self.Ancestorpath) == str:
+            datasets_ancestor = dc.search(self.relativePath_common+'/**', query = 'resource eq "'+self.Ancestorpath+'"')
+            if len(datasets_ancestor) == 1:
+                self.ancestor_is_valid = True
+                dc.addDependents(self, 'predecessor', dep_datasets = [dc.get(datasets_ancestor[0].relativePath)])
+
+    def check_conventions(self): # New, to be called in dc-register before calling CDMSDataCatalog.add
+        if not self.path_is_valid: # Check that relative path has the correct format
+            print('ERROR: unable to build the folder')
+            return False
+
+        for parameter in self.metadata.keys(): # Check that metadata take allowed values
+            if parameter in self.required_values.keys():
+                if not self.metadata[parameter] in self.required_values[parameter]:
+                    print('ERROR: metadata field', parameter, 'does not take any of the allowed values')
+                    print('Allowed values are:', ', '.join(self.required_values[parameter]))
+                    return False
+
+        if self.Ancestorpath != None: # Ancestorpath == None assumes that file has no predecessor dependents
+            if not self.ancestor_is_valid: # Check that one, and only one, ancestor exists
+                print('ERROR: unable to link to ancestors')
+                return False
+        return True
+
+
+class ParticleHits(ProdSimDataset):
+
+    def __init__(self,
+                 filename, filePath, dataType, site, fileFormat,
+                 SimStage, nProcessedEvents,
+                 SimulationsProduction, SimWorkFlowTools, SimProdMacros, OfflineRelease,
+                 descriptor, prodVersion,
+                 Geant4, SuperSim,
+                 DetType, Facility, Source, Mass):
+        ProdSimDataset.__init__(self,
+                                filename, filePath, dataType, site, fileFormat,
+                                SimStage, nProcessedEvents,
+                                SimulationsProduction, SimWorkFlowTools, SimProdMacros, OfflineRelease,
+                                descriptor, prodVersion,
+                                None,
+                                Geant4 = Geant4, Supersim = SuperSim,
+                                DetType = DetType, Facility = Facility, Source = Source, Mass = Mass)
+        self.required_values['DetType'] = ['CDMSlite1',
+                                           'CDMSlite2',
+                                           'HV100mm'  ,
+                                           'HV100mmSi',
+                                           'HVeV'     ,
+                                           'iZIP5'    ,
+                                           'iZIP7'    ,
+                                           'iZIP7Si'  ,
+                                           'NF-B'     ,
+                                           'NF-C'     ,
+                                           'NF-H'     ,
+                                           'QIS-A'    ,
+                                           'QIS-B'    ,
+                                           'QIS-C'    ]
+        self.required_values['Facility'] = ['cdmslite'  ,
+                                            'cdmsliteR2',
+                                            'cdmsliteR3',
+                                            'single'    ,
+                                            'snolab'    ,
+                                            'soudan'    ]
+        self.required_values['Source'] = ['Am241',
+                                          'Ba133',
+                                          'Cf252',
+                                          'DMC'  ,
+                                          'Ge71' ,
+                                          'Si32' ,
+                                          'Pb210',
+                                          'Radon',
+                                          'WIMP' ,
+                                          'YBe'  ,
+                                          'SbBe' ]
+
+
+class DMCintermediate(ProdSimDataset):
+
+    def __init__(self,
+                 filename, filePath, dataType, site, fileFormat,
+                 SimStage, nProcessedEvents,
+                 SimulationsProduction, SimWorkFlowTools, SimProdMacros, OfflineRelease,
+                 descriptor, prodVersion,
+                 Ancestorpath,
+                 Geant4, SuperSim):
+        ProdSimDataset.__init__(self,
+                                filename, filePath, dataType, site, fileFormat,
+                                SimStage, nProcessedEvents,
+                                SimulationsProduction, SimWorkFlowTools, SimProdMacros, OfflineRelease,
+                                descriptor, prodVersion,
+                                Ancestorpath,
+                                Geant4 = Geant4, Supersim = SuperSim)
+
+
+class RawSim(ProdSimDataset):
+
+    def __init__(self,
+                 filename, filePath, dataType, site, fileFormat,
+                 SimStage, nProcessedEvents,
+                 SimulationsProduction, SimWorkFlowTools, SimProdMacros, OfflineRelease,
+                 descriptor, prodVersion, seriesNumber,
+                 Ancestorpath,
+                 DAQSim, IOLibrary, nAddNoise,
+                 Facility, nDataType, nEvAll, nFridgeRun, nIsInSLAC, nIsJunk, nPipelineProdState):
+        ProdSimDataset.__init__(self,
+                                filename, filePath, dataType, site, fileFormat,
+                                SimStage, nProcessedEvents,
+                                SimulationsProduction, SimWorkFlowTools, SimProdMacros, OfflineRelease,
+                                descriptor, prodVersion,
+                                Ancestorpath,
+                                DAQSim = DAQSim, IOLibrary = IOLibrary, nAddNoise = nAddNoise,
+                                Facility = Facility, nDataType = nDataType, nEvAll = nEvAll, nFridgeRun = nFridgeRun, nIsInSLAC = nIsInSLAC, nIsJunk = nIsJunk, nPipelineProdState = nPipelineProdState)
+        self.relativePath += '/'+seriesNumber
+
+        self.metadata['CommentEnd'             ] = ''
+        self.metadata['CommentStart'           ] = ''
+        self.metadata['LastPipelineProdDate'   ] = ''
+        self.metadata['LastPipelineProdVersion'] = ''
+        self.metadata['nDump'                  ] = 0
+        self.metadata['nDumps'                 ] = 0
+        self.metadata['nEvBORR'                ] = 0
+        self.metadata['nEvBORTS'               ] = 0
+        self.metadata['nEvEORR'                ] = 0
+        self.metadata['nEvEORTS'               ] = 0
+
+        self.required_values['Facility' ] = [k for k in self.required_values['dataType']]
+        self.required_values['nDataType'] = [n for n in range(-1, 21)]
+        for n in [5, 6, 11]:
+            self.required_values['nDataType'].pop(self.required_values['nDataType'].index(n))
+
+
+class ProcessedSim(ProdSimDataset):
+
+    def __init__(self,
+                 filename, filePath, dataType, site, fileFormat,
+                 SimStage, nProcessedEvents,
+                 SimulationsProduction, SimWorkFlowTools, SimProdMacros, OfflineRelease,
+                 descriptor, prodVersion, seriesNumber, mergeStatus,
+                 Ancestorpath,
+                 CDMSBats, RunID,
+                 Facility, nDataType, nEvAll, nFridgeRun, nIsInSLAC, nIsJunk, nPipelineProdState):
+        ProdSimDataset.__init__(self,
+                                filename, filePath, dataType, site, fileFormat,
+                                SimStage, nProcessedEvents,
+                                SimulationsProduction, SimWorkFlowTools, SimProdMacros, OfflineRelease,
+                                descriptor, prodVersion,
+                                Ancestorpath,
+                                CDMSBats = CDMSBats, RunID = RunID,
+                                Facility = Facility, nDataType = nDataType, nEvAll = nEvAll, nFridgeRun = nFridgeRun, nIsInSLAC = nIsInSLAC, nIsJunk = nIsJunk, nPipelineProdState = nPipelineProdState)
+        self.relativePath += '/'+mergeStatus+'/'+seriesNumber
+        if not mergeStatus in ['Merged', 'Noise', 'Submerged', 'Unmerged']:
+            self.path_is_valid = False
+
+        self.metadata['CommentEnd'             ] = ''
+        self.metadata['CommentStart'           ] = ''
+        self.metadata['LastPipelineProdDate'   ] = ''
+        self.metadata['LastPipelineProdVersion'] = ''
+        self.metadata['nDump'                  ] = 0
+        self.metadata['nDumps'                 ] = 0
+        self.metadata['nEvBORR'                ] = 0
+        self.metadata['nEvBORTS'               ] = 0
+        self.metadata['nEvEORR'                ] = 0
+        self.metadata['nEvEORTS'               ] = 0
+
+        self.required_values['Facility' ] = [k for k in self.required_values['dataType']]
+        self.required_values['nDataType'] = [n for n in range(-1, 21)]
+        for n in [5, 6, 11]:
+            self.required_values['nDataType'].pop(self.required_values['nDataType'].index(n))
 
 
 class SuperSimData(CDMSDataset):
