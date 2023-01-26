@@ -3,7 +3,7 @@
 import click
 import inspect
 
-from CDMSDataCatalog import DMCintermediate, CDMSDataCatalog
+from CDMSDataCatalog import ParticleHits, DMCintermediate, RawSim, ProcessedSim, CDMSDataCatalog
 
 
 def options_from_class(cls):
@@ -30,6 +30,19 @@ def cli(ctx, cfg):
 
 
 @cli.command()
+@options_from_class(ParticleHits)
+@click.pass_context
+def particlehits(ctx, **kwargs):
+    click.echo("Creating ParticleHits with arguments: {}".format(kwargs))
+    dataset = ParticleHits(**kwargs)
+    click.echo("Creating connection with data catalog with {}".format(ctx.obj["cfg"]))
+    dc = CDMSDataCatalog(ctx.obj["cfg"])
+    if dataset.check_conventions():
+        #dc.add(dataset)
+        print('Registering! (1)')###
+
+
+@cli.command()
 @options_from_class(DMCintermediate)
 @click.pass_context
 def dmcintermediate(ctx, **kwargs):
@@ -37,7 +50,38 @@ def dmcintermediate(ctx, **kwargs):
     dataset = DMCintermediate(**kwargs)
     click.echo("Creating connection with data catalog with {}".format(ctx.obj["cfg"]))
     dc = CDMSDataCatalog(ctx.obj["cfg"])
-    dc.add(dataset)
+    dataset.link_to_ancestor(dc)
+    if dataset.check_conventions():
+        #dc.add(dataset)
+        print('Registering! (2)')###
+
+
+@cli.command()
+@options_from_class(RawSim)
+@click.pass_context
+def rawsim(ctx, **kwargs):
+    click.echo("Creating RawSim with arguments: {}".format(kwargs))
+    dataset = RawSim(**kwargs)
+    click.echo("Creating connection with data catalog with {}".format(ctx.obj["cfg"]))
+    dc = CDMSDataCatalog(ctx.obj["cfg"])
+    dataset.link_to_ancestor(dc)
+    if dataset.check_conventions():
+        #dc.add(dataset)
+        print('Registering! (3)')###
+
+
+@cli.command()
+@options_from_class(ProcessedSim)
+@click.pass_context
+def processedsim(ctx, **kwargs):
+    click.echo("Creating ProcessedSim with arguments: {}".format(kwargs))
+    dataset = ProcessedSim(**kwargs)
+    click.echo("Creating connection with data catalog with {}".format(ctx.obj["cfg"]))
+    dc = CDMSDataCatalog(ctx.obj["cfg"])
+    dataset.link_to_ancestor(dc)
+    if dataset.check_conventions():
+        #dc.add(dataset)
+        print('Registering! (4)')###
 
 
 if __name__ == "__main__":

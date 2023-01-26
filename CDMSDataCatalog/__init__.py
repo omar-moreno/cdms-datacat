@@ -13,5 +13,5 @@
  * `dc-rm`: remove a catalog entry
 
 """
-from .CDMSDataCatalog import CDMSDataCatalog, getFileFormat
+from .CDMSDataCatalog import CDMSDataCatalog, getFileFormat, register
 from .CDMSDataset import *
