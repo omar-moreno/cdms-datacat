@@ -1220,8 +1220,9 @@ class CDMSDataCatalog:
 
 from .CDMSDataset import ParticleHits, DMCintermediate, RawSim, ProcessedSim
 
-def register(dict_metadata, cfg_prod):
-    dc = CDMSDataCatalog(cfg_prod)
+def register(dict_metadata):
+    config = pkg_resources.resource_filename(__name__, 'cfg/prod.cfg')
+    dc = CDMSDataCatalog(config)
 
     dataset = None
     ds_is_valid = False
@@ -1244,3 +1245,17 @@ def register(dict_metadata, cfg_prod):
             
     if ds_is_valid:
         dc.add(dataset)
+        return True
+    return False
+
+def search(path, site = 'All', dofetch = False, fetchargs = {}, **kwargs):
+    """
+    kwargs are only used by search, not fetch
+    fetch kwargs are provided by fetchargs
+    """
+    config = pkg_resources.resource_filename(__name__, 'cfg/default.cfg')
+    dc = CDMSDataCatalog(config)
+    datasets = dc.search(path, site = site, **kwargs)
+    if dofetch:
+        datasets = self.fetch(datasets, **fetchargs)
+    return datasets
