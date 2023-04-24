@@ -295,7 +295,7 @@ class ProdSimDataset(CDMSDataset):
         CDMSDataset.__init__(self, filename, filePath, dataType, site, fileFormat)
         self.metadata_folder = Metadata()
         self.path_is_valid = False
-        self.relativePath = self.relativePath.replace('/CDMS/', '/CDMS/Test2/test_register_elias-2023_04_20') # For testing purposes only
+        #self.relativePath = self.relativePath.replace('/CDMS/', '/CDMS/Test2/test_register_elias-2023_04_20/') # For testing purposes only
 
         if type(FridgeRun) == str and MCSetup == None and MCType == None and MCVersion == None:
             self.metadata['FridgeRun'] = FridgeRun
@@ -395,22 +395,11 @@ class ProdSimDataset(CDMSDataset):
 
         return True
 
-    def get_dc_path(self):
-        return self.relativePath
-
-    def link_to_ancestor(self, dc):
-        if self.Ancestorpath:
-            datasets_ancestor = dc.search(self.relativePath_common+'/**', query = 'resource eq "'+self.Ancestorpath+'"')
-            if len(datasets_ancestor) == 1:
-                dc.addDependents(self, 'predecessor', dep_datasets = [dc.get(datasets_ancestor[0].relativePath)])
-                return True
-            else:
-                print('ERROR: unable to link to an existing ancestor')
-
-        else:
-            print('ERROR: ancestor path is undefined')
-
-        return False
+    def get_ancestors(self, dc_default):
+        try:
+            return dc_default.search(self.relativePath_common+'/**', query = 'resource eq "'+self.Ancestorpath+'"')
+        except:
+            return None
 
 
 class ParticleHits(ProdSimDataset):
@@ -469,7 +458,7 @@ class RawSim(ProdSimDataset):
         self.metadata_folder['nDataType'] = nDataType
         self.metadata_folder['nDumps'   ] = nDumps
 
-        self.required_values['nDataType'] = [200]
+        self.required_values['nDataType'] = ['200']
 
 class ProcessedSim(ProdSimDataset):
 
@@ -511,7 +500,7 @@ class ProcessedSim(ProdSimDataset):
         self.metadata_folder['nIsCdmsBatsProd'        ] = nIsCdmsBatsProd
         self.metadata_folder['nIsCdmsBatsSettingsProd'] = nIsCdmsBatsSettingsProd
 
-        self.required_values['nDataType'] = [200]
+        self.required_values['nDataType'] = ['200']
 
 
 class SuperSimData(CDMSDataset):
