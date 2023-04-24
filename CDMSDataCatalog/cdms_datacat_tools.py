@@ -58,12 +58,8 @@ def register(filePath, dict_metadata, dry_run = False):
             print('INFO: dry-run, dataset not registered')
         else:
             dc_prod.add(dataset)
-
-        if ancestor:
-            dataset = dc_default.get(dataset.relativePath+'/'+dataset.datasetName)
-            if dry_run:
-                print('INFO: dry-run, ancestor not linked')
-            else:
+            if ancestor:
+                dataset = dc_default.get(dataset.relativePath+'/'+dataset.datasetName)
                 dc_prod.addDependents(dataset, 'predecessor', dep_datasets = [dc_default.get(ancestor.relativePath)])
         return True
 
