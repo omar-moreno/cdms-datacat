@@ -173,7 +173,7 @@ class CDMSDataCatalog:
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
 
-    def mkdir(self, path, parents=False):
+    def mkdir(self, path, parents=False, metadata=None): ### ELA: modified this function to include metadata argument
         """ Create a new directory
         Args:
             path (str): full path to the new directory
@@ -181,7 +181,7 @@ class CDMSDataCatalog:
                 way (similar to `mkdir -p`)
         """
         path = corrPathCDMS(path)
-        self.client.mkdir(path, parents=parents)
+        self.client.mkdir(path, parents=parents, metadata=metadata) ### ELA: see above comment...
         return
 
     def search(self, path, site='All', getallmetadata=False, **kwargs):
@@ -1217,45 +1217,3 @@ class CDMSDataCatalog:
                 pass
 
         return last_run
-
-from .CDMSDataset import ParticleHits, DMCintermediate, RawSim, ProcessedSim
-
-def register(dict_metadata):
-    config = pkg_resources.resource_filename(__name__, 'cfg/prod.cfg')
-    dc = CDMSDataCatalog(config)
-
-    dataset = None
-    ds_is_valid = False
-    if 'SimStage' in dict_metadata.keys():
-        if   dict_metadata['SimStage'] == 'ParticleHits':
-            dataset = ParticleHits(**dict_metadata)
-            ds_is_valid = dataset.check_conventions()
-        elif dict_metadata['SimStage'] == 'DMCintermediate':
-            dataset = DMCintermediate(**dict_metadata)
-            dataset.link_to_ancestor(dc)
-            ds_is_valid = dataset.check_conventions()
-        elif dict_metadata['SimStage'] == 'Raw':
-            dataset = RawSim(**dict_metadata)
-            dataset.link_to_ancestor(dc)
-            ds_is_valid = dataset.check_conventions()
-        elif dict_metadata['SimStage'] == 'Processed':
-            dataset = ProcessedSim(**dict_metadata)
-            dataset.link_to_ancestor(dc)
-            ds_is_valid = dataset.check_conventions()
-            
-    if ds_is_valid:
-        dc.add(dataset)
-        return True
-    return False
-
-def search(path, site = 'All', dofetch = False, fetchargs = {}, **kwargs):
-    """
-    kwargs are only used by search, not fetch
-    fetch kwargs are provided by fetchargs
-    """
-    config = pkg_resources.resource_filename(__name__, 'cfg/default.cfg')
-    dc = CDMSDataCatalog(config)
-    datasets = dc.search(path, site = site, **kwargs)
-    if dofetch:
-        datasets = self.fetch(datasets, **fetchargs)
-    return datasets
