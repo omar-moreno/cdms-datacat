@@ -25,28 +25,46 @@ def get_dc_path(dict_metadata):
     dataset = build_dataset_from_metadata('', dict_metadata) # First argument (filePath) is not necessary because dataset will not be registered
 
     if dataset:
-        return dataset.get_dc_path()
+        return dataset.relativePath
     return None
 
 def register(filePath, dict_metadata, dry_run = False):
-    config = pkg_resources.resource_filename(__name__, 'cfg/prod.cfg')
-    dc = CDMSDataCatalog(config)
+    dc_default = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/default.cfg'))
+    dc_prod    = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/prod.cfg'   ))
 
     dataset = build_dataset_from_metadata(filePath, dict_metadata)
 
     if dataset:
+        ancestor = None
         if dataset.Ancestorpath:
-            if not dataset.link_to_ancestor(dc):
-                print('ERROR: unable to link to ancestor')
+            ancestors = dataset.get_ancestors(dc_default)
+            if not ancestors:
+                print('ERROR: unable to find ancestors')
                 return False
-        if not dc.exist(dataset.get_dc_path()): # Checking whether folder already exists
-            dc.mkdir(dataset.get_dc_path(), parents = True, metadata = dataset.metadata_folder) # If not, create folder automatically
+            if len(ancestors) == 1:
+                ancestor = ancestors[0]
+            else:
+                print('ERROR: multiple ancestors found')
+                return False
+
+        if not dc_default.exist(dataset.relativePath): # Checking whether folder already exists
+            if dry_run:
+                print('INFO: dry-run, folder not created')
+            else:
+                dc_prod.mkdir(dataset.relativePath, parents = True, metadata = dataset.metadata_folder) # If not, create folder automatically
         # else: check that folder metadata are consistent!
+
         if dry_run:
             print('INFO: dry-run, dataset not registered')
         else:
-            dc.add(dataset)
-        
+            dc_prod.add(dataset)
+
+        if ancestor:
+            dataset = dc_default.get(dataset.relativePath+'/'+dataset.datasetName)
+            if dry_run:
+                print('INFO: dry-run, ancestor not linked')
+            else:
+                dc_prod.addDependents(dataset, 'predecessor', dep_datasets = [dc_default.get(ancestor.relativePath)])
         return True
 
     return False
