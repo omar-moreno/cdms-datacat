@@ -173,7 +173,7 @@ class CDMSDataCatalog:
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
 
-    def mkdir(self, path, parents=False):
+    def mkdir(self, path, parents=False, metadata=None): ### ELA: modified this function to include metadata argument
         """ Create a new directory
         Args:
             path (str): full path to the new directory
@@ -181,7 +181,7 @@ class CDMSDataCatalog:
                 way (similar to `mkdir -p`)
         """
         path = corrPathCDMS(path)
-        self.client.mkdir(path, parents=parents)
+        self.client.mkdir(path, parents=parents, metadata=metadata) ### ELA: see above comment...
         return
 
     def search(self, path, site='All', getallmetadata=False, **kwargs):
@@ -1217,4 +1217,3 @@ class CDMSDataCatalog:
                 pass
 
         return last_run
-        
