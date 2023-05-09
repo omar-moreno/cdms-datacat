@@ -53,8 +53,8 @@ the constructor, or override the default download location
 ```
 
 There are a number of different ways to search the catalog for entries.
-Documentation and examples are in the API documentation for the
-CDMSDataCatalog class.
+Documentation and examples are in the [API documentation for the
+CDMSDataCatalog class](https://www.slac.stanford.edu/exp/cdms/software/releasedocs/latest/CDMSDataCatalog/).
 
 For examples of workflow to insert new datasets, see the
 [pipeline_proc repo](http://titus.stanford.edu:8080/git/summary/?r=Reconstruction/pipeline_proc.git).
