@@ -4,13 +4,15 @@ from setuptools import setup
 from glob import glob
 
 setup(name='CDMSDataCatalog',
-      version='0.7.3',
+      version='0.7.4',
       packages=['CDMSDataCatalog'],
-      install_requires=['datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git#subdirectory=client/python',
-                        'requests',
-                        'tqdm',
-                        'Click',
-                        'boto3'],
+      install_requires=[
+          'datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git@0.6.3#subdirectory=client/python',
+          'requests',
+          'tqdm',
+          'Click',
+          'boto3'
+      ],
       author='Noah Kurinsky',
       author_email='kurinsky@fnal.gov',
       url='https://confluence.slac.stanford.edu/display/CDMS/SuperCDMS+Data+Catalog#section-582118446',
