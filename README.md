@@ -63,7 +63,8 @@ Downloading from the OSN
 ------------------------
 If you are downloading from the OSN using the "fetch" function, then you must have access keys for the OSN. Please follow these steps to get the OSN access keys: 
 1. Clone OSN_secrets from [OSNSecrets Repository](https://gitlab.com/supercdms/DataHandling/osn_secrets)
-2. Source osn_secrets/OSN_creds.sh
+1. `cd osn_secrets`
+1. `source osn_secrets/OSN_creds.sh`
 
 After completing these steps, you should have the appropriate permissions to download from the OSN. If you are interested in the OSN and want to learn more, see the [OSNTransfer repoistory](https://gitlab.com/supercdms/DataHandling/OSNTransfer/-/tree/master).
 
