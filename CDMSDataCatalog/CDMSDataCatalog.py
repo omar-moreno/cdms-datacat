@@ -374,18 +374,19 @@ class CDMSDataCatalog:
         Check existing cycles in dep_container and if dependents are to be added.
             :param dep_container: Parent container object to add dependents to
             :param dep_type: Type of dependents to add
-            :param dep_dss: The datasets we wish to use as children of the parent container.
+            :param dep_dss: The datasets we wish to use as children of the parent container
                 VersionPKs are required for each dependent dataset.
             :param dep_grps: The groups we wish to use as children of the parent container
+            :return ts: the topological sorter object in graphlib
         """
-        self.client.add_dependents(dep_container, dep_type, dep_dss, dep_grps)
+        return self.client.check_dependency_cycles(dep_container, dep_type, dep_dss, dep_grps)
 
     def addDependents(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
         """
          Attach new dependents to container object.
         :param dep_container: Parent container object to add dependents to
         :param dep_type: Type of dependents to add
-        :param dep_datasets: The datasets we wish to use as children of the parent container.
+        :param dep_datasets: The datasets we wish to use as children of the parent container
         VersionPKs are required for each dependent dataset.
         :param dep_groups: The groups we wish to use as children of the parent container
         """
