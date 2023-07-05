@@ -282,7 +282,7 @@ class ProdSimDataset(CDMSDataset):
 
     def __init__(self,
                  filename, filePath, dataType, site, fileFormat, # Required by constructor of CDMSDataset base class
-                 OfflineRelease, Series, Source, nEvAll,
+                 OfflineRelease, Series, SimStage, Source, DetType, EnergyDeposit, nEvAll,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None, # Used to assign folder in Data Catalog
                  Ancestorpath = None): # Predecessor information
         """Constructor for the CDMS DMCintermediate dataset class
@@ -295,7 +295,7 @@ class ProdSimDataset(CDMSDataset):
         CDMSDataset.__init__(self, filename, filePath, dataType, site, fileFormat)
         self.metadata_folder = Metadata()
         self.path_is_valid = False
-        #self.relativePath = self.relativePath.replace('/CDMS/', '/CDMS/Test2/test_register_elias-2023_04_20/') # For testing purposes only
+        self.relativePath = self.relativePath.replace('/CDMS/', '/CDMS/Test2/test_dc3/') # For testing purposes only
 
         if type(FridgeRun) == str and MCSetup == None and MCType == None and MCVersion == None:
             self.metadata['FridgeRun'] = FridgeRun
@@ -313,16 +313,24 @@ class ProdSimDataset(CDMSDataset):
             print('ERROR: FridgeRun and ProdTag are undefined, will be required to build folder path')
         self.relativePath_common = self.relativePath
 
-        self.metadata['Facility'] = dataType
-        self.metadata['Source'  ] = Source
-        self.metadata['nEvAll'  ] = nEvAll
+        self.metadata['Series'       ] = Series
+        self.metadata['Source'       ] = Source
+        self.metadata['DetType'      ] = DetType
+        self.metadata['EnergyDeposit'] = EnergyDeposit
+        self.metadata['nEvAll'       ] = nEvAll
 
         self.metadata_folder['OfflineRelease'] = OfflineRelease
-        self.metadata_folder['Series'        ] = Series
+        self.metadata_folder['SimStage'      ] = SimStage
         self.metadata_folder['Source'        ] = Source
-        self.metadata_folder['nEvAll'        ] = nEvAll
+        self.metadata_folder['Facility'      ] = dataType
+        self.metadata_folder['DetType'       ] = DetType
+        self.metadata_folder['EnergyDeposit' ] = EnergyDeposit
 
         self.required_values = {} # To be also filled in the constructor of each specific class, if necessary
+        self.required_values['SimStage'] = ['SourceSim',
+                                            'DMC'      ,
+                                            'DAQSim'   ,
+                                            'CDMSBats' ]
         self.required_values['Facility'] = ['ANIMAL',
                                             'CUTE'  ,
                                             'NEXUS' ,
@@ -406,11 +414,11 @@ class ParticleHits(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Series, Facility, Source, nEvAll,
+                 OfflineRelease, Series, SimStage, Source, Facility, DetType, EnergyDeposit, nEvAll,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Series, Source, nEvAll,
+                                OfflineRelease, Series, SimStage, Source, DetType, EnergyDeposit, nEvAll,
                                 FridgeRun, MCSetup, MCType, MCVersion)
         self.relativePath += '/SourceSim/V'+self.metadata_folder['OfflineRelease']
 
@@ -419,12 +427,12 @@ class DMCintermediate(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Series, Facility, Source, nEvAll,
+                 OfflineRelease, Series, SimStage, Source, Facility, DetType, EnergyDeposit, nEvAll,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Series, Source, nEvAll,
+                                OfflineRelease, Series, SimStage, Source, DetType, EnergyDeposit, nEvAll,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
         self.relativePath += '/DMC/V'+self.metadata_folder['OfflineRelease']
@@ -434,14 +442,14 @@ class RawSim(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Series, Facility, Source, nEvAll,
+                 OfflineRelease, Series, SimStage, Source, Facility, DetType, EnergyDeposit, nEvAll,
                  IOLibrary, BatCommon, nAddNoise,
                  nDataType, nDumps, nDump, nEvBORR, nFirstTriggerId, nLastTriggerId,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Series, Source, nEvAll,
+                                OfflineRelease, Series, SimStage, Source, DetType, EnergyDeposit, nEvAll,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
         self.relativePath += '/DAQSim/V'+self.metadata_folder['OfflineRelease']
@@ -464,7 +472,7 @@ class ProcessedSim(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Series, Facility, Source, nEvAll,
+                 OfflineRelease, Series, SimStage, Source, Facility, DetType, EnergyDeposit, nEvAll,
                  IOLibrary, BatCommon,
                  nDataType, nDump, nEvBORR,
                  ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
@@ -473,7 +481,7 @@ class ProcessedSim(ProdSimDataset):
                  Ancestorpath = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Series, Source, nEvAll,
+                                OfflineRelease, Series, SimStage, Source, DetType, EnergyDeposit, nEvAll,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
         self.relativePath += '/Processed/V'+self.metadata_folder['OfflineRelease']+'_P'+ProcessingConfig
