@@ -9,11 +9,11 @@ def build_dataset_from_metadata(filePath, dict_metadata):
 
     dataset = None
     if 'SimStage' in dict_metadata.keys():
-        input_ds.pop('SimStage')
-        if   dict_metadata['SimStage'] == 'ParticleHits'   : dataset = ParticleHits(   **input_ds)
-        elif dict_metadata['SimStage'] == 'DMCintermediate': dataset = DMCintermediate(**input_ds)
-        elif dict_metadata['SimStage'] == 'Raw'            : dataset = RawSim(         **input_ds)
-        elif dict_metadata['SimStage'] == 'Processed'      : dataset = ProcessedSim(   **input_ds)
+#        input_ds.pop('SimStage')
+        if   dict_metadata['SimStage'] == 'SourceSim': dataset = ParticleHits(   **input_ds)
+        elif dict_metadata['SimStage'] == 'DMC'      : dataset = DMCintermediate(**input_ds)
+        elif dict_metadata['SimStage'] == 'DAQSim'   : dataset = RawSim(         **input_ds)
+        elif dict_metadata['SimStage'] == 'CDMSBats' : dataset = ProcessedSim(   **input_ds)
 
     if dataset:
         if dataset.check_conventions():
@@ -65,7 +65,7 @@ def register(filePath, dict_metadata, dry_run = False):
 
     return False
 
-def search(path, site = 'All', dofetch = False, fetchargs = {}, **kwargs):
+def search(path, site = 'All', dofetch = False, fetchargs = {}, **kwargs): # For now this is just a placeholder
     """
     kwargs are only used by search, not fetch
     fetch kwargs are provided by fetchargs
