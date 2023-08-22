@@ -18,3 +18,6 @@ from .CDMSDataCatalog import CDMSDataCatalog, getFileFormat
 from .CDMSDataset import *
 from .cdms_datacat_tools import get_dc_path, register, search
 from .transfer import transfer
+
+import os, sys
+sys.path.insert(1, os.path.dirname(os.path.realpath(__file__))+'/../scripts') # In order to be able to import metadata_tools
