@@ -23,4 +23,6 @@ def build_dict_metadata(site, fileFormat, fname_md_dataset, fname_md_folder):
             if not lparts[1] in dict_metadata.keys():
                 dict_metadata[lparts[1]] = lparts[3]
     f.close()
+    if (dict_metadata['SimStage'] == 'SourceSim' or dict_metadata['SimStage'] == 'DMC') and 'Series' in dict_metadata.keys(): # This statement might not be necessary in the future
+        dict_metadata.pop('Series')
     return dict_metadata
