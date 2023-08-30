@@ -21,7 +21,7 @@ For reference the output file is available in `metadata/Nexus_13_registration_un
 The notebook `register_files.ipynb` loads the CSV created by the first notebook, connects to the Data Catalog, then loops through all the rows and submits the metadata for registration.
 The files registered were 6708, it took 2 or 3 hours.
 
-See one of the registered files: [Link on datacat](https://supercdms-dev.slac.stanford.edu/datacat-v0.6/display/datasets/CDMS/NEXUS/R13/Raw/25220319_095807/25220319_095807_F1200.mid.gz)
+See one of the registered files: [Link on datacat](https://scdms.slac.stanford.edu/datacat-v0.6/display/datasets/CDMS/NEXUS/R13/Raw/25220319_095807/25220319_095807_F1200.mid.gz)
 
 ## Debugging
 
