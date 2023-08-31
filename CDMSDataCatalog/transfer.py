@@ -50,17 +50,17 @@ class TransferManager_globus:
 
             # Creating the directory structure given by relativePath, if necessary
             # Could not find a better method to do this...
-            part_relativePath = ''
+            absolutePath = basedir[:-1] if basedir[-1] == '/' else basedir
             for dirname in relativePath.split('/')[1:]:
-                for entry in transfer_client.operation_ls(dest_endpoint_id, basedir+part_relativePath):
+                for entry in transfer_client.operation_ls(dest_endpoint_id, absolutePath):
                     if entry['name'] == dirname and entry['type'] == 'dir':
                         break
                 else:
-                    print('Creating directory '+dest_endpoint_id+':'+basedir+part_relativePath+'/'+dirname)
-                    transfer_client.operation_mkdir(dest_endpoint_id, basedir+part_relativePath+'/'+dirname)
-                part_relativePath += '/'+dirname
+                    print('Creating directory '+dest_endpoint_id+':'+absolutePath+'/'+dirname)
+                    transfer_client.operation_mkdir(dest_endpoint_id, absolutePath+'/'+dirname)
+                absolutePath += '/'+dirname
 
-            filePath_remote = basedir+relativePath+'/'+self.filePaths[i].split('/')[-1]
+            filePath_remote = absolutePath+'/'+self.filePaths[i].split('/')[-1]
             task_data.add_item(self.filePaths[i], filePath_remote)
             print('Adding transfer from '+source_endpoint_id+':'+self.filePaths[i]+' to '+dest_endpoint_id+':'+filePath_remote)
 
