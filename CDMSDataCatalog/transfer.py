@@ -66,4 +66,8 @@ class TransferManager_globus:
 
         task_doc = transfer_client.submit_transfer(task_data)
         print('Transfer submitted with task_id =', task_doc['task_id'])
+
+        # Reseting the dataset information in order to be prepared for a new transfer
+        self.filePaths = []
+        self.list_dict_metadata = []
         return True
