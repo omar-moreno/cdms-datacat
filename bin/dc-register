@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+
+import click
+import inspect
+
+from CDMSDataCatalog import ParticleHits, DMCintermediate, RawSim, ProcessedSim, CDMSDataCatalog
+
+
+def options_from_class(cls):
+    """
+    Given an input class, creates Click options based on the arguments
+    of the constructors of the class.
+    """
+
+    def decorator(f):
+        for par in inspect.signature(cls.__init__).parameters.values():
+            if par.name not in ["self"]:
+                click.option("--" + par.name, par.name, required=True, type=par.annotation)(f)
+        return f
+
+    return decorator
+
+
+@click.group()
+@click.option("-c", "--cfg", default="./default.cfg", help="specify DataCatalog config file")
+@click.pass_context
+def cli(ctx, cfg):
+    ctx.ensure_object(dict)
+    ctx.obj['cfg'] = cfg
+
+
+@cli.command()
+@options_from_class(ParticleHits)
+@click.pass_context
+def particlehits(ctx, **kwargs):
+    click.echo("Creating ParticleHits with arguments: {}".format(kwargs))
+    dataset = ParticleHits(**kwargs)
+    click.echo("Creating connection with data catalog with {}".format(ctx.obj["cfg"]))
+    dc = CDMSDataCatalog(ctx.obj["cfg"])
+    if dataset.check_conventions():
+        #dc.add(dataset)
+        print('Registering! (1)')###
+
+
+@cli.command()
+@options_from_class(DMCintermediate)
+@click.pass_context
+def dmcintermediate(ctx, **kwargs):
+    click.echo("Creating DMCintermediate with arguments: {}".format(kwargs))
+    dataset = DMCintermediate(**kwargs)
+    click.echo("Creating connection with data catalog with {}".format(ctx.obj["cfg"]))
+    dc = CDMSDataCatalog(ctx.obj["cfg"])
+    dataset.link_to_ancestor(dc)
+    if dataset.check_conventions():
+        #dc.add(dataset)
+        print('Registering! (2)')###
+
+
+@cli.command()
+@options_from_class(RawSim)
+@click.pass_context
+def rawsim(ctx, **kwargs):
+    click.echo("Creating RawSim with arguments: {}".format(kwargs))
+    dataset = RawSim(**kwargs)
+    click.echo("Creating connection with data catalog with {}".format(ctx.obj["cfg"]))
+    dc = CDMSDataCatalog(ctx.obj["cfg"])
+    dataset.link_to_ancestor(dc)
+    if dataset.check_conventions():
+        #dc.add(dataset)
+        print('Registering! (3)')###
+
+
+@cli.command()
+@options_from_class(ProcessedSim)
+@click.pass_context
+def processedsim(ctx, **kwargs):
+    click.echo("Creating ProcessedSim with arguments: {}".format(kwargs))
+    dataset = ProcessedSim(**kwargs)
+    click.echo("Creating connection with data catalog with {}".format(ctx.obj["cfg"]))
+    dc = CDMSDataCatalog(ctx.obj["cfg"])
+    dataset.link_to_ancestor(dc)
+    if dataset.check_conventions():
+        #dc.add(dataset)
+        print('Registering! (4)')###
+
+
+if __name__ == "__main__":
+    cli(obj={})
