@@ -10,21 +10,21 @@ The data catalog is built into the offline release; follow the instructions here
 Follow the instructions [here](https://confluence.slac.stanford.edu/display/CDMS/Python+Packaging+Guide) for setting up and activating your 
 virtual environment, then call
 
-`pip install git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
+`pip install git+ssh://git@gitlab.com/supercdms/DataHandling/DataCat.git`
 
 Note that this will not play well with offline releases!
 
 #### Install in your user environment
 This will install the client under $HOME, so it will be always available (no need to activate venv) and doesn't require elevated privileges. 
 
-`pip install --user git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
+`pip install --user git+ssh://git@gitlab.com/supercdms/DataHandling/DataCat.git`
 
 Note that this will not play well with offline releases!
 
 #### Install at system level
 If you have root privileges or write access to your python install (e.g. anaconda installed in your home directory) you can simply do
 
-`pip install git+ssh://git@gitlab.com:supercdms/DataHandling/DataCat.git`
+`pip install git+ssh://git@gitlab.com/supercdms/DataHandling/DataCat.git`
 
 
 Documentation
@@ -53,12 +53,36 @@ the constructor, or override the default download location
 ```
 
 There are a number of different ways to search the catalog for entries.
-Documentation and examples are in the API documentation for the
-CDMSDataCatalog class.
+Documentation and examples are in the [API documentation for the
+CDMSDataCatalog class](https://www.slac.stanford.edu/exp/cdms/software/releasedocs/latest/CDMSDataCatalog/).
 
 For examples of workflow to insert new datasets, see the
 [pipeline_proc repo](http://titus.stanford.edu:8080/git/summary/?r=Reconstruction/pipeline_proc.git).
 
+Downloading from the OSN
+------------------------
+If you are downloading from the OSN using the "fetch" function, then you must have access keys for the OSN. Please follow these steps to get the OSN access keys: 
+1. Clone OSN_secrets from [OSNSecrets Repository](https://gitlab.com/supercdms/DataHandling/osn_secrets)
+1. `cd osn_secrets`
+1. `source osn_secrets/OSN_creds.sh`
+
+After completing these steps, you should have the appropriate permissions to download from the OSN. If you are interested in the OSN and want to learn more, see the [OSNTransfer repoistory](https://gitlab.com/supercdms/DataHandling/OSNTransfer/-/tree/master).
+
+Data Registering
+----------------
+When registering data, follow these steps to make sure the data gets registered
+(There is an issue that the DataCat won't find your data, this is a temporary work-around)
+*Only follow these steps when you are in the final steps to register to the Data Catalog*
+1. Copy the default.cfg file from DataCat/CDMSDataCatalog/cfg/default.cfg to your working directory
+2. Open the copied default.cfg (in your working directory) and uncomment every line (delete the # from the start of each line) and save it 
+3. In your data-registering file, replace dc = CDMSDataCatalog() with dc = CDMSDataCatalog(config_file = '/path/to/your/copied/config.cfg')
+4. Now you're ready to register :)
+
+Reporting Issues
+----------------
+If you run into any issues, please open a ticket at https://jira.slac.stanford.edu/, in the "SuperCDMS data catalog" project.  You should add Kenny Lo, Miriam Diamond, Amy Roberts, and Ben Loer as watchers.
+
+If you are unable to access JIRA or select watchers, contact Tina Cartaro and she'll fix your permissions!
 
 Development
 ------------
@@ -73,20 +97,3 @@ If you change your code, the 'build' is updated automatically, allowing you to r
 Use git flow while working on this repository.
 
 
-Data Registering
-----------------
-When registering data, follow these steps to make sure the data gets registered
-(There is an issue that the DataCat won't find your data, this is a temporary work-around)
-*Only follow these steps when you are in the final steps to register to the Data Catalog*
-1. Copy the default.cfg file from DataCat/CDMSDataCatalog/cfg/default.cfg to your working directory
-2. Open the copied default.cfg (in your working directory) and uncomment every line (delete the # from the start of each line) and save it 
-3. In your data-registering file, replace dc = CDMSDataCatalog() with dc = CDMSDataCatalog(config_file = '/path/to/your/copied/config.cfg')
-4. Now you're ready to register :)
-
-Downloading from the OSN
-------------------------
-If you are downloading from the OSN using the "fetch" function, then you must have access keys for the OSN. Please follow these steps to get the OSN access keys: 
-1. Clone OSN_secrets from [OSNSecrets Repository](https://gitlab.com/supercdms/DataHandling/osn_secrets)
-2. Source osn_secrets/OSN_creds.sh
-
-After completing these steps, you should have the appropriate permissions to download from the OSN. If you are interested in the OSN and want to learn more, see the [OSNTransfer repoistory](https://gitlab.com/supercdms/DataHandling/OSNTransfer/-/tree/master).

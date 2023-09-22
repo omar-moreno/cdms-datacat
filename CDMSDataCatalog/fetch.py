@@ -13,7 +13,6 @@ import logging
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from .CDMSDataset import CDMSDataset
-import boto3
 #from OSNTools import OSNTools
 
 log = logging.getLogger(__name__)
@@ -97,6 +96,7 @@ def print_filesize(num, suffix='B'):
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
+
 def download_web(dataset, target, baseurl, progcallback=None):
     """ Download a file through the data catalog web interface
     Args:
@@ -109,7 +109,7 @@ def download_web(dataset, target, baseurl, progcallback=None):
     # determine the URL for the file
     baseparsed = urllib.parse.urlparse(baseurl)
     url = urllib.parse.urlunparse((baseparsed[0], baseparsed[1],
-                                   'DataCatalog/get', '', '', ''))
+                                   baseparsed[2]+'/DataCatalog/get', '', '', ''))
     # need to get raw dataset to determine url
     locationPk = dataset.locationPk
     if locationPk is None:
@@ -152,6 +152,7 @@ def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucke
     Returns:
         target (str): The target filepath of the file downloaded from the OSN
     """
+    import boto3
     # Set default arguments
     endpointurl = 'https://ncsa.osn.xsede.org'
     bucketname = 'supercdms-data'
@@ -170,8 +171,16 @@ def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucke
         if progcallback:
             fout = CallbackIOWrapper(progcallback, fout, "write")
         # Download the specified file
-        AWSClient.download_fileobj(bucketname, dataset.relativePath, fout)
-    
+        ############## Portion to fix
+        # Option 1: Assume all dataset.relativePath from data registered on the DataCatalog the have a leading "/"
+        # AWSClient.download_fileobj(bucketname, dataset.relativePath[1:], fout)
+
+        # Option 2: Not making the assumption made in "Option 1", while also preserving the dataset.relativePath property
+        if dataset.relativePath[0] == "/":
+            AWSClient.download_fileobj(bucketname, dataset.relativePath[1:], fout)
+        else:
+            AWSClient.download_fileobj(bucketname, dataset.relativePath, fout)
+        ##############
     return target
 
 def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
@@ -372,8 +381,7 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
 
     # we're finally done!
     if errors:
-        log.warn(f"DataCat WARNING: Failed to fetch {len(errors)}/{len(allresults)} datasets!")
+        log.warning(f"DataCat WARNING: Failed to fetch {len(errors)}/{len(allresults)} datasets!")
         #for err in errors:
-            #warn(f"\t{str(err)}: {err.fetchError}")
+            #warning(f"\t{str(err)}: {err.fetchError}")
     return allresults
-    
