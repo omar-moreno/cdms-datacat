@@ -13,11 +13,7 @@
  * `dc-rm`: remove a catalog entry
 
 """
-### ELA: proposing to only include here cdms_datacat_tools and transfer, and comment the other imports, in order to not expose the SLAC python client
+### ELA: proposing to only include here cdms_datacat_tools, and comment the other imports, in order to not expose the SLAC python client
 from .CDMSDataCatalog import CDMSDataCatalog, getFileFormat
 from .CDMSDataset import *
-from .cdms_datacat_tools import get_dc_path, register, search
-from .transfer import transfer_ssh, TransferManager_globus
-
-import os, sys
-sys.path.insert(1, os.path.dirname(os.path.realpath(__file__))+'/../scripts') # In order to be able to import metadata_tools
+from .cdms_datacat_tools import *
