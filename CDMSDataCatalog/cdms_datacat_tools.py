@@ -158,7 +158,7 @@ def build_dict_metadata_swft(site, fileFormat, filePath_metadata_dataset, filePa
     for l in f.readlines():
         lparts = l.split('"')
         if len(lparts) == 3:
-            dict_metadata[lparts[1]] = str(int(lparts[2][2:]))
+            dict_metadata[lparts[1]] = str(int(lparts[2][2:].split(',')[0]))
         elif len(lparts) == 5:
             if lparts[1] == 'ProdTag':
                 continue
@@ -170,7 +170,7 @@ def build_dict_metadata_swft(site, fileFormat, filePath_metadata_dataset, filePa
         if len(lparts) == 3:
             if lparts[1] == 'nEvAll': # This statement should be removed if this field is eventually removed from the folder metadata
                 continue
-            dict_metadata[lparts[1]] = str(int(lparts[2][2:]))
+            dict_metadata[lparts[1]] = str(int(lparts[2][2:].split(',')[0]))
         elif len(lparts) == 5:
             if lparts[1] == 'ProdTag':
                 continue
