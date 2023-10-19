@@ -86,23 +86,23 @@ def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir):
         if type(path_local) == str:
             if '/'.join(filePaths[i].split('/')[:-1]) != path_local:
                 print('Error: all files must be in the same local directory')
-                return False
+                return None
         else:
             path_local = '/'.join(filePaths[i].split('/')[:-1])
 
         if type(relativePath) == str:
             if get_dc_path(list_dict_metadata[i]) != relativePath:
                 print('Error: all files must be registered in the same Data Catalog folder')
-                return False
+                return None
         else:
             relativePath = get_dc_path(list_dict_metadata[i])
 
-    path_remote = basedir+relativePath
+    path_remote = (basedir+relativePath).replace('//', '/')
     if not path_remote[-1] == '/':
         path_remote += '/'
     print('Transferring files from', path_local+'/', 'to', remote+':'+path_remote)
-    subprocess.run('rsync -a --no-p --rsync-path="mkdir -p '+path_remote+' && rsync" '+path_local+' '+user+'@'+remote+':'+path_remote, shell = True)
-    return True
+###    subprocess.run('rsync -a --no-p --rsync-path="mkdir -p '+path_remote+' && rsync" '+path_local+' '+user+'@'+remote+':'+path_remote, shell = True)
+    return [path_remote+filePaths[i].split('/')[-1] for i in range(len(filePaths))]
 
 def transfer_globus(filePaths, list_dict_metadata, client_id, source_endpoint_id, dest_endpoint_id, basedir):
     # slac#osg: endpoint_id = 'd98c7f90-6d04-11e5-ba46-22000b92c6ec'
@@ -126,6 +126,7 @@ def transfer_globus(filePaths, list_dict_metadata, client_id, source_endpoint_id
         out_activation = transfer_client.endpoint_autoactivate(dest_endpoint_id, if_expires_in = 3600)
     task_data = globus_sdk.TransferData(source_endpoint = source_endpoint_id, destination_endpoint = dest_endpoint_id)
 
+    filePaths_remote = []
     for i in range(len(filePaths)):
         relativePath = get_dc_path(list_dict_metadata[i])
         if not relativePath:
@@ -147,10 +148,11 @@ def transfer_globus(filePaths, list_dict_metadata, client_id, source_endpoint_id
         filePath_remote = absolutePath+'/'+filePaths[i].split('/')[-1]
         task_data.add_item(filePaths[i], filePath_remote)
         print('Adding transfer from', source_endpoint_id+':'+filePaths[i], 'to', dest_endpoint_id+':'+filePath_remote)
+        filePaths_remote.append(filePath_remote)
 
     task_doc = transfer_client.submit_transfer(task_data)
     print('Transfer submitted with task_id =', task_doc['task_id'])
-    return True
+    return filePaths_remote
 
 def build_dict_metadata_swft(site, fileFormat, filePath_metadata_dataset, filePath_metadata_folder):
     dict_metadata = {'site': site, 'fileFormat': fileFormat}
