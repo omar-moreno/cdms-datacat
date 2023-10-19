@@ -9,12 +9,12 @@ parser.add_argument('txtFile_metadata_dataset')
 parser.add_argument('txtFile_metadata_folder')
 parser.add_argument('basedir')
 parser.add_argument('--use_ssh', action = 'store_true')
-parser.add_argument('--write', action = 'store_true')
 parser.add_argument('--user')   # ssh
 parser.add_argument('--remote') # ssh
 parser.add_argument('--client_id')          # globus
 parser.add_argument('--source_endpoint_id') # globus
 parser.add_argument('--dest_endpoint_id')   # globus
+parser.add_argument('--save')
 args = parser.parse_args()
 
 def read_text_file(txtFile):
@@ -52,8 +52,8 @@ else:
     else:
         print('ERROR: required arguments not provided: --client_id, --source_endpoint_id, --dest_endpoint_id')
 
-if args.write and type(filePaths_remote) == list:
-    f = open('/'.join(args.txtFile_data.split('/')[:-1]+[''])+'transfer-sqft.txt', 'w')
+if type(args.save) == str and type(filePaths_remote) == list:
+    f = open(args.save, 'w')
     for filePath in filePaths_remote:
         f.write(filePath+'\n')
     f.close()
