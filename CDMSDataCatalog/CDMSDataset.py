@@ -27,7 +27,7 @@ class CDMSDataset:
                  'cdmsraw': 'CDMSSOUDANRAW', 'numpy': 'CDMSNUMPY',
                  'pickle': 'CDMSPICKLE', 'hdf5': 'CDMSHDF5',
                  'pmtroot': 'CDMSPMTROOT',
-                 'gz': 'CDMSGZ',
+                 'gz': 'CDMSGZ', 'mid.gz': 'CDMSMIDGZ',
                  'error': 'ERROR', None:'ERROR'}
 
     """ List of allowed file types """
@@ -37,7 +37,7 @@ class CDMSDataset:
                    'pdf': 'pdf', 'midas': 'midas', 'cdmsraw': 'cdmsraw',
                    'numpy': 'npz', 'pickle': 'pickle','hdf5':'hdf5',
                    'pmtroot': 'root',
-                   'gz': 'gz', 'mid.gz': 'gz',
+                   'gz': 'gz', 'mid.gz': 'mid.gz',
                    'error':None, None:None}
     """ List of allowed file formats (map type: suffix) """
     
