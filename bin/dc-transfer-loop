@@ -8,9 +8,10 @@ parser.add_argument('txtFile_data')
 parser.add_argument('txtFile_metadata_dataset')
 parser.add_argument('txtFile_metadata_folder')
 parser.add_argument('basedir')
-parser.add_argument('--use_ssh', action = 'store_true')
+parser.add_argument('--ssh', action = 'store_true')
 parser.add_argument('--user')   # ssh
 parser.add_argument('--remote') # ssh
+parser.add_argument('--globus', action = 'store_true')
 parser.add_argument('--client_id')          # globus
 parser.add_argument('--source_endpoint_id') # globus
 parser.add_argument('--dest_endpoint_id')   # globus
@@ -41,16 +42,16 @@ else:
         list_dict_metadata.append(build_dict_metadata_swft('SLAC', 'txt', filePaths_metadata_dataset[i], filePaths_metadata_folder[0])) # Actual values of site and fileFormat are not required here
 
 filePaths_remote = None
-if args.use_ssh:
+if args.ssh:
     if type(args.user) == str and type(args.remote) == str:
         filePaths_remote = transfer_ssh(filePaths_data, list_dict_metadata, args.user, args.remote, args.basedir)
     else:
-        print('ERROR: required arguments not provided: --user, --remote')
-else:
+        print('ERROR: missing optional arguments required by --ssh flag: --user, --remote')
+elif args.globus:
     if type(args.client_id) == str and type(args.source_endpoint_id) == str and type(args.dest_endpoint_id) == str:
         filePaths_remote = transfer_globus(filePaths_data, list_dict_metadata, args.client_id, args.source_endpoint_id, args.dest_endpoint_id, args.basedir)
     else:
-        print('ERROR: required arguments not provided: --client_id, --source_endpoint_id, --dest_endpoint_id')
+        print('ERROR: missing optional arguments required by --globus flag: --client_id, --source_endpoint_id, --dest_endpoint_id')
 
 if type(args.save) == str and type(filePaths_remote) == list:
     f = open(args.save, 'w')
