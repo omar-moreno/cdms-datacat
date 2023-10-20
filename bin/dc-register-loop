@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+import argparse
+from CDMSDataCatalog import register, build_dict_metadata_swft
+
+parser = argparse.ArgumentParser()
+parser.add_argument('site')
+parser.add_argument('fileFormat')
+parser.add_argument('--data')
+parser.add_argument('--metadata_dataset')
+parser.add_argument('--metadata_folder')
+parser.add_argument('--swft', action = 'store_true')
+parser.add_argument('--dry_run', action = 'store_true')
+args = parser.parse_args()
+
+def read_text_file(txtFile):
+    lines = []
+    f = open(txtFile)
+    for line in f.readlines():
+        lines.append(line.replace('\n', ''))
+    f.close()
+    return lines
+
+if args.swft:
+    if type(args.data) == str and type(args.metadata_dataset) == str and type(args.metadata_folder) == str:
+        filePaths_data = read_text_file(args.data)
+        filePaths_metadata_dataset = read_text_file(args.metadata_dataset)
+        filePaths_metadata_folder = read_text_file(args.metadata_folder)
+
+        if len(filePaths_data) != len(filePaths_metadata_dataset):
+            print('ERROR: number of dataset metadata files does not match number of data files')
+        elif len(filePaths_data) > 0 and len(filePaths_metadata_folder) == 0:
+            print('ERROR: no folder metadata file provided')
+        elif len(filePaths_metadata_folder) > 1:
+            print('ERROR: multiple folder metadata files provided (requiring only one folder metadata file)')
+        else:
+            for i in range(len(filePaths_data)):
+                dict_metadata = build_dict_metadata_swft(args.site, args.fileFormat, filePaths_metadata_dataset[i], filePaths_metadata_folder[0])
+                print('INFO from dc-register-swft: data file', str(i+1)+',', 'metadata =', dict_metadata)
+                if args.dry_run:
+                    register(filePaths_data[i], dict_metadata, dry_run = True)
+                else:
+                    register(filePaths_data[i], dict_metadata)
+
+    else:
+        print('ERROR: missing optional arguments required by --swft flag: --data, --metadata_dataset, --metadata_folder')
