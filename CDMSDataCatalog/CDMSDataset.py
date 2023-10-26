@@ -200,351 +200,6 @@ class CDMSDataset:
         self.metadata[key] = value
 
 
-class DMCData(CDMSDataset):
-
-    def __init__(self,
-                 name,
-                 filePath,
-                 DMCType,
-                 processStep='Postprocessed',
-                 experiment='Soudan',
-                 implement='MATLAB',
-                 site='SLAC',
-                 fileFormat='root',
-                 analysis='All',
-                 analysisVersion='53',
-                 detector='All',
-                 DMCVersion='5-3',
-                 COMSOLVersion='5.0'):
-        """Constructor for the CDMS DMC dataset class
-
-        All of these are mandatory; the optional metadata can be specified
-        after construction
-
-        name     - dataset name
-        filePath - physical path to file
-        DMCType  - 'Cf','Ba','WIMP',...
-
-        Optional Inputs
-        experiment  - 'Soudan' (default), 'SNOLAB', 'TestDevices'
-        implement   - 'MATLAB' (default), 'Geant'
-        processStep - 'Constants', 'SuperSim', 'Raw', 'Preprocessed',
-                      'Postprocessed' (default)
-        site        - e.g. 'SLAC' (default)
-        fileFormat  - 'root' (default), 'mat', 'txt'
-        analysis    - e.g. 'All' (default), 'HT', 'LT', 'G133'
-        analysisVersion - e.g. '53' (default)
-        detector    - e.g. 'All' (default), 'T1Z1'
-        DMCVersion  - e.g. '5-3' (default)
-        COMSOLVersion - e.g. 5.0 (default)
-        """
-        CDMSDataset.__init__(self, name, filePath, experiment + '/DMC', site,
-                             fileFormat)
-
-        processSteps = ['Constants', 'SuperSim', 'Raw', 'Preprocessed',
-                        'Postprocessed']
-        if(processStep in processSteps):
-            self.processStep = processStep
-        else:
-            raise ValueError("Please specify DMC process level (processStep),"
-                             " options are " + str(processSteps))
-
-        # add implementation to path
-        self.implement = implement
-        self.relativePath += '/' + self.implement
-
-        # add analysis and source to path
-        self.relativePath += '/'+analysis + '/'+DMCType
-
-        # add category to path
-        if(self.processStep in ['Constants', 'SuperSim']):
-            self.relativePath += '/Input/' + self.processStep
-        elif(self.processStep in ['Raw', 'Preprocessed', 'Postprocessed']):
-            self.relativePath += '/Production/' + self.processStep
-
-        # add detector if necessary
-        if(self.processStep in ['Constants', 'Raw', 'Preprocessed']):
-            self.relativePath += '/' + detector
-
-        self.metadata["Analysis"] = analysis
-        self.metadata["AnalysisVersion"] = analysisVersion
-        self.metadata["COMSOLVersion"] = COMSOLVersion
-        self.metadata["Detector"] = detector
-        self.metadata["DMCImpl"] = implement
-        self.metadata["DMCversion"] = DMCVersion
-        self.metadata["Source"] = DMCType
-        self.metadata["SourceLoc"] = 'None'
-        self.metadata["EnergyMax"] = '-1'
-        self.metadata["EnergyMin"] = '-1'
-        self.metadata["NoiseProfile"] = 'NA'
-        self.metadata["WIMPmass"] = "-1"
-        
-
-class ProdSimDataset(CDMSDataset):
-
-    def __init__(self,
-                 filename, filePath, dataType, site, fileFormat, # Required by constructor of CDMSDataset base class
-                 OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
-                 FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None, # Used to assign folder in Data Catalog
-                 Ancestorpath = None): # Predecessor information
-        """Constructor for the CDMS DMCintermediate dataset class
-        filename         - Dataset name
-        filePath         - Full path to actual file, including file name
-        dataType         - Required values: 'ANIMAL', 'CUTE', 'NEXUS', 'NoLab', 'SLAC', 'SNOLAB', 'Soudan', 'TRIUMF', 'UCB', 'UMN'
-        site             - For example, 'SLAC'
-        fileFormat       - For example, 'root' or 'txt'
-        """ 
-        CDMSDataset.__init__(self, filename, filePath, dataType, site, fileFormat)
-        self.metadata_folder = Metadata()
-        self.path_is_valid = False
-        self.relativePath = self.relativePath.replace('/CDMS/', '/CDMS/Test2/test_dc3/') # For testing purposes only
-
-        if type(FridgeRun) == str and MCSetup == None and MCType == None and MCVersion == None:
-            self.metadata['FridgeRun'] = FridgeRun
-            self.metadata_folder['FridgeRun'] = FridgeRun
-            self.relativePath += '/'+FridgeRun+'/Simulated'
-            self.path_is_valid = True
-        elif FridgeRun == None and type(MCSetup) == str and type(MCType) == str and type(MCVersion) == str:
-            if len(MCSetup) > 0 and len(MCType) > 0 and len(MCVersion) > 0:
-                ProdTag = '_'.join([MCSetup, MCType, MCVersion])
-                self.metadata['ProdTag'] = ProdTag
-                self.metadata_folder['ProdTag'] = ProdTag
-                self.relativePath += '/'+ProdTag+'/Simulated'
-                self.path_is_valid = True
-        if not self.path_is_valid:
-            print('ERROR: FridgeRun and ProdTag are undefined, will be required to build folder path')
-        self.relativePath_common = self.relativePath
-
-        self.metadata['Source'       ] = Source
-        self.metadata['DetType'      ] = DetType
-        self.metadata['EnergyDeposit'] = EnergyDeposit
-        self.metadata['nEvAll'       ] = nEvAll
-
-        self.metadata_folder['OfflineRelease'] = OfflineRelease
-        self.metadata_folder['Source'        ] = Source
-        self.metadata_folder['Facility'      ] = dataType
-        self.metadata_folder['DetType'       ] = DetType
-        self.metadata_folder['EnergyDeposit' ] = EnergyDeposit
-
-        self.required_values = {} # To be also filled in the constructor of each specific class, if necessary
-        self.required_values['Facility'] = ['ANIMAL',
-                                            'CUTE'  ,
-                                            'NEXUS' ,
-                                            'NoLab' ,
-                                            'SLAC'  ,
-                                            'SNOLAB',
-                                            'Soudan',
-                                            'TRIUMF',
-                                            'UCB'   ,
-                                            'UMN'   ]
-        self.required_values['Source'] = ['Am241',
-                                          'Ba133',
-                                          'Cf252',
-                                          'DMCER',
-                                          'DMCNR',
-                                          'Ge71' ,
-                                          'Si32' ,
-                                          'Pb210',
-                                          'Radon',
-                                          'WIMP' ,
-                                          'SbBe' ,
-                                          'YBe'  ]
-
-        self.Ancestorpath = Ancestorpath
-
-    def check_conventions(self): # To be called before registering
-        if not self.path_is_valid: # Check that folder path has the correct format
-            print('ERROR: unable to build valid folder path with the metadata provided')
-            return False
-
-        print('Dataset metadata:')
-        max_len_param = max([len(parameter) for parameter in self.metadata.keys()])
-        for parameter in self.metadata.keys(): # Check that metadata take allowed values
-            if parameter in self.required_values.keys():
-                if not self.metadata[parameter] in self.required_values[parameter]:
-                    print('ERROR: metadata field', parameter, 'does not take any of the allowed values')
-                    print('Allowed values are:', ', '.join(self.required_values[parameter]))
-                    return False
-
-            if parameter[0] == 'n' and parameter[1].isupper():
-                try:
-                    self.metadata[parameter] = int(self.metadata[parameter])
-                except:
-                    print('ERROR: unable to convert metadata field', parameter, 'to int')
-                    return False
-            else:
-                self.metadata[parameter] = str(self.metadata[parameter])
-                
-            print('-', parameter.ljust(max_len_param), self.metadata[parameter])
-
-        print('Folder metadata:')
-        max_len_param = max([len(parameter) for parameter in self.metadata_folder.keys()])
-        for parameter in self.metadata_folder.keys(): # Check that metadata take allowed values
-            if parameter in self.required_values.keys():
-                if not self.metadata_folder[parameter] in self.required_values[parameter]:
-                    print('ERROR: metadata field', parameter, 'does not take any of the allowed values')
-                    print('Allowed values are:', ', '.join(self.required_values[parameter]))
-                    return False
-
-            if parameter[0] == 'n' and parameter[1].isupper():
-                try:
-                    self.metadata_folder[parameter] = int(self.metadata_folder[parameter])
-                except:
-                    print('ERROR: unable to convert metadata field', parameter, 'to int')
-                    return False
-            else:
-                self.metadata_folder[parameter] = str(self.metadata_folder[parameter])
-                
-            print('-', parameter.ljust(max_len_param), self.metadata_folder[parameter])
-
-        return True
-
-    def get_ancestors(self, dc_default):
-        try:
-            return dc_default.search(self.relativePath_common+'/**', query = 'resource eq "'+self.Ancestorpath+'"')
-        except:
-            return None
-
-
-class ParticleHits(ProdSimDataset):
-
-    def __init__(self,
-                 filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
-                 FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None):
-        ProdSimDataset.__init__(self,
-                                filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
-                                FridgeRun, MCSetup, MCType, MCVersion)
-        self.relativePath += '/SourceSim/V'+self.metadata_folder['OfflineRelease']
-
-
-class DMCintermediate(ProdSimDataset):
-
-    def __init__(self,
-                 filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
-                 FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
-                 Ancestorpath = None):
-        ProdSimDataset.__init__(self,
-                                filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
-                                FridgeRun, MCSetup, MCType, MCVersion,
-                                Ancestorpath)
-        self.relativePath += '/DMC/V'+self.metadata_folder['OfflineRelease']
-
-
-class RawSim(ProdSimDataset):
-
-    def __init__(self,
-                 filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
-                 Series, IOLibrary, BatCommon, nAddNoise,
-                 nDataType, nDumps, nDump, nEvBORR, nFirstTriggerId, nLastTriggerId,
-                 FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
-                 Ancestorpath = None):
-        ProdSimDataset.__init__(self,
-                                filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
-                                FridgeRun, MCSetup, MCType, MCVersion,
-                                Ancestorpath)
-        self.relativePath += '/DAQSim/V'+self.metadata_folder['OfflineRelease']
-
-        self.metadata['Series'         ] = Series
-        self.metadata['nDataType'      ] = nDataType
-        self.metadata['nDump'          ] = nDump
-        self.metadata['nEvBORR'        ] = nEvBORR
-        self.metadata['nFirstTriggerId'] = nFirstTriggerId
-        self.metadata['nLastTriggerId' ] = nLastTriggerId
-
-        self.metadata_folder['IOLibrary'] = IOLibrary
-        self.metadata_folder['BatCommon'] = BatCommon
-        self.metadata_folder['nAddNoise'] = nAddNoise
-        self.metadata_folder['nDataType'] = nDataType
-        self.metadata_folder['nDumps'   ] = nDumps
-
-        self.required_values['nDataType'] = ['200']
-
-class ProcessedSim(ProdSimDataset):
-
-    def __init__(self,
-                 filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
-                 Series, IOLibrary, BatCommon,
-                 nDataType, nDump, nEvBORR,
-                 ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
-                 CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
-                 FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
-                 Ancestorpath = None):
-        ProdSimDataset.__init__(self,
-                                filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
-                                FridgeRun, MCSetup, MCType, MCVersion,
-                                Ancestorpath)
-        self.relativePath += '/Processed/V'+self.metadata_folder['OfflineRelease']+'_P'+ProcessingConfig
-
-        self.metadata['Series'               ] = Series
-        self.metadata['nDataType'            ] = nDataType
-        self.metadata['nDump'                ] = nDump
-        self.metadata['nEvBORR'              ] = nEvBORR
-        self.metadata['ProcessingConfig'     ] = ProcessingConfig
-        self.metadata['CalibAnalysisConfig'  ] = CalibAnalysisConfig
-        self.metadata['CalibProcessingConfig'] = CalibProcessingConfig
-        self.metadata['AnalysisConfig'       ] = AnalysisConfig
-
-        self.metadata_folder['IOLibrary'              ] = IOLibrary
-        self.metadata_folder['BatCommon'              ] = BatCommon
-        self.metadata_folder['nDataType'              ] = nDataType
-        self.metadata_folder['ProcessingConfig'       ] = ProcessingConfig
-        self.metadata_folder['CalibAnalysisConfig'    ] = CalibAnalysisConfig
-        self.metadata_folder['CalibProcessingConfig'  ] = CalibProcessingConfig
-        self.metadata_folder['AnalysisConfig'         ] = AnalysisConfig
-        self.metadata_folder['CdmsBats'               ] = CdmsBats
-        self.metadata_folder['CdmsBatsSettings'       ] = CdmsBatsSettings
-        self.metadata_folder['CdmsBatsPath'           ] = CdmsBatsPath
-        self.metadata_folder['CdmsBatsSettingsPath'   ] = CdmsBatsSettingsPath
-        self.metadata_folder['nIsCdmsBatsProd'        ] = nIsCdmsBatsProd
-        self.metadata_folder['nIsCdmsBatsSettingsProd'] = nIsCdmsBatsSettingsProd
-
-        self.required_values['nDataType'] = ['200']
-
-
-class SuperSimData(CDMSDataset):
-
-    def __init__(self,
-                 name,
-                 filePath,
-                 SuperSimType,
-                 SuperSimVersion,
-                 experiment='Soudan',
-                 site='SLAC',
-                 fileFormat='root'):
-        """Constructor for the CDMS SuperSim dataset class
-
-        All of these are mandatory; the optional metadata can be specified
-        after construction
-
-        name     - dataset name
-        filePath - physical path to file
-        SuperSimType  - e.g. 'Backgrounds'
-        SuperSimVersion - e.g. 1.0
-
-        Optional Inputs
-        experiment  - 'Soudan' (default), 'SNOLAB', 'TestDevices', 'UMN', 'UCB'
-        site        - e.g. 'SLAC' (default)
-        fileFormat  - 'root' (default), 'mat', 'txt'
-        SuperSimVersion - e.g. 1.0 (default)
-        """
-        CDMSDataset.__init__(self, name, filePath, experiment + '/SuperSim',
-                             site, fileFormat)
-
-        # add simulation type to path
-        self.relativePath += '/' + SuperSimType + '/' + SuperSimVersion
-
-        self.metadata["SuperSimType"] = SuperSimType
-        self.metadata["SuperSimVersion"] = SuperSimVersion 
-
-
 class RawData(CDMSDataset):
 
     def __init__(self,
@@ -832,3 +487,232 @@ class MidasToolsData(CDMSDataset):
         self.metadata["Tests"] = tests
         self.metadata["Comment"] = comment
         self.metadata["nIsJunk"] = int(nIsJunk)
+        
+
+class ProdSimDataset(CDMSDataset):
+
+    def __init__(self,
+                 filename, filePath, dataType, site, fileFormat, # Required by constructor of CDMSDataset base class
+                 OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
+                 FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None, # Used to assign folder in Data Catalog
+                 Ancestorpath = None): # Predecessor information
+        """Constructor for the CDMS DMCintermediate dataset class
+        filename         - Dataset name
+        filePath         - Full path to actual file, including file name
+        dataType         - Required values: 'ANIMAL', 'CUTE', 'NEXUS', 'NoLab', 'SLAC', 'SNOLAB', 'Soudan', 'TRIUMF', 'UCB', 'UMN'
+        site             - For example, 'SLAC'
+        fileFormat       - For example, 'root' or 'txt'
+        """ 
+        CDMSDataset.__init__(self, filename, filePath, dataType, site, fileFormat)
+        self.metadata_folder = Metadata()
+        self.path_is_valid = False
+        self.relativePath = self.relativePath.replace('/CDMS/', '/CDMS/Test2/test_dc3/') # For testing purposes only
+
+        if type(FridgeRun) == str and MCSetup == None and MCType == None and MCVersion == None:
+            self.metadata['FridgeRun'] = FridgeRun
+            self.metadata_folder['FridgeRun'] = FridgeRun
+            self.relativePath += '/'+FridgeRun+'/Simulated'
+            self.path_is_valid = True
+        elif FridgeRun == None and type(MCSetup) == str and type(MCType) == str and type(MCVersion) == str:
+            if len(MCSetup) > 0 and len(MCType) > 0 and len(MCVersion) > 0:
+                ProdTag = '_'.join([MCSetup, MCType, MCVersion])
+                self.metadata['ProdTag'] = ProdTag
+                self.metadata_folder['ProdTag'] = ProdTag
+                self.relativePath += '/'+ProdTag+'/Simulated'
+                self.path_is_valid = True
+        if not self.path_is_valid:
+            print('ERROR: FridgeRun and ProdTag are undefined, will be required to build folder path')
+        self.relativePath_common = self.relativePath
+
+        self.metadata['Source'       ] = Source
+        self.metadata['DetType'      ] = DetType
+        self.metadata['EnergyDeposit'] = EnergyDeposit
+        self.metadata['nEvAll'       ] = nEvAll
+
+        self.metadata_folder['OfflineRelease'] = OfflineRelease
+        self.metadata_folder['Source'        ] = Source
+        self.metadata_folder['Facility'      ] = dataType
+        self.metadata_folder['DetType'       ] = DetType
+        self.metadata_folder['EnergyDeposit' ] = EnergyDeposit
+
+        self.required_values = {} # To be also filled in the constructor of each specific class, if necessary
+        self.required_values['Facility'] = ['ANIMAL',
+                                            'CUTE'  ,
+                                            'NEXUS' ,
+                                            'NoLab' ,
+                                            'SLAC'  ,
+                                            'SNOLAB',
+                                            'Soudan',
+                                            'TRIUMF',
+                                            'UCB'   ,
+                                            'UMN'   ]
+        self.required_values['Source'] = ['Am241',
+                                          'Ba133',
+                                          'Cf252',
+                                          'DMCER',
+                                          'DMCNR',
+                                          'Ge71' ,
+                                          'Si32' ,
+                                          'Pb210',
+                                          'Radon',
+                                          'WIMP' ,
+                                          'SbBe' ,
+                                          'YBe'  ]
+
+        self.Ancestorpath = Ancestorpath
+
+    def check_conventions(self): # To be called before registering
+        if not self.path_is_valid: # Check that folder path has the correct format
+            print('ERROR: unable to build valid folder path with the metadata provided')
+            return False
+
+        print('Dataset metadata:')
+        max_len_param = max([len(parameter) for parameter in self.metadata.keys()])
+        for parameter in self.metadata.keys(): # Check that metadata take allowed values
+            if parameter in self.required_values.keys():
+                if not self.metadata[parameter] in self.required_values[parameter]:
+                    print('ERROR: metadata field', parameter, 'does not take any of the allowed values')
+                    print('Allowed values are:', ', '.join(self.required_values[parameter]))
+                    return False
+
+            if parameter[0] == 'n' and parameter[1].isupper():
+                try:
+                    self.metadata[parameter] = int(self.metadata[parameter])
+                except:
+                    print('ERROR: unable to convert metadata field', parameter, 'to int')
+                    return False
+            else:
+                self.metadata[parameter] = str(self.metadata[parameter])
+                
+            print('-', parameter.ljust(max_len_param), self.metadata[parameter])
+
+        print('Folder metadata:')
+        max_len_param = max([len(parameter) for parameter in self.metadata_folder.keys()])
+        for parameter in self.metadata_folder.keys(): # Check that metadata take allowed values
+            if parameter in self.required_values.keys():
+                if not self.metadata_folder[parameter] in self.required_values[parameter]:
+                    print('ERROR: metadata field', parameter, 'does not take any of the allowed values')
+                    print('Allowed values are:', ', '.join(self.required_values[parameter]))
+                    return False
+
+            if parameter[0] == 'n' and parameter[1].isupper():
+                try:
+                    self.metadata_folder[parameter] = int(self.metadata_folder[parameter])
+                except:
+                    print('ERROR: unable to convert metadata field', parameter, 'to int')
+                    return False
+            else:
+                self.metadata_folder[parameter] = str(self.metadata_folder[parameter])
+                
+            print('-', parameter.ljust(max_len_param), self.metadata_folder[parameter])
+
+        return True
+
+    def get_ancestors(self, dc_default):
+        try:
+            return dc_default.search(self.relativePath_common+'/**', query = 'resource eq "'+self.Ancestorpath+'"')
+        except:
+            return None
+
+
+class ParticleHits(ProdSimDataset):
+
+    def __init__(self,
+                 filename, filePath, site, fileFormat,
+                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None):
+        ProdSimDataset.__init__(self,
+                                filename, filePath, Facility, site, fileFormat,
+                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
+                                FridgeRun, MCSetup, MCType, MCVersion)
+        self.relativePath += '/SourceSim/V'+self.metadata_folder['OfflineRelease']
+
+
+class DMCintermediate(ProdSimDataset):
+
+    def __init__(self,
+                 filename, filePath, site, fileFormat,
+                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
+                 Ancestorpath = None):
+        ProdSimDataset.__init__(self,
+                                filename, filePath, Facility, site, fileFormat,
+                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
+                                FridgeRun, MCSetup, MCType, MCVersion,
+                                Ancestorpath)
+        self.relativePath += '/DMC/V'+self.metadata_folder['OfflineRelease']
+
+
+class RawSim(ProdSimDataset):
+
+    def __init__(self,
+                 filename, filePath, site, fileFormat,
+                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 Series, IOLibrary, BatCommon, nAddNoise,
+                 nDataType, nDumps, nDump, nEvBORR, nFirstTriggerId, nLastTriggerId,
+                 FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
+                 Ancestorpath = None):
+        ProdSimDataset.__init__(self,
+                                filename, filePath, Facility, site, fileFormat,
+                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
+                                FridgeRun, MCSetup, MCType, MCVersion,
+                                Ancestorpath)
+        self.relativePath += '/DAQSim/V'+self.metadata_folder['OfflineRelease']
+
+        self.metadata['Series'         ] = Series
+        self.metadata['nDataType'      ] = nDataType
+        self.metadata['nDump'          ] = nDump
+        self.metadata['nEvBORR'        ] = nEvBORR
+        self.metadata['nFirstTriggerId'] = nFirstTriggerId
+        self.metadata['nLastTriggerId' ] = nLastTriggerId
+
+        self.metadata_folder['IOLibrary'] = IOLibrary
+        self.metadata_folder['BatCommon'] = BatCommon
+        self.metadata_folder['nAddNoise'] = nAddNoise
+        self.metadata_folder['nDataType'] = nDataType
+        self.metadata_folder['nDumps'   ] = nDumps
+
+        self.required_values['nDataType'] = ['200']
+
+class ProcessedSim(ProdSimDataset):
+
+    def __init__(self,
+                 filename, filePath, site, fileFormat,
+                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 Series, IOLibrary, BatCommon,
+                 nDataType, nDump, nEvBORR,
+                 ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
+                 CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                 FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
+                 Ancestorpath = None):
+        ProdSimDataset.__init__(self,
+                                filename, filePath, Facility, site, fileFormat,
+                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
+                                FridgeRun, MCSetup, MCType, MCVersion,
+                                Ancestorpath)
+        self.relativePath += '/Processed/V'+self.metadata_folder['OfflineRelease']+'_P'+ProcessingConfig
+
+        self.metadata['Series'               ] = Series
+        self.metadata['nDataType'            ] = nDataType
+        self.metadata['nDump'                ] = nDump
+        self.metadata['nEvBORR'              ] = nEvBORR
+        self.metadata['ProcessingConfig'     ] = ProcessingConfig
+        self.metadata['CalibAnalysisConfig'  ] = CalibAnalysisConfig
+        self.metadata['CalibProcessingConfig'] = CalibProcessingConfig
+        self.metadata['AnalysisConfig'       ] = AnalysisConfig
+
+        self.metadata_folder['IOLibrary'              ] = IOLibrary
+        self.metadata_folder['BatCommon'              ] = BatCommon
+        self.metadata_folder['nDataType'              ] = nDataType
+        self.metadata_folder['ProcessingConfig'       ] = ProcessingConfig
+        self.metadata_folder['CalibAnalysisConfig'    ] = CalibAnalysisConfig
+        self.metadata_folder['CalibProcessingConfig'  ] = CalibProcessingConfig
+        self.metadata_folder['AnalysisConfig'         ] = AnalysisConfig
+        self.metadata_folder['CdmsBats'               ] = CdmsBats
+        self.metadata_folder['CdmsBatsSettings'       ] = CdmsBatsSettings
+        self.metadata_folder['CdmsBatsPath'           ] = CdmsBatsPath
+        self.metadata_folder['CdmsBatsSettingsPath'   ] = CdmsBatsSettingsPath
+        self.metadata_folder['nIsCdmsBatsProd'        ] = nIsCdmsBatsProd
+        self.metadata_folder['nIsCdmsBatsSettingsProd'] = nIsCdmsBatsSettingsProd
+
+        self.required_values['nDataType'] = ['200']
