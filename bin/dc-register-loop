@@ -36,7 +36,7 @@ if args.swft:
         else:
             for i in range(len(filePaths_data)):
                 dict_metadata = build_dict_metadata_swft(args.site, args.fileFormat, filePaths_metadata_dataset[i], filePaths_metadata_folder[0])
-                print('INFO from dc-register-swft: data file', str(i+1)+',', 'metadata =', dict_metadata)
+                print('INFO from dc-register-loop: data file', str(i+1)+',', 'metadata =', dict_metadata)
                 if args.dry_run:
                     register(filePaths_data[i], dict_metadata, dry_run = True)
                 else:
