@@ -559,7 +559,7 @@ class ProdSimDataset(CDMSDataset):
                                           'SbBe' ,
                                           'YBe'  ]
 
-        self.Ancestorpath = Ancestorpath
+        self.Ancestorpath = [Ancestorpath] if type(Ancestorpath) == str else Ancestorpath
 
     def check_conventions(self): # To be called before registering
         if not self.path_is_valid: # Check that folder path has the correct format
@@ -609,10 +609,13 @@ class ProdSimDataset(CDMSDataset):
         return True
 
     def get_ancestors(self, dc_default):
-        try:
-            return dc_default.search(self.relativePath_common+'/**', query = 'resource eq "'+self.Ancestorpath+'"')
-        except:
-            return None
+        ancestors = []
+        for item in self.Ancestorpath:
+            try:
+                ancestors.append(dc_default.search(self.relativePath_common+'/**', query = 'resource eq "'+item+'"'))
+            except:
+                ancestors.append(None)
+        return ancestors
 
 
 class ParticleHits(ProdSimDataset):
