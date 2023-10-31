@@ -1,3 +1,5 @@
+import sys
+sys.dont_write_bytecode = True
 import subprocess
 import pkg_resources
 from .CDMSDataCatalog import CDMSDataCatalog
@@ -36,17 +38,16 @@ def register(filePath, dict_metadata, dry_run = False):
     dataset = build_dataset_from_metadata(filePath, dict_metadata)
 
     if dataset:
-        ancestor = None
+        ancestors = None
         if dataset.Ancestorpath:
             ancestors = dataset.get_ancestors(dc_default)
-            if not ancestors:
-                print('ERROR: unable to find ancestors')
-                return False
-            if len(ancestors) == 1:
-                ancestor = ancestors[0]
-            else:
-                print('ERROR: multiple ancestors found')
-                return False
+            for ancestor in ancestors:
+                if not ancestor:
+                    print('ERROR: unable to find ancestors')
+                    return False
+                elif len(ancestor) > 1:
+                    print('ERROR: ancestor search provides ambiguous results')
+                    return False
 
         if not dc_default.exist(dataset.relativePath): # Checking whether folder already exists
             if dry_run:
@@ -59,9 +60,9 @@ def register(filePath, dict_metadata, dry_run = False):
             print('INFO: dry-run, dataset not registered')
         else:
             dc_prod.add(dataset)
-            if ancestor:
+            if ancestors:
                 dataset = dc_default.get(dataset.relativePath+'/'+dataset.datasetName)
-                dc_prod.addDependents(dataset, 'predecessor', dep_datasets = [dc_default.get(ancestor.relativePath)])
+                dc_prod.addDependents(dataset, 'predecessor', dep_datasets = [dc_default.get(ancestor[0].relativePath) for ancestor in ancestors])
         return True
 
     return False
@@ -158,6 +159,9 @@ def build_dict_metadata_swft(site, fileFormat, filePath_metadata_dataset, filePa
     dict_metadata = {'site': site, 'fileFormat': fileFormat}
     f = open(filePath_metadata_dataset)
     for l in f.readlines():
+        if '"Ancestorpath"' in l and '[' in l:
+            dict_metadata['Ancestorpath'] = [s.replace('"', '').strip() for s in l.split('[')[1].split(']')[0].split(',')]
+            continue
         lparts = l.split('"')
         if len(lparts) == 3:
             dict_metadata[lparts[1]] = str(int(lparts[2][2:].split(',')[0]))
