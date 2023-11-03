@@ -3,7 +3,7 @@ sys.dont_write_bytecode = True
 import subprocess
 import pkg_resources
 from .CDMSDataCatalog import CDMSDataCatalog
-from .CDMSDataset import ParticleHits, DMCintermediate, RawSim, ProcessedSim
+from .CDMSDataset import *
 
 def build_dataset_from_metadata(filePath, dict_metadata):
     input_ds = {'filename': filePath.split('/')[-1], 'filePath': filePath}
@@ -13,10 +13,23 @@ def build_dataset_from_metadata(filePath, dict_metadata):
     dataset = None
     if 'SimStage' in dict_metadata.keys():
         input_ds.pop('SimStage')
-        if   dict_metadata['SimStage'] == 'SourceSim': dataset = ParticleHits(   **input_ds)
-        elif dict_metadata['SimStage'] == 'DMC'      : dataset = DMCintermediate(**input_ds)
-        elif dict_metadata['SimStage'] == 'DAQSim'   : dataset = RawSim(         **input_ds)
-        elif dict_metadata['SimStage'] == 'Processed': dataset = ProcessedSim(   **input_ds)
+        if dict_metadata['SimStage'] == 'SourceSim':
+            dataset = ParticleHits(**input_ds)
+        elif dict_metadata['SimStage'] == 'DMC':
+            dataset = DMCintermediate(**input_ds)
+        elif dict_metadata['SimStage'] == 'DAQSim':
+            dataset = RawSim(**input_ds)
+        elif dict_metadata['SimStage'] == 'Processed':
+            if '/noise/' in filePath:
+                dataset = BatNoiseSim(**input_ds)
+            elif '/unmerged/' in filePath and '/merge_' in filePath:
+                dataset = UnmergedBatRootSim(**input_ds)
+            elif '/unmerged/' in filePath and '/calib_' in filePath:
+                dataset = UnmergedBatCalibSim(**input_ds)
+            elif '/submerged/' in filePath and '/merge_' in filePath:
+                dataset = SubmergedBatRootSim(**input_ds)
+            elif '/submerged/' in filePath and '/calib_' in filePath:
+                dataset = SubmergedBatCalibSim(**input_ds)
 
     if dataset:
         if dataset.check_conventions():
