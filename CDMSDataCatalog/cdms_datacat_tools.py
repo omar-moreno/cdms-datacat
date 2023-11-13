@@ -20,16 +20,21 @@ def build_dataset_from_metadata(filePath, dict_metadata):
         elif dict_metadata['SimStage'] == 'DAQSim':
             dataset = RawSim(**input_ds)
         elif dict_metadata['SimStage'] == 'Processed':
-            if '/noise/' in filePath:
-                dataset = BatNoiseSim(**input_ds)
-            elif '/unmerged/' in filePath and '/merge_' in filePath:
-                dataset = UnmergedBatRootSim(**input_ds)
-            elif '/unmerged/' in filePath and '/calib_' in filePath:
-                dataset = UnmergedBatCalibSim(**input_ds)
-            elif '/submerged/' in filePath and '/merge_' in filePath:
-                dataset = SubmergedBatRootSim(**input_ds)
-            elif '/submerged/' in filePath and '/calib_' in filePath:
-                dataset = SubmergedBatCalibSim(**input_ds)
+            if 'BatCategory' in dict_metadata.keys():
+                input_ds.pop('BatCategory')
+                if dict_metadata['BatCategory'] == 'BatNoise':
+                    dataset = BatNoiseSim(**input_ds)
+                elif dict_metadata['BatCategory'] == 'BatRoot_unmerged':
+                    dataset = UnmergedBatRootSim(**input_ds)
+                elif dict_metadata['BatCategory'] == 'BatRoot_submerged':
+                    dataset = SubmergedBatRootSim(**input_ds)
+                elif dict_metadata['BatCategory'] == 'BatCalib_unmerged':
+                    dataset = UnmergedBatCalibSim(**input_ds)
+                elif dict_metadata['BatCategory'] == 'BatCalib_submerged':
+                    dataset = SubmergedBatCalibSim(**input_ds)
+            else:
+                print('ERROR: BatCategory info is required if SimStage == Processed')
+                return None
 
     if dataset:
         if dataset.check_conventions():
