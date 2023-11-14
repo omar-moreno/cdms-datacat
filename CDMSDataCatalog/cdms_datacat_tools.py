@@ -49,13 +49,16 @@ def get_dc_path(dict_metadata):
         return dataset.relativePath
     return None
 
-def register(filePath, dict_metadata, dry_run = False):
+def register(filePath, dict_metadata, dry_run = False, test_folder = False):
     dc_default = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/default.cfg'))
     dc_prod    = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/prod.cfg'   ))
 
     dataset = build_dataset_from_metadata(filePath, dict_metadata)
 
     if dataset:
+        if test_folder: # To be removed after DC3...
+            dataset.enable_test_folder()
+
         ancestors = None
         if dataset.Ancestorpath:
             ancestors = dataset.get_ancestors(dc_default)
