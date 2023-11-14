@@ -506,7 +506,6 @@ class ProdSimDataset(CDMSDataset):
         CDMSDataset.__init__(self, filename, filePath, dataType, site, fileFormat)
         self.metadata_folder = Metadata()
         self.path_is_valid = False
-        self.relativePath = self.relativePath.replace('/CDMS/', '/CDMS/Test2/test_dc3/') # For testing purposes only
 
         if type(FridgeRun) == str and MCSetup == None and MCType == None and MCVersion == None:
             self.metadata['FridgeRun'] = FridgeRun
@@ -616,6 +615,9 @@ class ProdSimDataset(CDMSDataset):
             except:
                 ancestors.append(None)
         return ancestors
+
+    def enable_test_folder(self): # To be removed after DC3...
+        self.relativePath = self.relativePath.replace('/CDMS/', '/CDMS/Test2/test_dc3/')
 
 
 class ParticleHits(ProdSimDataset):
