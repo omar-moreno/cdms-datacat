@@ -12,7 +12,7 @@ parser.add_argument('--ssh', action = 'store_true')
 parser.add_argument('--user')   # ssh
 parser.add_argument('--remote') # ssh
 parser.add_argument('--globus', action = 'store_true')
-parser.add_argument('--client_id')          # globus
+parser.add_argument('--access_token')       # globus
 parser.add_argument('--source_endpoint_id') # globus
 parser.add_argument('--dest_endpoint_id')   # globus
 parser.add_argument('--save')
@@ -49,8 +49,8 @@ if type(args.data) == str and type(args.metadata_dataset) == str and type(args.m
         else:
             print('ERROR: missing optional arguments required by --ssh flag: --user, --remote')
     elif args.globus:
-        if type(args.client_id) == str and type(args.source_endpoint_id) == str and type(args.dest_endpoint_id) == str:
-            filePaths_remote = transfer_globus(filePaths_data, list_dict_metadata, args.client_id, args.source_endpoint_id, args.dest_endpoint_id, args.basedir)
+        if type(args.access_token) == str and type(args.source_endpoint_id) == str and type(args.dest_endpoint_id) == str:
+            filePaths_remote = transfer_globus(filePaths_data, list_dict_metadata, args.access_token, args.source_endpoint_id, args.dest_endpoint_id, args.basedir)
         else:
             print('ERROR: missing optional arguments required by --globus flag: --client_id, --source_endpoint_id, --dest_endpoint_id')
 
