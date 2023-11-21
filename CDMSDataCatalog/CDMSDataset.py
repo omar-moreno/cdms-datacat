@@ -677,7 +677,7 @@ class RawSim(ProdSimDataset):
         self.metadata_folder['nDataType'] = nDataType
         self.metadata_folder['nDumps'   ] = nDumps
 
-        self.required_values['nDataType'] = ['200']
+        self.required_values['nDataType'] = [200]
 
 class ProcessedSim(ProdSimDataset):
 
@@ -719,7 +719,7 @@ class ProcessedSim(ProdSimDataset):
         self.metadata_folder['nIsCdmsBatsProd'        ] = nIsCdmsBatsProd
         self.metadata_folder['nIsCdmsBatsSettingsProd'] = nIsCdmsBatsSettingsProd
 
-        self.required_values['nDataType'] = ['200']
+        self.required_values['nDataType'] = [200]
 
 class BatNoiseSim(ProcessedSim):
 
