@@ -181,32 +181,38 @@ def transfer_globus(filePaths, list_dict_metadata, access_token, source_endpoint
     return filePaths_remote
 
 def build_dict_metadata_swft(site, fileFormat, filePath_metadata_dataset, filePath_metadata_folder):
+    import ast
+
     dict_metadata = {'site': site, 'fileFormat': fileFormat}
     f = open(filePath_metadata_dataset)
-    for l in f.readlines():
-        if '"Ancestorpath"' in l and '[' in l:
-            dict_metadata['Ancestorpath'] = [s.replace('"', '').strip() for s in l.split('[')[1].split(']')[0].split(',')]
+    dict_from_f = ast.literal_eval(''.join(f.readlines()).split('=')[-1])
+    for k in dict_from_f.keys():
+        if k == 'ProdTag':
             continue
-        lparts = l.split('"')
-        if len(lparts) == 3:
-            dict_metadata[lparts[1]] = str(int(lparts[2][2:].split(',')[0]))
-        elif len(lparts) == 5:
-            if lparts[1] == 'ProdTag':
-                continue
-            dict_metadata[lparts[1]] = lparts[3]
+        if k == 'AncestorPath':
+            dict_metadata['Ancestorpath'] = dict_from_f[k]
+        elif type(dict_from_f[k]) == int and not (k[0] == 'n' and k[1].isupper()):
+            dict_metadata[k] = str(dict_from_f[k])
+        else:
+            dict_metadata[k] = dict_from_f[k]
     f.close()
     f = open(filePath_metadata_folder)
-    for l in f.readlines():
-        lparts = l.split('"')
-        if len(lparts) == 3:
-            if lparts[1] == 'nEvAll': # This statement should be removed if this field is eventually removed from the folder metadata
-                continue
-            dict_metadata[lparts[1]] = str(int(lparts[2][2:].split(',')[0]))
-        elif len(lparts) == 5:
-            if lparts[1] == 'ProdTag':
-                continue
-            if not lparts[1] in dict_metadata.keys():
-                dict_metadata[lparts[1]] = lparts[3]
+    dict_from_f = ast.literal_eval(''.join(f.readlines()).split('=')[-1])
+    for k in dict_from_f.keys():
+        if k == 'nEvAll' or k == 'ProdTag': # This statement should be modified if nEvAll is eventually removed from the folder metadata
+            continue
+        if type(dict_from_f[k]) == int and not (k[0] == 'n' and k[1].isupper()):
+            if k in dict_metadata.keys():
+                if str(dict_from_f[k]) != dict_metadata[k]:
+                    print('ERROR: conflict between dataset and folder metadata: '+k)
+                    return None
+            dict_metadata[k] = str(dict_from_f[k])
+        else:
+            if k in dict_metadata.keys():
+                if dict_from_f[k] != dict_metadata[k]:
+                    print('ERROR: conflict between dataset and folder metadata: '+k)
+                    return None
+            dict_metadata[k] = dict_from_f[k]
     f.close()
     if (dict_metadata['SimStage'] == 'SourceSim' or dict_metadata['SimStage'] == 'DMC') and 'Series' in dict_metadata.keys(): # This statement might not be necessary in the future
         dict_metadata.pop('Series')
