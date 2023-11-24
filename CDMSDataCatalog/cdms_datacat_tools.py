@@ -152,7 +152,7 @@ def transfer_globus(filePaths, list_dict_metadata, access_token, source_endpoint
     while out_activation['code'] == 'AutoActivationFailed':
         input('Please go to https://app.globus.org/file-manager?origin_id='+dest_endpoint_id+', and press ENTER upon login')
         out_activation = transfer_client.endpoint_autoactivate(dest_endpoint_id, if_expires_in = 3600)
-    task_data = globus_sdk.TransferData(source_endpoint = source_endpoint_id, destination_endpoint = dest_endpoint_id)
+    task_data = globus_sdk.TransferData(transfer_client = transfer_client, source_endpoint = source_endpoint_id, destination_endpoint = dest_endpoint_id)
 
     filePaths_remote = []
     for i in range(len(filePaths)):
