@@ -17,5 +17,5 @@ setup(name='CDMSDataCatalog',
       author_email='kurinsky@fnal.gov',
       url='https://confluence.slac.stanford.edu/display/CDMS/SuperCDMS+Data+Catalog#section-582118446',
       scripts=glob('bin/*'),
-      package_data={'CDMSDataCatalog': ['cfg/default.cfg']}
+      package_data={'CDMSDataCatalog': ['cfg/default.cfg', 'cfg/prod.cfg']}
 )
