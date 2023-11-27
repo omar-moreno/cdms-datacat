@@ -616,8 +616,15 @@ class ProdSimDataset(CDMSDataset):
                 ancestors.append(None)
         return ancestors
 
+    def include_last_dir(self):
+        try:
+            self.relativePath += '/'+self.filePath.split('/')[-2]
+        except:
+            print('WARNING: unable to include subdirectory')
+
     def enable_test_folder(self): # To be removed after DC3...
         self.relativePath = self.relativePath.replace('/CDMS/', '/CDMS/Test2/test_dc3/')
+        self.relativePath_common = self.relativePath_common.replace('/CDMS/', '/CDMS/Test2/test_dc3/')
 
 
 class ParticleHits(ProdSimDataset):
@@ -630,7 +637,10 @@ class ParticleHits(ProdSimDataset):
                                 filename, filePath, Facility, site, fileFormat,
                                 OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
                                 FridgeRun, MCSetup, MCType, MCVersion)
-        self.relativePath += '/SourceSim/V'+self.metadata_folder['OfflineRelease']
+        if self.metadata_folder['OfflineRelease'].find('SuperSim') == 0:
+            self.relativePath += '/SourceSim/'+self.metadata_folder['OfflineRelease']
+        else:
+            self.relativePath += '/SourceSim/V'+self.metadata_folder['OfflineRelease']
 
 
 class DMCintermediate(ProdSimDataset):
@@ -645,7 +655,10 @@ class DMCintermediate(ProdSimDataset):
                                 OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
-        self.relativePath += '/DMC/V'+self.metadata_folder['OfflineRelease']
+        if self.metadata_folder['OfflineRelease'].find('SuperSim') == 0:
+            self.relativePath += '/DMC/'+self.metadata_folder['OfflineRelease']
+        else:
+            self.relativePath += '/DMC/V'+self.metadata_folder['OfflineRelease']
 
 
 class RawSim(ProdSimDataset):
@@ -662,7 +675,10 @@ class RawSim(ProdSimDataset):
                                 OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
-        self.relativePath += '/DAQSim/V'+self.metadata_folder['OfflineRelease']
+        if self.metadata_folder['OfflineRelease'].find('DAQSim') == 0:
+            self.relativePath += '/DAQSim/'+self.metadata_folder['OfflineRelease']
+        else:
+            self.relativePath += '/DAQSim/V'+self.metadata_folder['OfflineRelease']
 
         self.metadata['Series'         ] = Series
         self.metadata['nDataType'      ] = nDataType
@@ -695,7 +711,10 @@ class ProcessedSim(ProdSimDataset):
                                 OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
-        self.relativePath += '/Processed/V'+self.metadata_folder['OfflineRelease']+'_P'+ProcessingConfig
+        if self.metadata_folder['OfflineRelease'].find('CDMSBats') == 0:
+            self.relativePath += '/Processed/'+self.metadata_folder['OfflineRelease']+'_P'+ProcessingConfig
+        else:
+            self.relativePath += '/Processed/V'+self.metadata_folder['OfflineRelease']+'_P'+ProcessingConfig
 
         self.metadata['Series'               ] = Series
         self.metadata['nDataType'            ] = nDataType
