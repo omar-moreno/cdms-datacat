@@ -15,6 +15,7 @@ parser.add_argument('--globus', action = 'store_true')
 parser.add_argument('--access_token')       # globus
 parser.add_argument('--source_endpoint_id') # globus
 parser.add_argument('--dest_endpoint_id')   # globus
+parser.add_argument('--include_last_dir', action = 'store_true')
 parser.add_argument('--save')
 parser.add_argument('--test_folder', action = 'store_true')
 args = parser.parse_args()
@@ -44,17 +45,20 @@ if type(args.data) == str and type(args.metadata_dataset) == str and type(args.m
             list_dict_metadata.append(build_dict_metadata_swft('SLAC', 'txt', filePaths_metadata_dataset[i], filePaths_metadata_folder[0])) # Actual values of site and fileFormat are not required here
 
     filePaths_remote = None
+    include_last_dir = False
+    if args.include_last_dir:
+        include_last_dir = True
     test_folder = False
     if args.test_folder:
         test_folder = True
     if args.ssh:
         if type(args.user) == str and type(args.remote) == str:
-            filePaths_remote = transfer_ssh(filePaths_data, list_dict_metadata, args.user, args.remote, args.basedir, test_folder)
+            filePaths_remote = transfer_ssh(filePaths_data, list_dict_metadata, args.user, args.remote, args.basedir, include_last_dir, test_folder)
         else:
             print('ERROR: missing optional arguments required by --ssh flag: --user, --remote')
     elif args.globus:
         if type(args.access_token) == str and type(args.source_endpoint_id) == str and type(args.dest_endpoint_id) == str:
-            filePaths_remote = transfer_globus(filePaths_data, list_dict_metadata, args.access_token, args.source_endpoint_id, args.dest_endpoint_id, args.basedir, test_folder)
+            filePaths_remote = transfer_globus(filePaths_data, list_dict_metadata, args.access_token, args.source_endpoint_id, args.dest_endpoint_id, args.basedir, include_last_dir, test_folder)
         else:
             print('ERROR: missing optional arguments required by --globus flag: --client_id, --source_endpoint_id, --dest_endpoint_id')
 
