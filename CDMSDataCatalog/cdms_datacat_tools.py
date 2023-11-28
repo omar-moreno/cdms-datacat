@@ -42,10 +42,12 @@ def build_dataset_from_metadata(filePath, dict_metadata):
     print('ERROR: unable to build valid dataset')
     return None
 
-def get_dc_path(dict_metadata, test_folder = False):
-    dataset = build_dataset_from_metadata('', dict_metadata) # First argument (filePath) is not necessary because dataset will not be registered
+def get_dc_path(filePath, dict_metadata, include_last_dir = False, test_folder = False):
+    dataset = build_dataset_from_metadata(filePath, dict_metadata)
 
     if dataset:
+        if include_last_dir:
+            dataset.include_last_dir()
         if test_folder: # To be removed after DC3...
             dataset.enable_test_folder()
         return dataset.relativePath
@@ -104,7 +106,7 @@ def search(path, site = 'All', dofetch = False, fetchargs = {}, **kwargs): # For
         datasets = self.fetch(datasets, **fetchargs)
     return datasets
 
-def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir, test_folder = False):
+def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir, include_last_dir = False, test_folder = False):
     path_local = None
     relativePath = None
 
@@ -117,11 +119,11 @@ def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir, test_fold
             path_local = '/'.join(filePaths[i].split('/')[:-1])
 
         if type(relativePath) == str:
-            if get_dc_path(list_dict_metadata[i], test_folder) != relativePath:
+            if get_dc_path(filePaths[i], list_dict_metadata[i], include_last_dir, test_folder) != relativePath:
                 print('Error: all files must be registered in the same Data Catalog folder')
                 return None
         else:
-            relativePath = get_dc_path(list_dict_metadata[i], test_folder)
+            relativePath = get_dc_path(filePaths[i], list_dict_metadata[i], include_last_dir, test_folder)
 
     path_remote = (basedir+relativePath).replace('//', '/')
     if not path_remote[-1] == '/':
@@ -141,7 +143,7 @@ def get_access_token_globus(client_id):
     transfer_tokens = tokens.by_resource_server['transfer.api.globus.org']
     return transfer_tokens['access_token']
 
-def transfer_globus(filePaths, list_dict_metadata, access_token, source_endpoint_id, dest_endpoint_id, basedir, test_folder = False):
+def transfer_globus(filePaths, list_dict_metadata, access_token, source_endpoint_id, dest_endpoint_id, basedir, include_last_dir = False, test_folder = False):
     # slac#osg: endpoint_id = 'd98c7f90-6d04-11e5-ba46-22000b92c6ec'
     # slac#sdf: endpoint_id = 'dda770be-f428-11eb-ab64-d195c983855c'
     # slac#s3df: endpoint_id = '649de2a6-8a58-11e5-9967-22000b96db58'
@@ -158,7 +160,7 @@ def transfer_globus(filePaths, list_dict_metadata, access_token, source_endpoint
 
     filePaths_remote = []
     for i in range(len(filePaths)):
-        relativePath = get_dc_path(list_dict_metadata[i], test_folder)
+        relativePath = get_dc_path(filePaths[i], list_dict_metadata[i], include_last_dir, test_folder)
         if not relativePath:
             print('Warning: file', filePaths[i], 'will not be transferred (unable to determine Data Catalog path)')
             continue
