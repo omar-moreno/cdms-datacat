@@ -129,7 +129,7 @@ def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir, include_l
     if not path_remote[-1] == '/':
         path_remote += '/'
     print('Transferring files from', path_local+'/', 'to', remote+':'+path_remote)
-    subprocess.run('rsync -a --no-p --rsync-path="mkdir -p '+path_remote+' && rsync" '+path_local+' '+user+'@'+remote+':'+path_remote, shell = True)
+    subprocess.run('rsync -a --no-p --rsync-path="mkdir -p '+path_remote+' && rsync" '+path_local+'/* '+user+'@'+remote+':'+path_remote, shell = True)
     return [path_remote+filePaths[i].split('/')[-1] for i in range(len(filePaths))]
 
 def get_access_token_globus(client_id):
