@@ -4,7 +4,7 @@ from setuptools import setup
 from glob import glob
 
 setup(name='CDMSDataCatalog',
-      version='0.7.6',
+      version='0.8',
       packages=['CDMSDataCatalog'],
       install_requires=[
           'datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git@0.6.4#subdirectory=client/python',
