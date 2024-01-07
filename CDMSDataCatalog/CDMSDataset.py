@@ -491,7 +491,8 @@ class ProdSimDataset(CDMSDataset):
 
     def __init__(self,
                  filename, filePath, dataType, site, fileFormat, # Required by constructor of CDMSDataset base class
-                 OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
+                 OfflineRelease, Source, DetType, nEvAll,
+                 nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None, # Used to assign folder in Data Catalog
                  Ancestorpath = None): # Predecessor information
         """Constructor for the CDMS DMCintermediate dataset class
@@ -521,16 +522,22 @@ class ProdSimDataset(CDMSDataset):
             print('ERROR: FridgeRun and ProdTag are undefined, will be required to build folder path')
         self.relativePath_common = self.relativePath
 
-        self.metadata['Source'       ] = Source
-        self.metadata['DetType'      ] = DetType
-        self.metadata['EnergyDeposit'] = EnergyDeposit
-        self.metadata['nEvAll'       ] = nEvAll
+        self.metadata['Source' ] = Source
+        self.metadata['DetType'] = DetType
+        self.metadata['nEvAll' ] = nEvAll
+        if Source == 'WIMP':
+            self.metadata['nWimpMass'] = nWimpMass
+        if Source == 'DMCER' or Source == 'DMCNR':
+            self.metadata['EnergyDeposit'] = EnergyDeposit
 
         self.metadata_folder['OfflineRelease'] = OfflineRelease
         self.metadata_folder['Source'        ] = Source
         self.metadata_folder['Facility'      ] = dataType
         self.metadata_folder['DetType'       ] = DetType
-        self.metadata_folder['EnergyDeposit' ] = EnergyDeposit
+        if Source == 'WIMP':
+            self.metadata_folder['nWimpMass'] = nWimpMass
+        if Source == 'DMCER' or Source == 'DMCNR':
+            self.metadata_folder['EnergyDeposit' ] = EnergyDeposit
 
         self.required_values = {} # To be also filled in the constructor of each specific class, if necessary
         self.required_values['Facility'] = ['ANIMAL',
@@ -629,11 +636,13 @@ class ParticleHits(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 OfflineRelease, Source, Facility, DetType, nEvAll,
+                 nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
+                                OfflineRelease, Source, DetType, nEvAll,
+                                nWimpMass, EnergyDeposit,
                                 FridgeRun, MCSetup, MCType, MCVersion)
         if self.metadata_folder['OfflineRelease'].find('SuperSim') == 0:
             self.relativePath += '/SourceSim/'+self.metadata_folder['OfflineRelease']
@@ -645,12 +654,14 @@ class DMCintermediate(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 OfflineRelease, Source, Facility, DetType, nEvAll,
+                 nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
+                                OfflineRelease, Source, DetType, nEvAll,
+                                nWimpMass, EnergyDeposit,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
         if self.metadata_folder['OfflineRelease'].find('SuperSim') == 0:
@@ -663,14 +674,16 @@ class RawSim(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon, nAddNoise,
                  nDataType, nDumps, nDump, nEvBORR, nFirstTriggerId, nLastTriggerId,
+                 nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
+                                OfflineRelease, Source, DetType, nEvAll,
+                                nWimpMass, EnergyDeposit,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
         if self.metadata_folder['OfflineRelease'].find('DAQSim') == 0:
@@ -697,16 +710,18 @@ class ProcessedSim(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, nEvBORR,
                  ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                 nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, EnergyDeposit, nEvAll,
+                                OfflineRelease, Source, DetType, nEvAll,
+                                nWimpMass, EnergyDeposit,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
         if self.metadata_folder['OfflineRelease'].find('CDMSBats') == 0:
@@ -742,20 +757,22 @@ class BatNoiseSim(ProcessedSim):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, nEvBORR,
                  ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                 nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProcessedSim.__init__(self,
                               filename, filePath, site, fileFormat,
-                              OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                              OfflineRelease, Source, Facility, DetType, nEvAll,
                               Series, IOLibrary, BatCommon,
                               nDataType, nEvBORR,
                               ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                               CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                              nWimpMass, EnergyDeposit,
                               FridgeRun, MCSetup, MCType, MCVersion,
                               Ancestorpath)
         self.relativePath += '/Noise'
@@ -764,20 +781,22 @@ class UnmergedBatRootSim(ProcessedSim):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, nDump, nEvBORR,
                  ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                 nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProcessedSim.__init__(self,
                               filename, filePath, site, fileFormat,
-                              OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                              OfflineRelease, Source, Facility, DetType, nEvAll,
                               Series, IOLibrary, BatCommon,
                               nDataType, nEvBORR,
                               ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                               CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                              nWimpMass, EnergyDeposit,
                               FridgeRun, MCSetup, MCType, MCVersion,
                               Ancestorpath)
         self.relativePath += '/Unmerged'
@@ -788,20 +807,22 @@ class UnmergedBatCalibSim(ProcessedSim):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, nDump, nEvBORR,
                  ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                 nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProcessedSim.__init__(self,
                               filename, filePath, site, fileFormat,
-                              OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                              OfflineRelease, Source, Facility, DetType, nEvAll,
                               Series, IOLibrary, BatCommon,
                               nDataType, nEvBORR,
                               ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                               CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                              nWimpMass, EnergyDeposit,
                               FridgeRun, MCSetup, MCType, MCVersion,
                               Ancestorpath)
         self.relativePath += '/Unmerged'
@@ -812,20 +833,22 @@ class SubmergedBatRootSim(ProcessedSim):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, nEvBORR,
                  ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                 nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProcessedSim.__init__(self,
                               filename, filePath, site, fileFormat,
-                              OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                              OfflineRelease, Source, Facility, DetType, nEvAll,
                               Series, IOLibrary, BatCommon,
                               nDataType, nEvBORR,
                               ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                               CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                              nWimpMass, EnergyDeposit,
                               FridgeRun, MCSetup, MCType, MCVersion,
                               Ancestorpath)
         self.relativePath += '/Submerged'
@@ -834,20 +857,22 @@ class SubmergedBatCalibSim(ProcessedSim):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                 OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, nEvBORR,
                  ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                 nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProcessedSim.__init__(self,
                               filename, filePath, site, fileFormat,
-                              OfflineRelease, Source, Facility, DetType, EnergyDeposit, nEvAll,
+                              OfflineRelease, Source, Facility, DetType, nEvAll,
                               Series, IOLibrary, BatCommon,
                               nDataType, nEvBORR,
                               ProcessingConfig, CalibAnalysisConfig, CalibProcessingConfig, AnalysisConfig,
                               CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
+                              nWimpMass, EnergyDeposit,
                               FridgeRun, MCSetup, MCType, MCVersion,
                               Ancestorpath)
         self.relativePath += '/Submerged'
