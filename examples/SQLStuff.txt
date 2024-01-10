@@ -1,0 +1,10 @@
+SQL for registering raw data
+-----------------------------
+
+Table for modes
+select * from series_modes;
+
+select id, series, mode, nevents from series where series = '';
+
+select series_id, postrun_selection from postrun_comments where series_id = (number);
+
