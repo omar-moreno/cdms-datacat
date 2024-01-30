@@ -501,8 +501,8 @@ class ProdSimDataset(CDMSDataset):
         dataType   - Required values: 'ANIMAL', 'CUTE', 'NEXUS', 'NoLab', 'SLAC', 'SNOLAB', 'Soudan', 'TRIUMF', 'UCB', 'UMN'
         site       - For example, 'SLAC'
         fileFormat - For example, 'root' or 'txt'
-        """ 
-        CDMSDataset.__init__(self, filename, filePath, dataType, site, fileFormat)
+        """
+        CDMSDataset.__init__(self, filename, filePath.replace('//', '/'), dataType, site, fileFormat)
         self.metadata_folder = Metadata()
         self.path_is_valid = False
 
