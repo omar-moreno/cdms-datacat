@@ -733,6 +733,7 @@ class ProcessedSim(ProdSimDataset):
         self.metadata['nDataType'            ] = nDataType
         self.metadata['nEvBORR'              ] = nEvBORR
         self.metadata['ProdStep'             ] = ProdStep
+        self.metadata['nMergeLevel'          ] = nMergeLevel
         self.metadata['ProcessingConfig'     ] = ProcessingConfig
         self.metadata['CalibProcessingConfig'] = CalibProcessingConfig
         self.metadata['AnalysisConfig'       ] = AnalysisConfig
@@ -741,7 +742,6 @@ class ProcessedSim(ProdSimDataset):
         self.metadata_folder['IOLibrary'              ] = IOLibrary
         self.metadata_folder['BatCommon'              ] = BatCommon
         self.metadata_folder['nDataType'              ] = nDataType
-        self.metadata_folder['nMergeLevel'            ] = nMergeLevel
         self.metadata_folder['ProcessingConfig'       ] = ProcessingConfig
         self.metadata_folder['CalibProcessingConfig'  ] = CalibProcessingConfig
         self.metadata_folder['AnalysisConfig'         ] = AnalysisConfig
