@@ -20,21 +20,16 @@ def build_dataset_from_metadata(filePath, dict_metadata):
         elif dict_metadata['SimStage'] == 'DAQSim':
             dataset = RawSim(**input_ds)
         elif dict_metadata['SimStage'] == 'Processed':
-            if 'BatCategory' in dict_metadata.keys():
-                input_ds.pop('BatCategory')
-                if dict_metadata['BatCategory'] == 'BatNoise':
-                    dataset = BatNoiseSim(**input_ds)
-                elif dict_metadata['BatCategory'] == 'BatRoot_unmerged':
-                    dataset = UnmergedBatRootSim(**input_ds)
-                elif dict_metadata['BatCategory'] == 'BatRoot_submerged':
-                    dataset = SubmergedBatRootSim(**input_ds)
-                elif dict_metadata['BatCategory'] == 'BatCalib_unmerged':
-                    dataset = UnmergedBatCalibSim(**input_ds)
-                elif dict_metadata['BatCategory'] == 'BatCalib_submerged':
-                    dataset = SubmergedBatCalibSim(**input_ds)
-            else:
-                print('ERROR: BatCategory info is required if SimStage == Processed')
-                return None
+            if 'ProdStep' in dict_metadata.keys():
+                if dict_metadata['ProdStep'] == 'BatNoise':
+                    dataset = NoiseSim(**input_ds)
+                elif 'nMergeLevel' in dict_metadata.keys():
+                    if dict_metadata['nMergeLevel'] == 0:
+                        dataset = UnmergedSim(**input_ds)
+                    elif dict_metadata['nMergeLevel'] == 1:
+                        dataset = SubmergedSim(**input_ds)
+                    elif dict_metadata['nMergeLevel'] == 2: # For consistency with the actual processed data
+                        dataset = MergedSim(**input_ds)
 
     if dataset:
         if dataset.check_conventions():
@@ -106,6 +101,19 @@ def search(path, site = 'All', dofetch = False, fetchargs = {}, **kwargs): # For
         datasets = self.fetch(datasets, **fetchargs)
     return datasets
 
+def find_nDump_from_nTriggerId(Series, nTriggerId, Facility, nFridgeRun, site = 'All'):
+    relativePath = '/CDMS/'+Facility+'/R'+str(nFridgeRun)
+    config = pkg_resources.resource_filename(__name__, 'cfg/default.cfg')
+    dc = CDMSDataCatalog(config)
+    datasets = dc.search(relativePath+'/**', site = site, query = 'Series eq "'+Series+'" and nFirstTriggerId lteq '+str(nTriggerId)+' and nLastTriggerId gteq '+str(nTriggerId))
+    if len(datasets) == 1:
+        return dc.get(datasets[0].relativePath).metadata['nDump'] 
+    if len(datasets) == 0:
+        print('ERROR: no files found for Series = '+Series+' and nTriggerId = '+str(nTriggerId))
+    else:
+        print('ERROR: multiple files found for Series = '+Series+' and nTriggerId = '+str(nTriggerId))
+    return None
+
 def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir, include_last_dir = False, test_folder = False):
     path_local = None
     relativePath = None
@@ -113,14 +121,14 @@ def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir, include_l
     for i in range(len(filePaths)):
         if type(path_local) == str:
             if '/'.join(filePaths[i].split('/')[:-1]) != path_local:
-                print('Error: all files must be in the same local directory')
+                print('ERROR: all files must be in the same local directory')
                 return None
         else:
             path_local = '/'.join(filePaths[i].split('/')[:-1])
 
         if type(relativePath) == str:
             if get_dc_path(filePaths[i], list_dict_metadata[i], include_last_dir, test_folder) != relativePath:
-                print('Error: all files must be registered in the same Data Catalog folder')
+                print('ERROR: all files must be registered in the same Data Catalog folder')
                 return None
         else:
             relativePath = get_dc_path(filePaths[i], list_dict_metadata[i], include_last_dir, test_folder)
@@ -162,7 +170,7 @@ def transfer_globus(filePaths, list_dict_metadata, access_token, source_endpoint
     for i in range(len(filePaths)):
         relativePath = get_dc_path(filePaths[i], list_dict_metadata[i], include_last_dir, test_folder)
         if not relativePath:
-            print('Warning: file', filePaths[i], 'will not be transferred (unable to determine Data Catalog path)')
+            print('WARNING: file', filePaths[i], 'will not be transferred (unable to determine Data Catalog path)')
             continue
 
         # Creating the directory structure given by relativePath, if necessary
