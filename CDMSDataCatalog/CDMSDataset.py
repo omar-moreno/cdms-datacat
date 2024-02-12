@@ -725,9 +725,9 @@ class ProcessedSim(ProdSimDataset):
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
         if self.metadata_folder['OfflineRelease'].find('CDMSBats') == 0:
-            self.relativePath += '/Processed/'+self.metadata_folder['OfflineRelease']+'_P'+ProcessingConfig
+            self.relativePath += '/Processed/'+self.metadata_folder['OfflineRelease']+'_P'+CdmsBatsSettings[1:]
         else:
-            self.relativePath += '/Processed/V'+self.metadata_folder['OfflineRelease']+'_P'+ProcessingConfig
+            self.relativePath += '/Processed/V'+self.metadata_folder['OfflineRelease']+'_P'+CdmsBatsSettings[1:]
 
         self.metadata['Series'               ] = Series
         self.metadata['nDataType'            ] = nDataType
