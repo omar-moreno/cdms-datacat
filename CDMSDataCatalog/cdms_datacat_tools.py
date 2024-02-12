@@ -231,3 +231,35 @@ def build_dict_metadata_swft(site, fileFormat, filePath_metadata_dataset, filePa
     if (dict_metadata['SimStage'] == 'SourceSim' or dict_metadata['SimStage'] == 'DMC') and 'Series' in dict_metadata.keys(): # This statement might not be necessary in the future
         dict_metadata.pop('Series')
     return dict_metadata
+
+def group(name, filePaths = []):
+    relativePath = name  # Not enforcing any conventions on relativePath
+    if name.find('/CDMS/') != 0:
+        relativePath = ('/CDMS/'+relativePath).replace('//', '/')
+    if relativePath[-1] == '/':
+        relativePath = relativePath[:-1]
+
+    dc_default = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/default.cfg'))
+    dc_prod    = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/prod.cfg'   ))
+
+    if not dc_default.exist(relativePath):
+        dc_prod.mkgroup(relativePath, parents = True) # Not attaching any metadata to group
+
+    datasets = []
+    for filePath in filePaths:
+        try:
+            if filePath.find('/CDMS/') == 0: # Case 1: filePath is Data Catalog path
+                datasets.append(dc_default.get(filePath))
+            elif filePath.count('/CDMS/') == 1: # Case 2: filePath is actual path on disk, requires single occurrence of '/CDMS/'
+                datasets.append(dc_default.get('/CDMS/'+filePath.split('/CDMS/')))
+        except:
+            print('ERROR: cannot find Data Catalog entry for file '+filePath)
+            return False
+
+        datasets[-1].relativePath = relativePath+'/'+datasets[-1].relativePath.split('/')[-1]
+
+    for dataset in datasets:
+        print(dir(dataset), type(dataset.rawDataset))
+        dc_prod.add(CDMSDataset.fromDataset(dataset))
+        #dc_prod.add(dataset)
+    return True
