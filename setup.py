@@ -7,7 +7,7 @@ setup(name='CDMSDataCatalog',
       version='0.8',
       packages=['CDMSDataCatalog'],
       install_requires=[
-          'datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git@0.6.4#subdirectory=client/python',
+          'datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git@0.6.5#subdirectory=client/python',
           'requests',
           'tqdm',
           'Click',
