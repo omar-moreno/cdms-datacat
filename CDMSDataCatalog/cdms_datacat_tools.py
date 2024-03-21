@@ -101,8 +101,10 @@ def search(path, site = 'All', dofetch = False, fetchargs = {}, **kwargs): # For
         datasets = self.fetch(datasets, **fetchargs)
     return datasets
 
-def find_nDump_from_nTriggerId(Series, nTriggerId, Facility, nFridgeRun, site = 'All'):
-    relativePath = '/CDMS/'+Facility+'/R'+str(nFridgeRun)
+def find_nDump_from_nTriggerId(Series, nTriggerId, Facility, nFridgeRun = None, site = 'All'):
+    relativePath = '/CDMS/'+Facility
+    if type(nFridgeRun) == int:
+        relativePath += '/R'+str(nFridgeRun)
     config = pkg_resources.resource_filename(__name__, 'cfg/default.cfg')
     dc = CDMSDataCatalog(config)
     datasets = dc.search(relativePath+'/**', site = site, query = 'Series eq "'+Series+'" and nFirstTriggerId lteq '+str(nTriggerId)+' and nLastTriggerId gteq '+str(nTriggerId))
@@ -232,34 +234,55 @@ def build_dict_metadata_swft(site, fileFormat, filePath_metadata_dataset, filePa
         dict_metadata.pop('Series')
     return dict_metadata
 
-def group(name, filePaths = []):
-    relativePath = name  # Not enforcing any conventions on relativePath
-    if name.find('/CDMS/') != 0:
-        relativePath = ('/CDMS/'+relativePath).replace('//', '/')
-    if relativePath[-1] == '/':
-        relativePath = relativePath[:-1]
-
+def create_group(groupname):
     dc_default = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/default.cfg'))
     dc_prod    = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/prod.cfg'   ))
 
+    relativePath = groupname.rstrip('/') if groupname.find('/CDMS/')  == 0 else '/CDMS/'+groupname.strip('/') # Not enforcing any conventions on relativePath
+
     if not dc_default.exist(relativePath):
         dc_prod.mkgroup(relativePath, parents = True) # Not attaching any metadata to group
+        return True
+    else:
+        print('WARNING: group '+groupname+' already exists')
+    return False
 
+def add_files_to_group(groupname, filePaths):
+###    dc_default = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/default.cfg'))
+    dc_prod    = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/prod.cfg'   ))
+###    dc_prod = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/default.cfg'))###
+
+    print('1')###
+    relativePath = groupname.rstrip('/') if groupname.find('/CDMS/')  == 0 else '/CDMS/'+groupname.strip('/')
+###    group = dc_default.getgroup(relativePath)
+    print(relativePath)###
+    group = dc_prod.getgroup(relativePath)###
+
+    print('2')###
     datasets = []
     for filePath in filePaths:
         try:
             if filePath.find('/CDMS/') == 0: # Case 1: filePath is Data Catalog path
-                datasets.append(dc_default.get(filePath))
+###                datasets.append(dc_default.get(filePath))
+                datasets.append(dc_prod.get(filePath))###
+                print('3')###
             elif filePath.count('/CDMS/') == 1: # Case 2: filePath is actual path on disk, requires single occurrence of '/CDMS/'
-                datasets.append(dc_default.get('/CDMS/'+filePath.split('/CDMS/')))
+###                datasets.append(dc_default.get('/CDMS/'+filePath.split('/CDMS/')))
+                datasets.append(dc_prod.get('/CDMS/'+filePath.split('/CDMS/')))###
+                print('4')###
         except:
             print('ERROR: cannot find Data Catalog entry for file '+filePath)
             return False
 
-        datasets[-1].relativePath = relativePath+'/'+datasets[-1].relativePath.split('/')[-1]
-
-    for dataset in datasets:
-        print(dir(dataset), type(dataset.rawDataset))
-        dc_prod.add(CDMSDataset.fromDataset(dataset))
-        #dc_prod.add(dataset)
+    print('5')###
+#    breakpoint()###
+    dc_prod.addDependents(group, 'cdmsgroup', dep_datasets = datasets)
+    print('6')###
     return True
+
+def retrieve_files_from_group(groupname, num_datasets = 1000000000):
+    dc_default = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/default.cfg'))
+
+    relativePath = groupname.rstrip('/') if groupname.find('/CDMS/')  == 0 else '/CDMS/'+groupname.strip('/')
+    group = dc_default.getgroup(relativePath)
+    return dc_default.getDependents(group, 'cdmsgroup', 1, num_datasets)
