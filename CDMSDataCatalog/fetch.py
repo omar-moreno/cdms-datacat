@@ -226,7 +226,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
             Otherwise, `filePath` will be `None` and `fetchError` will contain
             more info about the error.
     """
-
     # sanity guard
     if not path:
         return CDMSFetchError(path, error="Empty request")
@@ -288,33 +287,28 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
 
     # now that we have a flat list of `CDMSDataset`s, check each one
     def _check_local(dataset, errifnotfound):
+
+        # If force is set to True, just add the dataset to the list of
+        # that will  be downloaded.
+        if force and not errifnotfound: todownload.append(dataset)
+
+        # Check if the dataset has already been downloaded locally.  If the
+        # file exists but the size does not match the size listed in the
+        # data catalog, download the file again.
         target = get_fetch_path(dataset, dest, destRelative)
-        if target:
-            targetexists = os.path.isfile(target)
-            if targetexists:
-                size = os.path.getsize(target)
-                if dataset.size and size != dataset.size:
-                    if force and not errifnotfound:
-                        todownload.append(dataset)
-                    else:
-                        dataset.fetchError = f"File '{target}' size mismatch"
-                        errors.append(dataset)
-                else:
-                    dataset.filePath = target
-                    success.append(dataset)
+        if os.path.isfile(target):
+            size = os.path.getsize(target)
+            if dataset.size and size != dataset.size:
+                todownload.append(dataset)
             else:
-                if errifnotfound:
-                    dataset.fetchError = f"File '{target}' not found on disk"
-                    errors.append(dataset)
-                else:
-                    todownload.append(dataset)
+                dataset.filePath = target
+                success.append(dataset)
         else:
-            dataset.fetchError = "Unable to determine local disk path"
-            errors.append(dataset)
-                    
+            todownload.append(dataset)
         
     for dataset in tocheck:
         _check_local(dataset, errifnotfound=False)
+    
     tocheck = []
 
     # now download any required files
@@ -363,7 +357,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
             try:
                 pool.shutdown()
             except KeyboardInterrupt as e:
-                print("Aborting download...")
                 pbar.abort = KeyboardInterrupt("User interrupted")
             for dl in dls:
                 if dl.fetchError:
@@ -374,7 +367,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
         tqdm.write("Download finished")
 
     elif todownload:
-        print("Skipping download")
         for dataset in todownload:
             dataset.fetchError = 'Download prevented'
             errors.append(dataset)
