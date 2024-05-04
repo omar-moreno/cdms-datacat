@@ -283,8 +283,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
     allresults = tocheck + errors
     todownload = []
 
-    success = []
-
     # now that we have a flat list of `CDMSDataset`s, check each one
     def _check_local(dataset, errifnotfound):
 
@@ -293,8 +291,10 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
         if force and not errifnotfound: todownload.append(dataset)
 
         # Check if the dataset has already been downloaded locally.  If the
-        # file exists but the size does not match the size listed in the
-        # data catalog, download the file again.
+        # file exists, update the dataset.filePath parameter to the location
+        # of the file. If there is a size mismatch between size listed in the
+        # data catalog and the local file or if the file doesn't exists 
+        # locally, add the file to the download queue.
         target = get_fetch_path(dataset, dest, destRelative)
         if os.path.isfile(target):
             size = os.path.getsize(target)
@@ -302,7 +302,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                 todownload.append(dataset)
             else:
                 dataset.filePath = target
-                success.append(dataset)
         else:
             todownload.append(dataset)
         
