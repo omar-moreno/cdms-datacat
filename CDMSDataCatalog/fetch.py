@@ -347,11 +347,13 @@ def fetchdata(catalog : CDMSDataCatalog, path : str, checkonly : bool = None,
                     # we need to actually do the download
                     targetDir = os.path.dirname(target)
                     pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
-                    if dataset.site == 'OSN':
-                        download_OSN(dataset, target, _callback)
-                    elif dataset.site == 'SLAC':
+                    if 'SLAC' in dataset.getSitePaths():
                         download_web(dataset, target, baseurl, _callback)
-
+                    else:
+                        for site in dataset.getSitePaths().keys() - { 'SLAC' }:
+                            if site == 'OSN':
+                                download_OSN(dataset, target, _callback)
+                                break
                 except BaseException as e:
                     dataset.fetchError = f"Exception during download: {e}"
                 return dataset
