@@ -339,23 +339,36 @@ def fetchdata(catalog : CDMSDataCatalog, path : str, checkonly : bool = None,
                     raise pbar.abort
                 pbar.update(n)
 
-            def _get(dataset):
+            def _get_from_site(dataset, target, site : str):
                 try:
-                    #fail fast in case we've gotten an abort request
-                    _callback(0)
-                    target = get_fetch_path(dataset, dest, destRelative)
-                    # we need to actually do the download
-                    targetDir = os.path.dirname(target)
-                    pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
-                    if 'SLAC' in dataset.getSitePaths():
+                    if site == 'SLAC':
                         download_web(dataset, target, baseurl, _callback)
-                    else:
-                        for site in dataset.getSitePaths().keys() - { 'SLAC' }:
-                            if site == 'OSN':
-                                download_OSN(dataset, target, _callback)
-                                break
-                except BaseException as e:
-                    dataset.fetchError = f"Exception during download: {e}"
+                        return True
+                    elif site == 'OSN':
+                        download_OSN(dataset, target, _callback)
+                        return True
+                    else: return False
+                except requests.exceptions.RequestException as e:
+                    return False
+
+            def _get(dataset):
+
+                #fail fast in case we've gotten an abort request
+                _callback(0)
+                target = get_fetch_path(dataset, dest, destRelative)
+
+                # we need to actually do the download
+                targetDir = os.path.dirname(target)
+                pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
+
+                if _get_from_site(dataset, target, 'SLAC'):
+                    return dataset
+
+                for site in dataset.getSitePaths().keys() - { 'SLAC' }:
+                    if _get_from_site(dataset, target, site):
+                        return dataset
+
+                dataset.fetchError = "Failed to download file."
                 return dataset
             
             pool = ThreadPoolExecutor(max_workers=maxthreads)
