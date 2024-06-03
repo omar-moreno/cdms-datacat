@@ -41,7 +41,8 @@ def get_default_fetchdir():
     """
     # first look for official tier 1/2 locations
     # todo: do this by hostname!
-    testpaths = ['/sdf/group/supercdms/data', 		#SLAC
+    testpaths = ['/fs/ddn/sdf/group/supercdms/data',    #SLAC SDF legacy
+                 '/sdf/data/supercdms/data',            #SLAC S3DF
                  '/scratch/m/mdiamond/mdiamond/data',   #Niagara
                  '/scratch/group/mitchcomp/CDMS/data',  #TAMU HPRC
                  '/scratch/group/cdms/data',            #ManeFrame
