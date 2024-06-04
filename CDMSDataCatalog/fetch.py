@@ -194,9 +194,10 @@ def fetchdata(catalog : CDMSDataCatalog, path : str, checkonly : bool = None,
     """Download a copy of the files pointed by path to the local system, only
     if it is not already found.
 
-    Args:
-      catalog: a CDMSDataCatalog object
-      path:  The file(s) to copy. Can take many forms:
+    Parameters:
+      catalog (CDMSDataCatalog) : a CDMSDataCatalog object
+      path (str, CDMSDataset, CDMSDataGroup, list):  The file(s) to copy. 
+          Can take many forms:
       
         * a single string giving the full data catalog entry path
         * a CDMSDataset
@@ -339,7 +340,21 @@ def fetchdata(catalog : CDMSDataCatalog, path : str, checkonly : bool = None,
                     raise pbar.abort
                 pbar.update(n)
 
-            def _get_from_site(dataset, target, site : str):
+            def _get_from_site(dataset : CDMSDataset, target : str, site : str) -> bool:
+                """
+                Download a file from the specified site.
+
+                Parameters: 
+                    dataset (CDMSDataset): The dataset to download
+                    target (str): Path to location where file will be 
+                        downloaded to.
+                    site (str): The name of the site to download from. The 
+                        valid sites include "SLAC" and "OSN".
+
+                Returns: 
+                    bool: True if the dataset was downloaded correctly, False
+                        otherwise.
+                """
                 try:
                     if site == 'SLAC':
                         download_web(dataset, target, baseurl, _callback)
@@ -352,6 +367,15 @@ def fetchdata(catalog : CDMSDataCatalog, path : str, checkonly : bool = None,
                     return False
 
             def _get(dataset):
+                """
+                Download the specified dataset.
+
+                Parameters: 
+                    dataset (CDMSDataset): The dataset to download.
+
+                Returns: 
+                    CDMSDataset: The downloaded dataset with updated metadata.
+                """
 
                 #fail fast in case we've gotten an abort request
                 _callback(0)
