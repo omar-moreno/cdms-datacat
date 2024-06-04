@@ -194,9 +194,10 @@ def fetchdata(catalog : CDMSDataCatalog, path : str, checkonly : bool = None,
     """Download a copy of the files pointed by path to the local system, only
     if it is not already found.
 
-    Args:
-      catalog: a CDMSDataCatalog object
-      path:  The file(s) to copy. Can take many forms:
+    Parameters:
+      catalog (CDMSDataCatalog) : a CDMSDataCatalog object
+      path (str, CDMSDataset, CDMSDataGroup, list):  The file(s) to copy. 
+          Can take many forms:
       
         * a single string giving the full data catalog entry path
         * a CDMSDataset
@@ -339,21 +340,59 @@ def fetchdata(catalog : CDMSDataCatalog, path : str, checkonly : bool = None,
                     raise pbar.abort
                 pbar.update(n)
 
-            def _get(dataset):
-                try:
-                    #fail fast in case we've gotten an abort request
-                    _callback(0)
-                    target = get_fetch_path(dataset, dest, destRelative)
-                    # we need to actually do the download
-                    targetDir = os.path.dirname(target)
-                    pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
-                    if dataset.site == 'OSN':
-                        download_OSN(dataset, target, _callback)
-                    elif dataset.site == 'SLAC':
-                        download_web(dataset, target, baseurl, _callback)
+            def _get_from_site(dataset : CDMSDataset, target : str, site : str) -> bool:
+                """
+                Download a file from the specified site.
 
-                except BaseException as e:
-                    dataset.fetchError = f"Exception during download: {e}"
+                Parameters: 
+                    dataset (CDMSDataset): The dataset to download
+                    target (str): Path to location where file will be 
+                        downloaded to.
+                    site (str): The name of the site to download from. The 
+                        valid sites include "SLAC" and "OSN".
+
+                Returns: 
+                    bool: True if the dataset was downloaded correctly, False
+                        otherwise.
+                """
+                try:
+                    if site == 'SLAC':
+                        download_web(dataset, target, baseurl, _callback)
+                        return True
+                    elif site == 'OSN':
+                        download_OSN(dataset, target, _callback)
+                        return True
+                    else: return False
+                except requests.exceptions.RequestException as e:
+                    return False
+
+            def _get(dataset):
+                """
+                Download the specified dataset.
+
+                Parameters: 
+                    dataset (CDMSDataset): The dataset to download.
+
+                Returns: 
+                    CDMSDataset: The downloaded dataset with updated metadata.
+                """
+
+                #fail fast in case we've gotten an abort request
+                _callback(0)
+                target = get_fetch_path(dataset, dest, destRelative)
+
+                # we need to actually do the download
+                targetDir = os.path.dirname(target)
+                pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
+
+                if _get_from_site(dataset, target, 'SLAC'):
+                    return dataset
+
+                for site in dataset.getSitePaths().keys() - { 'SLAC' }:
+                    if _get_from_site(dataset, target, site):
+                        return dataset
+
+                dataset.fetchError = "Failed to download file."
                 return dataset
             
             pool = ThreadPoolExecutor(max_workers=maxthreads)
