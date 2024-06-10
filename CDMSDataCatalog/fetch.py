@@ -1,18 +1,21 @@
 """ Utility functions for downloading data to local disk
 """
 
-import pathlib
-from concurrent.futures import ThreadPoolExecutor
-import urllib
-import shutil
+import logging
 import os
+import pathlib
 import requests
+import shutil
 import subprocess
 import sys
-import logging
+import urllib
+
+from CDMSDataCatalog import CDMSDataCatalog
+from .CDMSDataset import CDMSDataset
+from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
-from .CDMSDataset import CDMSDataset
+from typing import List, Union
 #from OSNTools import OSNTools
 
 log = logging.getLogger(__name__)
@@ -41,7 +44,8 @@ def get_default_fetchdir():
     """
     # first look for official tier 1/2 locations
     # todo: do this by hostname!
-    testpaths = ['/sdf/group/supercdms/data', 		#SLAC
+    testpaths = ['/fs/ddn/sdf/group/supercdms/data',    #SLAC SDF legacy
+                 '/sdf/data/supercdms/data',            #SLAC S3DF
                  '/scratch/m/mdiamond/mdiamond/data',   #Niagara
                  '/scratch/group/mitchcomp/CDMS/data',  #TAMU HPRC
                  '/scratch/group/cdms/data',            #ManeFrame
@@ -183,14 +187,18 @@ def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucke
         ##############
     return target
 
-def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True, 
-              maxthreads=None, force=False):
+def fetchdata(catalog : CDMSDataCatalog, path : str, checkonly : bool = None,
+              dest : Union[str, pathlib.Path] = None, 
+              destRelative : bool = True, 
+              maxthreads : int = None, 
+              force : bool = False) -> List[CDMSDataset]:
     """Download a copy of the files pointed by path to the local system, only
     if it is not already found.
 
-    Args:
-      catalog: a CDMSDataCatalog object
-      path:  The file(s) to copy. Can take many forms:
+    Parameters:
+      catalog (CDMSDataCatalog) : a CDMSDataCatalog object
+      path (str, CDMSDataset, CDMSDataGroup, list):  The file(s) to copy. 
+          Can take many forms:
       
         * a single string giving the full data catalog entry path
         * a CDMSDataset
@@ -199,7 +207,7 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
         * a list/tuple of paths/queries/Datasets
 
 
-      checkonly (bool or int): if True, don't download, only look for datasets
+      checkonly (bool): if True, don't download, only look for datasets
                             already present on disk.  If False, download all
                             requested files without prompting. If a number,
                             ask for user confirmation if download is greater
@@ -216,9 +224,8 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
 
       maxthreads (int): If a `path` expands to more than a single dataset, use
                         up to `maxthreads` simultaneous download connections
-      force (bool): If True and a file is found but is bad (usually has wrong
-                    size due to a cancelled download), delete the original 
-                    and attempt to download again
+      force (bool): If True, download the file again regardless of whether it
+                    exists locally. 
     Returns:
       list: A flat list of CDMSDataset objects retrieved. The `filePath`
             attribute on each object will be set to the found/downloaded file
@@ -226,7 +233,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
             Otherwise, `filePath` will be `None` and `fetchError` will contain
             more info about the error.
     """
-
     # sanity guard
     if not path:
         return CDMSFetchError(path, error="Empty request")
@@ -284,37 +290,31 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
     allresults = tocheck + errors
     todownload = []
 
-    success = []
-
     # now that we have a flat list of `CDMSDataset`s, check each one
     def _check_local(dataset, errifnotfound):
+
+        # If force is set to True, just add the dataset to the list of
+        # that will  be downloaded.
+        if force and not errifnotfound: todownload.append(dataset)
+
+        # Check if the dataset has already been downloaded locally.  If the
+        # file exists, update the dataset.filePath parameter to the location
+        # of the file. If there is a size mismatch between size listed in the
+        # data catalog and the local file or if the file doesn't exists 
+        # locally, add the file to the download queue.
         target = get_fetch_path(dataset, dest, destRelative)
-        if target:
-            targetexists = os.path.isfile(target)
-            if targetexists:
-                size = os.path.getsize(target)
-                if dataset.size and size != dataset.size:
-                    if force and not errifnotfound:
-                        todownload.append(dataset)
-                    else:
-                        dataset.fetchError = f"File '{target}' size mismatch"
-                        errors.append(dataset)
-                else:
-                    dataset.filePath = target
-                    success.append(dataset)
+        if os.path.isfile(target):
+            size = os.path.getsize(target)
+            if dataset.size and size != dataset.size:
+                todownload.append(dataset)
             else:
-                if errifnotfound:
-                    dataset.fetchError = f"File '{target}' not found on disk"
-                    errors.append(dataset)
-                else:
-                    todownload.append(dataset)
+                dataset.filePath = target
         else:
-            dataset.fetchError = "Unable to determine local disk path"
-            errors.append(dataset)
-                    
+            todownload.append(dataset)
         
     for dataset in tocheck:
         _check_local(dataset, errifnotfound=False)
+    
     tocheck = []
 
     # now download any required files
@@ -341,21 +341,59 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
                     raise pbar.abort
                 pbar.update(n)
 
-            def _get(dataset):
-                try:
-                    #fail fast in case we've gotten an abort request
-                    _callback(0)
-                    target = get_fetch_path(dataset, dest, destRelative)
-                    # we need to actually do the download
-                    targetDir = os.path.dirname(target)
-                    pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
-                    if dataset.site == 'OSN':
-                        download_OSN(dataset, target, _callback)
-                    elif dataset.site == 'SLAC':
-                        download_web(dataset, target, baseurl, _callback)
+            def _get_from_site(dataset : CDMSDataset, target : str, site : str) -> bool:
+                """
+                Download a file from the specified site.
 
-                except BaseException as e:
-                    dataset.fetchError = f"Exception during download: {e}"
+                Parameters: 
+                    dataset (CDMSDataset): The dataset to download
+                    target (str): Path to location where file will be 
+                        downloaded to.
+                    site (str): The name of the site to download from. The 
+                        valid sites include "SLAC" and "OSN".
+
+                Returns: 
+                    bool: True if the dataset was downloaded correctly, False
+                        otherwise.
+                """
+                try:
+                    if site == 'SLAC':
+                        download_web(dataset, target, baseurl, _callback)
+                        return True
+                    elif site == 'OSN':
+                        download_OSN(dataset, target, _callback)
+                        return True
+                    else: return False
+                except requests.exceptions.RequestException as e:
+                    return False
+
+            def _get(dataset):
+                """
+                Download the specified dataset.
+
+                Parameters: 
+                    dataset (CDMSDataset): The dataset to download.
+
+                Returns: 
+                    CDMSDataset: The downloaded dataset with updated metadata.
+                """
+
+                #fail fast in case we've gotten an abort request
+                _callback(0)
+                target = get_fetch_path(dataset, dest, destRelative)
+
+                # we need to actually do the download
+                targetDir = os.path.dirname(target)
+                pathlib.Path(targetDir).mkdir(parents=True, exist_ok=True)
+
+                if _get_from_site(dataset, target, 'SLAC'):
+                    return dataset
+
+                for site in dataset.getSitePaths().keys() - { 'SLAC' }:
+                    if _get_from_site(dataset, target, site):
+                        return dataset
+
+                dataset.fetchError = "Failed to download file."
                 return dataset
             
             pool = ThreadPoolExecutor(max_workers=maxthreads)
@@ -363,7 +401,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
             try:
                 pool.shutdown()
             except KeyboardInterrupt as e:
-                print("Aborting download...")
                 pbar.abort = KeyboardInterrupt("User interrupted")
             for dl in dls:
                 if dl.fetchError:
@@ -374,7 +411,6 @@ def fetchdata(catalog, path, checkonly=None, dest=None, destRelative=True,
         tqdm.write("Download finished")
 
     elif todownload:
-        print("Skipping download")
         for dataset in todownload:
             dataset.fetchError = 'Download prevented'
             errors.append(dataset)
