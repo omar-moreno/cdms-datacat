@@ -675,7 +675,7 @@ class RawSim(ProdSimDataset):
                  filename, filePath, site, fileFormat,
                  OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon, nAddNoise,
-                 nDataType, nDumps, nDump, nEvBORR, nFirstTriggerId, nLastTriggerId,
+                 nDataType, nDumps, nDump, nEvBORR, nEvEORR, nFirstTriggerId, nLastTriggerId,
                  nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
@@ -694,6 +694,7 @@ class RawSim(ProdSimDataset):
         self.metadata['nDataType'      ] = nDataType
         self.metadata['nDump'          ] = nDump
         self.metadata['nEvBORR'        ] = nEvBORR
+        self.metadata['nEvEORR'        ] = nEvEORR
         self.metadata['nFirstTriggerId'] = nFirstTriggerId
         self.metadata['nLastTriggerId' ] = nLastTriggerId
 
@@ -711,7 +712,7 @@ class ProcessedSim(ProdSimDataset):
                  filename, filePath, site, fileFormat,
                  OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
-                 nDataType, nEvBORR,
+                 nDataType, nEvBORR, nEvEORR,
                  ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
@@ -732,6 +733,7 @@ class ProcessedSim(ProdSimDataset):
         self.metadata['Series'               ] = Series
         self.metadata['nDataType'            ] = nDataType
         self.metadata['nEvBORR'              ] = nEvBORR
+        self.metadata['nEvEORR'              ] = nEvEORR
         self.metadata['ProdStep'             ] = ProdStep
         self.metadata['nMergeLevel'          ] = nMergeLevel
         self.metadata['ProcessingConfig'     ] = ProcessingConfig
@@ -767,7 +769,7 @@ class NoiseSim(ProcessedSim):
                  filename, filePath, site, fileFormat,
                  OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
-                 nDataType, nEvBORR,
+                 nDataType, nEvBORR, nEvBORR,
                  ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
@@ -778,7 +780,7 @@ class NoiseSim(ProcessedSim):
                               filename, filePath, site, fileFormat,
                               OfflineRelease, Source, Facility, DetType, nEvAll,
                               Series, IOLibrary, BatCommon,
-                              nDataType, nEvBORR,
+                              nDataType, nEvBORR, nEvEORR,
                               ProdStep, nMergeLevel,
                               ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
                               CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
@@ -793,7 +795,7 @@ class UnmergedSim(ProcessedSim):
                  filename, filePath, site, fileFormat,
                  OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
-                 nDataType, nDump, nEvBORR,
+                 nDataType, nDump, nEvBORR, nEvEORR,
                  ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
@@ -804,7 +806,7 @@ class UnmergedSim(ProcessedSim):
                               filename, filePath, site, fileFormat,
                               OfflineRelease, Source, Facility, DetType, nEvAll,
                               Series, IOLibrary, BatCommon,
-                              nDataType, nEvBORR,
+                              nDataType, nEvBORR, nEvEORR,
                               ProdStep, nMergeLevel,
                               ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
                               CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
@@ -821,7 +823,7 @@ class SubmergedSim(ProcessedSim):
                  filename, filePath, site, fileFormat,
                  OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
-                 nDataType, nEvBORR,
+                 nDataType, nEvBORR, nEvEORR,
                  ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
@@ -832,7 +834,7 @@ class SubmergedSim(ProcessedSim):
                               filename, filePath, site, fileFormat,
                               OfflineRelease, Source, Facility, DetType, nEvAll,
                               Series, IOLibrary, BatCommon,
-                              nDataType, nEvBORR,
+                              nDataType, nEvBORR, nEvEORR,
                               ProdStep, nMergeLevel,
                               ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
                               CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
@@ -847,7 +849,7 @@ class MergedSim(ProcessedSim):
                  filename, filePath, site, fileFormat,
                  OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
-                 nDataType, nEvBORR,
+                 nDataType, nEvBORR, nEvEORR,
                  ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
@@ -858,7 +860,7 @@ class MergedSim(ProcessedSim):
                               filename, filePath, site, fileFormat,
                               OfflineRelease, Source, Facility, DetType, nEvAll,
                               Series, IOLibrary, BatCommon,
-                              nDataType, nEvBORR,
+                              nDataType, nEvBORR, nEvEORR,
                               ProdStep, nMergeLevel,
                               ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
                               CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
