@@ -769,7 +769,7 @@ class NoiseSim(ProcessedSim):
                  filename, filePath, site, fileFormat,
                  OfflineRelease, Source, Facility, DetType, nEvAll,
                  Series, IOLibrary, BatCommon,
-                 nDataType, nEvBORR, nEvBORR,
+                 nDataType, nEvBORR, nEvEORR,
                  ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
                  CdmsBats, CdmsBatsSettings, CdmsBatsPath, CdmsBatsSettingsPath, nIsCdmsBatsProd, nIsCdmsBatsSettingsProd,
