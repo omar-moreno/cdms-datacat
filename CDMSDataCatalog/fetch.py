@@ -187,6 +187,23 @@ def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucke
         ##############
     return target
 
+def download_globus():
+    CLIENT_ID = "fee777c7-94da-4677-a7be-cf75821cc4b" 
+    client = globus.sdk.NativeAppAuthClient(CLIENT_ID)
+    def _get_transfer_client():
+        client.oauth2_start_flow(requested_scopes=TransferScopes.all)
+        auth_url = client.oauth2_get_authorize_url()
+        print(f"Please go to this URL and login:\n\n{auth_url}\n")
+        
+        auth_code = input("Please enter the code here: ").strip()
+        tokens = client.oauth2_exchange_code_for_tokens(auth_code)
+        transfer_tokens = tokens.by_resource_server["transfer.api.globus.org"]
+
+        # return the TransferClient object, as the result of doing a login
+        return globus_sdk.TransferClient(
+            authorizer=globus_sdk.AccessTokenAuthorizer(transfer_tokens["access_token"])
+        )
+
 def fetchdata(catalog : CDMSDataCatalog, path : str, checkonly : bool = None,
               dest : Union[str, pathlib.Path] = None, 
               destRelative : bool = True, 
