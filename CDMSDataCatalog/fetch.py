@@ -187,10 +187,44 @@ def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucke
         ##############
     return target
 
-def download_globus():
-    CLIENT_ID = "fee777c7-94da-4677-a7be-cf75821cc4b" 
-    client = globus.sdk.NativeAppAuthClient(CLIENT_ID)
+import globus_sdk
+from globus_sdk.scopes import TransferScopes
+
+def fetch_globus(dc : CDMSDataCatalog, path : str,
+                 dest_coll_id : str,
+                 dest_path : str,
+                 # The default is the collection ID for S3DF.
+                 source_coll_id : str = "31f8393f-79ef-4da4-a395-7127edd9b3a4",
+                 site : str = 'SLAC') -> None:
+    """Transfer the files in the given path using Globus. Note, this method
+    simply creates the request and submits it to Globus for transfer.  The
+    status of the transfer can be checked via the web interface.
+
+    Parameters:
+        catalog (CDMSDataCatalog) : a CDMSDataCatalog object.
+
+        path (str) : Data catalog path to the files that will be transferred.
+                     The path will be passed directly to the clients search
+                     function in order to retrieve all files and metadata
+                     necessary to build the Globus query.
+
+        source_coll_id (str) : The Globus UUID of the source endpoint.
+
+        dest_coll_id (str) : The Globus UUID of the destination endpoint.
+
+        dest_path (str) : The path to where the files will be transferred to.
+
+    """
     def _get_transfer_client():
+        """Initialize and return the Globus transfer client. This requires to
+        authenticate by login into the given URL and inputing the displayed
+        code into the command line.  If successful, the function will exit
+        without an error. Note, the client ID was assigned by registering the
+        app with Globus and is not secret.
+        """
+        CLIENT_ID = "fee777c7-94da-4677-a7be-cf758521cc4b"
+        client = globus_sdk.NativeAppAuthClient(CLIENT_ID)
+
         client.oauth2_start_flow(requested_scopes=TransferScopes.all)
         auth_url = client.oauth2_get_authorize_url()
         print(f"Please go to this URL and login:\n\n{auth_url}\n")
@@ -203,6 +237,29 @@ def download_globus():
         return globus_sdk.TransferClient(
             authorizer=globus_sdk.AccessTokenAuthorizer(transfer_tokens["access_token"])
         )
+
+    # Initialize the transfer client.
+    transfer_client = _get_transfer_client()
+
+    # Create the task that will be submitted to Globus.
+    task_data = globus_sdk.TransferData(source_endpoint=source_coll_id,
+                                        destination_endpoint=dest_coll_id)
+
+    # Recursively retrieve the files at the site of interest. The default site
+    # is SLAC.
+    datasets = dc.client.search(path, site=site)
+
+    # Add all files locations and destinations to the Globus request.
+    for dataset in datasets:
+        task_data.add_item(
+            dataset.locations[0].resource,
+            dest_path+dataset.name
+        )
+
+    # Submit the request.
+    task_doc = transfer_client.submit_transfer(task_data)
+    task_id = task_doc["task_id"]
+    print(f"submitted transfer, task_id={task_id}")
 
 def fetchdata(catalog : CDMSDataCatalog, path : str, checkonly : bool = None,
               dest : Union[str, pathlib.Path] = None, 
