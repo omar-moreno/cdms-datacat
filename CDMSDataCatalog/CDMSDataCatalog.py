@@ -6,7 +6,7 @@ import pathlib
 import pkg_resources
 import logging
 
-from .fetch import fetchdata, get_default_fetchdir
+from .fetch import fetchdata, get_default_fetchdir, fetch_globus
 from .CDMSDataset import CDMSDataset
 from .CDMSGroup import CDMSGroup
 from . import paths
@@ -316,6 +316,10 @@ class CDMSDataCatalog:
         """ fetch (download) dataset at `path`.
         See `CDMSDataCatalog.fetch.fetchdata` for
         different possible forms for `path` and additional arguments"""
+        if kwargs.get('globus', False): 
+            fetch_globus(self, path, "448bfdaa-3269-11ef-8875-2b3122c1d121",
+                         "/home/omoreno/projects/supercdms/globus/")
+            return []
         kwargs.setdefault('dest', self.default_fetchdir)
         return fetchdata(self, path, **kwargs)
 
