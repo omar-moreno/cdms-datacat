@@ -63,6 +63,10 @@ class CDMSDataCatalog:
         * auth_key_id: authentication id
         * auth_secret_key: authentication public key
         * default_fetchdir: same as `default_fetchdir` argument
+        * globus_destination_endpoint_id: The endpoint ID to which Globus will
+            transfer files to.
+        * globus_destination_path: The path on disk at the destination to which
+            files will be transferred to.
 
         
         """
@@ -84,6 +88,11 @@ class CDMSDataCatalog:
                 pass
         
         self.client = client_from_config(config)
+
+        # These are Globus specific parameters.  They are not used by default
+        # and set to empty strings.
+        self.dest_endpoint_id = config.get('globus_destination_endpoint_id', "")
+        self.dest_path = config.get('globus_destination_path', "")
         
     def ls(self, path='/CDMS/'):
         """ Return contents of a datacat path, by default look in /CDMS/
@@ -313,12 +322,17 @@ class CDMSDataCatalog:
                 raise
 
     def fetch(self, path, **kwargs):
-        """ fetch (download) dataset at `path`.
-        See `CDMSDataCatalog.fetch.fetchdata` for
-        different possible forms for `path` and additional arguments"""
-        if kwargs.get('globus', False): 
-            fetch_globus(self, path, "448bfdaa-3269-11ef-8875-2b3122c1d121",
-                         "/home/omoreno/projects/supercdms/globus/")
+        """ fetch (download) dataset at `path`. See
+        `CDMSDataCatalog.fetch.fetchdata` for different possible forms for
+        `path` and additional arguments. To use globus, pass the parameter
+        `globus = True` and set the parameters `globus_destination_endpoint_id`
+        and `globus_destination_path` to the appropriate values in the
+        configuration file used to initialize a CDMSDataCatalog object.
+        """
+        if kwargs.get('globus', False):
+            if (not self.dest_endpoint_id) or (not self.dest_path):
+                raise ValueError('Failed to specify destination endpoint ID or destination path.')
+            fetch_globus(self, path, self.dest_endpoint_id, self.dest_path)
             return []
         kwargs.setdefault('dest', self.default_fetchdir)
         return fetchdata(self, path, **kwargs)
