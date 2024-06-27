@@ -63,6 +63,7 @@ class CDMSDataCatalog:
         * auth_key_id: authentication id
         * auth_secret_key: authentication public key
         * default_fetchdir: same as `default_fetchdir` argument
+        * globus_source_site: The site from which the Globus transfer will occur.
         * globus_destination_endpoint_id: The endpoint ID to which Globus will
             transfer files to.
         * globus_destination_path: The path on disk at the destination to which
@@ -91,8 +92,9 @@ class CDMSDataCatalog:
 
         # These are Globus specific parameters.  They are not used by default
         # and set to empty strings.
-        self.dest_endpoint_id = config.get('globus_destination_endpoint_id', "")
-        self.dest_path = config.get('globus_destination_path', "")
+        self.globus_site = config.get('globus_source_site', 'SLAC')
+        self.globus_dest_endpoint_id = config.get('globus_destination_endpoint_id', "")
+        self.globus_dest_path = config.get('globus_destination_path', "")
         
     def ls(self, path='/CDMS/'):
         """ Return contents of a datacat path, by default look in /CDMS/
@@ -330,9 +332,11 @@ class CDMSDataCatalog:
         configuration file used to initialize a CDMSDataCatalog object.
         """
         if kwargs.get('globus', False):
-            if (not self.dest_endpoint_id) or (not self.dest_path):
+            if (not self.globus_dest_endpoint_id) or (not self.globus_dest_path):
                 raise ValueError('Failed to specify destination endpoint ID or destination path.')
-            fetch_globus(self, path, self.dest_endpoint_id, self.dest_path)
+            fetch_globus(self, path, self.globus_site, 
+                         self.globus_dest_endpoint_id, 
+                         self.globus_dest_path)
             return []
         kwargs.setdefault('dest', self.default_fetchdir)
         return fetchdata(self, path, **kwargs)

@@ -190,12 +190,12 @@ def download_OSN(dataset, target, progcallback = None, endpointurl = None, bucke
 import globus_sdk
 from globus_sdk.scopes import TransferScopes
 
+endpoint_id = { 'SLAC' : "31f8393f-79ef-4da4-a395-7127edd9b3a4" } 
+
 def fetch_globus(dc : CDMSDataCatalog, path : str,
+                 source_site : str, 
                  dest_coll_id : str,
-                 dest_path : str,
-                 # The default is the collection ID for S3DF.
-                 source_coll_id : str = "31f8393f-79ef-4da4-a395-7127edd9b3a4",
-                 site : str = 'SLAC') -> None:
+                 dest_path : str) -> None: 
     """Transfer the files in the given path using Globus. Note, this method
     simply creates the request and submits it to Globus for transfer.  The
     status of the transfer can be checked via the web interface.
@@ -208,13 +208,22 @@ def fetch_globus(dc : CDMSDataCatalog, path : str,
                      function in order to retrieve all files and metadata
                      necessary to build the Globus query.
 
-        source_coll_id (str) : The Globus UUID of the source endpoint.
+        source_site (str) : The site from where the transfer will happen. 
+                            The UUID of the source site will be retrieved using
+                            the source site.
 
         dest_coll_id (str) : The Globus UUID of the destination endpoint.
 
         dest_path (str) : The path to where the files will be transferred to.
 
     """
+    
+    def _get_endpoint_id(site : str): 
+        return endpoint_id[site]
+
+    # Retrieve the endpoint ID.
+    source_coll_id = _get_endpoint_id(source_site)
+
     def _get_transfer_client():
         """Initialize and return the Globus transfer client. This requires to
         authenticate by login into the given URL and inputing the displayed
@@ -247,7 +256,7 @@ def fetch_globus(dc : CDMSDataCatalog, path : str,
 
     # Recursively retrieve the files at the site of interest. The default site
     # is SLAC.
-    datasets = dc.client.search(path, site=site)
+    datasets = dc.client.search(path, site=source_site)
 
     # Add all files locations and destinations to the Globus request.
     for dataset in datasets:
