@@ -4,4 +4,4 @@ import sys
 from CDMSDataCatalog import get_access_token_globus
 
 client_id = sys.argv[1]
-print(get_access_token_globus(client_id))
+print(get_access_token_globus(client_id, slac = '--slac' in sys.argv[2:]))
