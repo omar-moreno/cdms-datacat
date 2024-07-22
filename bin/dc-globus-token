@@ -9,6 +9,6 @@ parser.add_argument('--consent_data_access')
 args = parser.parse_args()
 
 if type(args.consent_data_access) == str:
-    print(get_access_token_globus(args.client_id, endpoint_id_consent = args.consent_data_access))
+    print(get_access_token_globus(args.client_id, arg_consent = args.consent_data_access))
 else:
     print(get_access_token_globus(args.client_id))
