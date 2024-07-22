@@ -142,14 +142,14 @@ def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir, include_l
     subprocess.run('rsync -a --no-p --rsync-path="mkdir -p '+path_remote+' && rsync" '+path_local+'/* '+user+'@'+remote+':'+path_remote, shell = True)
     return [path_remote+filePaths[i].split('/')[-1] for i in range(len(filePaths))]
 
-def get_access_token_globus(client_id, endpoint_id_consent = None):
+def get_access_token_globus(client_id, arg_consent = None):
     import globus_sdk
     from globus_sdk.scopes import TransferScopes
 
     auth_client = globus_sdk.NativeAppAuthClient(client_id)
     scopes = TransferScopes.all
-    if type(endpoint_id_consent) == str:
-        scopes += '[*https://auth.globus.org/scopes/'+endpoint_id_consent+'/data_access]'
+    if type(arg_consent) == str:
+        scopes += '['+' '.join(['*https://auth.globus.org/scopes/'+endpoint_id+'/data_access' for endpoint_id in arg_consent.split()])+']'
     auth_client.oauth2_start_flow(requested_scopes = scopes)
     auth_code = input('Please go to '+auth_client.oauth2_get_authorize_url()+', and enter here the code provided upon login: ').strip()
     tokens = auth_client.oauth2_exchange_code_for_tokens(auth_code)
