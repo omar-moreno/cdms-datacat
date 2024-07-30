@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
-from CDMSDataCatalog import *
 import sys
+from CDMSDataCatalog import CDMSDataCatalog
 
-
-dc=CDMSDataCatalog()
-if(len(sys.argv) > 1):
-    dc.ls(sys.argv[1])	
-else:
-    dc.ls()
+dc = CDMSDataCatalog()
+for item in dc.ls(sys.argv[1] if len(sys.argv) > 1 else '/CDMS'):
+    print(item)
