@@ -613,10 +613,17 @@ class ProdSimDataset(CDMSDataset):
     def get_ancestors(self, dc_default):
         ancestors = []
         for item in self.Ancestorpath:
-            try:
-                ancestors.append(dc_default.search(self.relativePath_common+'/**', query = 'resource eq "'+item+'"'))
-            except:
-                ancestors.append(None)
+            print('Ancestorpath: ', self.Ancestorpath)
+            # check if ancestor exists under provided path
+            if dc_default.search(self.Ancestorpath):
+                print('Item: ', item)
+                ancestors.append(item)
+            # if not, try to guess the ancestor path
+            else:
+                try:
+                    ancestors.append(dc_default.search(self.relativePath_common+'/**', query = 'resource eq "'+item+'"'))
+                except:
+                    ancestors.append(None)
         return ancestors
 
     def include_last_dir(self):
