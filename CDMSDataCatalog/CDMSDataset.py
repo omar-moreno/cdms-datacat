@@ -613,11 +613,22 @@ class ProdSimDataset(CDMSDataset):
     def get_ancestors(self, dc_default):
         ancestors = []
         for item in self.Ancestorpath:
-            print('Ancestorpath: ', self.Ancestorpath)
+            print('Ancestor item: ', item)
+
+            # Extract the DataCat directory path from the ancestor path
+            full_item_dir, ancestor_filename = os.path.split(item)
+            cdms_index = full_item_dir.find('/CDMS')
+            if cdms_index != -1:
+                # Construct DC path starting with '/CDMS'
+                dc_item_dir = os.path.join('/CDMS/', full_item_dir[cdms_index + len('/CDMS/'):])
+                print('Ancestor path directory: ', dc_item_dir)
+            else:
+                print('Invalid path provided: ', full_item_dir)
+
             # check if ancestor exists under provided path
-            if dc_default.search(self.Ancestorpath):
-                print('Item: ', item)
-                ancestors.append(item)
+            if dc_default.search(dc_item_dir, query = 'resource eq "'+item+'"'):
+                print('Found ancestor: ', dc_item_dir+'/'+ancestor_filename)
+                ancestors.append(dc_default.search(dc_item_dir, query = 'resource eq "'+item+'"'))
             # if not, try to guess the ancestor path
             else:
                 try:
