@@ -1,12 +1,8 @@
 #!/usr/bin/env python
 
-from CDMSDataCatalog import *
 import sys
+from CDMSDataCatalog import CDMSDataCatalog
 
-
-dc=CDMSDataCatalog()
-if(len(sys.argv) > 1):
-    ds=dc.get(sys.argv[1])
-    ds.info()
-else:
-    print 'Enter dataset with full relative path'
+dc = CDMSDataCatalog()
+ds = dc.get(sys.argv[1]) # Argument must be dataset.relativePath
+ds.info()
