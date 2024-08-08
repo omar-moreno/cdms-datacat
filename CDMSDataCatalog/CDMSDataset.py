@@ -491,7 +491,7 @@ class ProdSimDataset(CDMSDataset):
 
     def __init__(self,
                  filename, filePath, dataType, site, fileFormat, # Required by constructor of CDMSDataset base class
-                 OfflineRelease, Source, DetType, nEvAll,
+                 OfflineRelease, Source, nEvAll,
                  nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None, # Used to assign folder in Data Catalog
                  Ancestorpath = None): # Predecessor information
@@ -522,9 +522,8 @@ class ProdSimDataset(CDMSDataset):
             print('ERROR: FridgeRun and ProdTag are undefined, will be required to build folder path')
         self.relativePath_common = self.relativePath
 
-        self.metadata['Source' ] = Source
-        self.metadata['DetType'] = DetType
-        self.metadata['nEvAll' ] = nEvAll
+        self.metadata['Source'] = Source
+        self.metadata['nEvAll'] = nEvAll
         if Source == 'WIMP':
             self.metadata['nWimpMass'] = nWimpMass
         if Source == 'DMCER' or Source == 'DMCNR':
@@ -533,7 +532,6 @@ class ProdSimDataset(CDMSDataset):
         self.metadata_folder['OfflineRelease'] = OfflineRelease
         self.metadata_folder['Source'        ] = Source
         self.metadata_folder['Facility'      ] = dataType
-        self.metadata_folder['DetType'       ] = DetType
         if Source == 'WIMP':
             self.metadata_folder['nWimpMass'] = nWimpMass
         if Source == 'DMCER' or Source == 'DMCNR':
@@ -615,10 +613,27 @@ class ProdSimDataset(CDMSDataset):
     def get_ancestors(self, dc_default):
         ancestors = []
         for item in self.Ancestorpath:
-            try:
-                ancestors.append(dc_default.search(self.relativePath_common+'/**', query = 'resource eq "'+item+'"'))
-            except:
-                ancestors.append(None)
+            print('Ancestor item: ', item)
+            # Extract the DataCat directory path from the ancestor path
+            full_item_dir, ancestor_filename = os.path.split(item)
+            cdms_index = full_item_dir.find('/CDMS')
+            if cdms_index != -1:
+                # Construct DC path starting with '/CDMS'
+                dc_item_dir = os.path.join('/CDMS/', full_item_dir[cdms_index + len('/CDMS/'):])
+                print('Ancestor path directory: ', dc_item_dir)
+            else:
+                print('Invalid path provided: ', full_item_dir)
+
+            # Check if ancestor exists under provided path
+            if dc_default.search(dc_item_dir, query = 'resource eq "'+item+'"'):
+                print('Found ancestor: ', dc_item_dir+'/'+ancestor_filename)
+                ancestors.append(dc_default.search(dc_item_dir, query = 'resource eq "'+item+'"'))
+            # If not, try to guess the ancestor path
+            else:
+                try:
+                    ancestors.append(dc_default.search(self.relativePath_common+'/**', query = 'resource eq "'+item+'"'))
+                except:
+                    ancestors.append(None)
         return ancestors
 
     def include_last_dir(self):
@@ -636,12 +651,12 @@ class ParticleHits(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, nEvAll,
+                 OfflineRelease, Source, Facility, nEvAll,
                  nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, nEvAll,
+                                OfflineRelease, Source, nEvAll,
                                 nWimpMass, EnergyDeposit,
                                 FridgeRun, MCSetup, MCType, MCVersion)
         if self.metadata_folder['OfflineRelease'].find('SuperSim') == 0:
@@ -654,13 +669,13 @@ class DMCintermediate(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, nEvAll,
+                 OfflineRelease, Source, Facility, nEvAll,
                  nWimpMass = None, EnergyDeposit = None,
                  FridgeRun = None, MCSetup = None, MCType = None, MCVersion = None,
                  Ancestorpath = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, nEvAll,
+                                OfflineRelease, Source, nEvAll,
                                 nWimpMass, EnergyDeposit,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
@@ -673,7 +688,7 @@ class RawSim(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, nEvAll,
+                 OfflineRelease, Source, Facility, nEvAll,
                  Series, IOLibrary, BatCommon, nAddNoise,
                  nDataType, nDumps, nDump, nFirstTriggerId, nLastTriggerId,
                  nEvBORR=0, nEvEORR=0,
@@ -682,7 +697,7 @@ class RawSim(ProdSimDataset):
                  Ancestorpath = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, nEvAll,
+                                OfflineRelease, Source, nEvAll,
                                 nWimpMass, EnergyDeposit,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
@@ -711,7 +726,7 @@ class ProcessedSim(ProdSimDataset):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, nEvAll,
+                 OfflineRelease, Source, Facility, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
@@ -722,7 +737,7 @@ class ProcessedSim(ProdSimDataset):
                  Ancestorpath = None):
         ProdSimDataset.__init__(self,
                                 filename, filePath, Facility, site, fileFormat,
-                                OfflineRelease, Source, DetType, nEvAll,
+                                OfflineRelease, Source, nEvAll,
                                 nWimpMass, EnergyDeposit,
                                 FridgeRun, MCSetup, MCType, MCVersion,
                                 Ancestorpath)
@@ -768,7 +783,7 @@ class NoiseSim(ProcessedSim):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, nEvAll,
+                 OfflineRelease, Source, Facility, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
@@ -779,7 +794,7 @@ class NoiseSim(ProcessedSim):
                  Ancestorpath = None):
         ProcessedSim.__init__(self,
                               filename, filePath, site, fileFormat,
-                              OfflineRelease, Source, Facility, DetType, nEvAll,
+                              OfflineRelease, Source, Facility, nEvAll,
                               Series, IOLibrary, BatCommon,
                               nDataType, ProdStep, nMergeLevel,
                               ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
@@ -794,7 +809,7 @@ class UnmergedSim(ProcessedSim):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, nEvAll,
+                 OfflineRelease, Source, Facility, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, nDump, ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
@@ -805,7 +820,7 @@ class UnmergedSim(ProcessedSim):
                  Ancestorpath = None):
         ProcessedSim.__init__(self,
                               filename, filePath, site, fileFormat,
-                              OfflineRelease, Source, Facility, DetType, nEvAll,
+                              OfflineRelease, Source, Facility, nEvAll,
                               Series, IOLibrary, BatCommon,
                               nDataType, ProdStep, nMergeLevel,
                               ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
@@ -822,7 +837,7 @@ class SubmergedSim(ProcessedSim):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, nEvAll,
+                 OfflineRelease, Source, Facility, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
@@ -833,7 +848,7 @@ class SubmergedSim(ProcessedSim):
                  Ancestorpath = None):
         ProcessedSim.__init__(self,
                               filename, filePath, site, fileFormat,
-                              OfflineRelease, Source, Facility, DetType, nEvAll,
+                              OfflineRelease, Source, Facility, nEvAll,
                               Series, IOLibrary, BatCommon,
                               nDataType, ProdStep, nMergeLevel,
                               ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
@@ -848,7 +863,7 @@ class MergedSim(ProcessedSim):
 
     def __init__(self,
                  filename, filePath, site, fileFormat,
-                 OfflineRelease, Source, Facility, DetType, nEvAll,
+                 OfflineRelease, Source, Facility, nEvAll,
                  Series, IOLibrary, BatCommon,
                  nDataType, ProdStep, nMergeLevel,
                  ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
@@ -859,7 +874,7 @@ class MergedSim(ProcessedSim):
                  Ancestorpath = None):
         ProcessedSim.__init__(self,
                               filename, filePath, site, fileFormat,
-                              OfflineRelease, Source, Facility, DetType, nEvAll,
+                              OfflineRelease, Source, Facility, nEvAll,
                               Series, IOLibrary, BatCommon,
                               nDataType, ProdStep, nMergeLevel,
                               ProcessingConfig, CalibProcessingConfig, AnalysisConfig, CalibAnalysisConfig,
