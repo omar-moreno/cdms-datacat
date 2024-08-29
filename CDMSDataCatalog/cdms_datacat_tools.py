@@ -151,11 +151,10 @@ def get_access_token_globus(client_id, arg_consent=None):
     scope = globus_sdk.Scope(TransferScopes.all)
 
     if arg_consent:
-        for collection_id in arg_consent:
+        for collection_id in arg_consent.split():
             print(collection_id)
             collection_scope = GCSCollectionScopeBuilder(collection_id).data_access
-            parsed_scope = globus_sdk.Scope.parse(collection_scope)
-            scope.add_dependency(parsed_scope, optional=True)
+            scope.add_dependency(collection_scope, optional=True)
 
     print(scope)
     auth_client.oauth2_start_flow(requested_scopes=scope)
