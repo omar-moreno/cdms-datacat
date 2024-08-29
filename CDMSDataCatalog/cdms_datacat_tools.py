@@ -143,24 +143,26 @@ def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir, include_l
     return [path_remote+filePaths[i].split('/')[-1] for i in range(len(filePaths))]
 
 
-def get_access_token_globus(client_id, data_access_collections=None):
+def get_access_token_globus(client_id, arg_consent=None):
     import globus_sdk
     from globus_sdk.scopes import TransferScopes, GCSCollectionScopeBuilder
 
     auth_client = globus_sdk.NativeAppAuthClient(client_id)
     scope = globus_sdk.Scope(TransferScopes.all)
 
-    if data_access_collections:
-        for collection_id in data_access_collections:
-            scope.add_dependency(GCSCollectionScopeBuilder(collection_id).data_access, optional=True)
-    
+    if arg_consent:
+        for collection_id in arg_consent:
+            print(collection_id)
+            collection_scope = GCSCollectionScopeBuilder(collection_id).data_access
+            parsed_scope = globus_sdk.Scope.parse(collection_scope)
+            scope.add_dependency(parsed_scope, optional=True)
+
     print(scope)
     auth_client.oauth2_start_flow(requested_scopes=scope)
     auth_code = input('Please go to '+auth_client.oauth2_get_authorize_url()+', and enter here the code provided upon login: ').strip()
     tokens = auth_client.oauth2_exchange_code_for_tokens(auth_code)
     transfer_tokens = tokens.by_resource_server['transfer.api.globus.org']
     return transfer_tokens['access_token']
-
 
 
 def transfer_globus(filePaths, list_dict_metadata, access_token, source_endpoint_id, dest_endpoint_id, basedir, include_last_dir = False, test_folder = False):
