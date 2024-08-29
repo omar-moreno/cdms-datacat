@@ -156,8 +156,7 @@ def get_access_token_globus(client_id, data_access_collections=None):
     
     print(scope)
     auth_client.oauth2_start_flow(requested_scopes=scope)
-    auth_code = input('Please go to '+auth_client.oauth2_get_authorize_url()+', and enter here the code p
-rovided upon login: ').strip()
+    auth_code = input('Please go to '+auth_client.oauth2_get_authorize_url()+', and enter here the code provided upon login: ').strip()
     tokens = auth_client.oauth2_exchange_code_for_tokens(auth_code)
     transfer_tokens = tokens.by_resource_server['transfer.api.globus.org']
     return transfer_tokens['access_token']
