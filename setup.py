@@ -11,7 +11,8 @@ setup(name='CDMSDataCatalog',
           'requests',
           'tqdm',
           'Click',
-          'boto3'
+          'boto3',
+          'globus_cli>=3.30.1'
       ],
       author='Noah Kurinsky',
       author_email='kurinsky@fnal.gov',
