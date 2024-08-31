@@ -142,19 +142,33 @@ def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir, include_l
     subprocess.run('rsync -a --no-p --rsync-path="mkdir -p '+path_remote+' && rsync" '+path_local+'/* '+user+'@'+remote+':'+path_remote, shell = True)
     return [path_remote+filePaths[i].split('/')[-1] for i in range(len(filePaths))]
 
-def get_access_token_globus(client_id, slac = False):
+
+def get_access_token_globus(client_id, arg_consent=None):
     import globus_sdk
-    from globus_sdk.scopes import TransferScopes
+    from globus_sdk.scopes import TransferScopes, GCSCollectionScopeBuilder
 
     auth_client = globus_sdk.NativeAppAuthClient(client_id)
-    scopes = TransferScopes.all
-    if slac:
-        scopes += '[*https://auth.globus.org/scopes/31f8393f-79ef-4da4-a395-7127edd9b3a4/data_access]'
-    auth_client.oauth2_start_flow(requested_scopes = scopes)
+    scope = globus_sdk.Scope(TransferScopes.all)
+
+    if arg_consent:
+        for collection_id in arg_consent.split():
+            print(f"\nProcessing collection ID: {collection_id}")
+            try:
+                # Build the data_access scope for the given collection ID
+                # (data_access scopes are specific to non-High-Assurance Mapped Collections.)
+                collection_scope = GCSCollectionScopeBuilder(collection_id).data_access
+                scope.add_dependency(collection_scope, optional=True)
+            except Exception as e:
+                print("\nThe data_access scopes are specific to non-High-Assurance Mapped Collections. They are not created for any other collection type (Guest Collection, High-Assurance Mapped Collection).")
+                print(f"Error processing scope for collection {collection_id}: {e}")
+
+    print(f"\nFinal requested scope: {scope}\n")
+    auth_client.oauth2_start_flow(requested_scopes=scope)
     auth_code = input('Please go to '+auth_client.oauth2_get_authorize_url()+', and enter here the code provided upon login: ').strip()
     tokens = auth_client.oauth2_exchange_code_for_tokens(auth_code)
     transfer_tokens = tokens.by_resource_server['transfer.api.globus.org']
     return transfer_tokens['access_token']
+
 
 def transfer_globus(filePaths, list_dict_metadata, access_token, source_endpoint_id, dest_endpoint_id, basedir, include_last_dir = False, test_folder = False):
     # slac#s3df_globus5: endpoint_id = '31f8393f-79ef-4da4-a395-7127edd9b3a4'
