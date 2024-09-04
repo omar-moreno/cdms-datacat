@@ -170,6 +170,14 @@ def get_access_token_globus(client_id, arg_consent=None):
     return transfer_tokens['access_token']
 
 
+def globus_token_status(client_id,token):
+    import globus_sdk
+    auth_client = globus_sdk.NativeAppAuthClient(client_id)
+    token_info = auth_client.oauth2_validate_token(token) # valid for both access and refresh token
+    return token_info['active'] # output is either true, or false
+
+
+
 def transfer_globus(filePaths, list_dict_metadata, access_token, source_endpoint_id, dest_endpoint_id, basedir, include_last_dir = False, test_folder = False):
     # slac#s3df_globus5: endpoint_id = '31f8393f-79ef-4da4-a395-7127edd9b3a4'
     # Elias Lopez Asamar - Laptop UAM: endpoint_id = 'f9c2873c-411c-11ee-b696-812118bf21b5'
