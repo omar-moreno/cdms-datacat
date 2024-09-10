@@ -101,10 +101,19 @@ def search(path, site = 'All', dofetch = False, fetchargs = {}, **kwargs): # For
         datasets = self.fetch(datasets, **fetchargs)
     return datasets
 
-def find_nDump_from_nTriggerId(Series, nTriggerId, Facility, nFridgeRun = None, site = 'All'):
+def find_nDump_from_nTriggerId(Series, nTriggerId, Facility, nFridgeRun = None, MCSetup = None, MCType = None, MCVersion = None, site = 'All'):
     relativePath = '/CDMS/'+Facility
-    if type(nFridgeRun) == int:
+    if type(nFridgeRun) == int and MCSetup == None and MCType == None and MCVersion == None:
         relativePath += '/R'+str(nFridgeRun)
+    elif nFridgeRun == None and type(MCSetup) == str and type(MCType) == str and type(MCVersion) == str:
+        relativePath += '/'+'_'.join([MCSetup, MCType, MCVersion])
+    else:
+        if type(nFridgeRun) == int and type(MCSetup) == str:
+            print('ERROR: nFridgeRun and MCSetup are exclusive optional arguments')
+            return None
+        if type(MCSetup) == str and (MCType == None or MCVersion == None):
+            print('ERROR: MCType and MCVersion are both mandatory when using MCSetup optional argument')
+            return None
     config = pkg_resources.resource_filename(__name__, 'cfg/default.cfg')
     dc = CDMSDataCatalog(config)
     datasets = dc.search(relativePath+'/**', site = site, query = 'Series eq "'+Series+'" and nFirstTriggerId lteq '+str(nTriggerId)+' and nLastTriggerId gteq '+str(nTriggerId))
@@ -112,9 +121,13 @@ def find_nDump_from_nTriggerId(Series, nTriggerId, Facility, nFridgeRun = None, 
         return dc.get(datasets[0].relativePath).metadata['nDump'] 
     if len(datasets) == 0:
         print('ERROR: no files found for Series = '+Series+' and nTriggerId = '+str(nTriggerId))
+        return None
     else:
-        print('ERROR: multiple files found for Series = '+Series+' and nTriggerId = '+str(nTriggerId))
-    return None
+        print('WARNING: multiple files found for Series = '+Series+' and nTriggerId = '+str(nTriggerId)+', returning a dictionary with all results')
+        dict_nDump = {}
+        for dataset in datasets:
+            dict_nDump[dataset.relativePath] = dc.get(dataset.relativePath).metadata['nDump']
+        return dict_nDump
 
 def transfer_ssh(filePaths, list_dict_metadata, user, remote, basedir, include_last_dir = False, test_folder = False):
     path_local = None
