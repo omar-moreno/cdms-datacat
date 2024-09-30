@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+
+import sys
+from CDMSDataCatalog import CDMSDataCatalog
+
+dc = CDMSDataCatalog()
+ds = dc.get(sys.argv[1]) # Argument must be dataset.relativePath
+dep_type = sys.argv[2] # Eiter 'predecessor' or 'successor'
+max_depth = int(sys.argv[3])
+chunk_size = int(sys.argv[4])
+dependents = dc.getDependents(ds, dep_type, max_depth = 10, chunk_size = 10)
+for dep in dependents:
+    print(dep.path)
+
+# TO-DO: implement this functionality for groups

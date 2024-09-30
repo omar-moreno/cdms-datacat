@@ -1,51 +1,17 @@
 #!/usr/bin/env python3
 
-""" dc-fetch
-This is an executable function that downloads hits from the data catalog
-to a local mirror.  The resulting filenames are printed to stdout
-"""
-
-import sys
-from contextlib import redirect_stdout
 import argparse
-import itertools
-import CDMSDataCatalog
+from CDMSDataCatalog import CDMSDataCatalog
 
-# parse command-line arguments
-parser = argparse.ArgumentParser(description="Download data catalog datasets")
-parser.add_argument("-c", "--cfg", help="specify DataCatalog config file")
-parser.add_argument("-D", "--topdir", 
-                    help="path to root output, default 'datacat-data'")
-parser.add_argument("--site", help="dc.search `site` argument",
-                    default="All")
-parser.add_argument("dataset", help="catalog path or search string",
-                    nargs='+')
+parser = argparse.ArgumentParser()
+parser.add_argument('datasets', nargs = '+')
+parser.add_argument('--checkonly', type = bool)
+parser.add_argument('--dest')
+parser.add_argument('--destRelative', action = 'store_true')
+parser.add_argument('--force', action = 'store_true')
 args = parser.parse_args()
 
-
-# fetch functions print stuff to stdout, so redirect it
-result = None
-with redirect_stdout(sys.stderr):
-    dc = CDMSDataCatalog.CDMSDataCatalog(args.cfg, args.topdir)
-    try:
-        datasets = sum([dc.search(ds, site=args.site) for ds in args.dataset], 
-                       list())
-    except BaseException as e:
-        print("Search Error: ", e)
-        sys.exit(1)
-    try:
-        result = dc.fetch(datasets)
-    except BaseException as e:
-        print("Fetch Error: ", e)
-        sys.exit(2)
-    # this should be a CDMSMultiFetchResult
-    if not result:
-        result.summary()
-        sys.exit(3)
-
-# if we get here, everything should have worked, ds is a CDMSMultiFetchRequest
-for ds in result:
+dc = CDMSDataCatalog()
+datasets = dc.fetch(args.datasets, checkonly = args.checkonly, dest = args.dest, destRelative = args.destRelative, force = args.force)
+for ds in datasets:
     print(ds.filePath)
-
-sys.exit(0)
-
