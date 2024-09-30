@@ -1,11 +1,27 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from CDMSDataCatalog import *
-import sys
+import argparse
+import pkg_resources
+from datacat.model import Metadata
+from CDMSDataCatalog import CDMSDataCatalog
 
+parser = argparse.ArgumentParser()
+parser.add_argument('folder')
+parser.add_argument('--parents', action = 'store_true')
+parser.add_argument('--metadata', nargs = '+')
+args = parser.parse_args()
 
-dc=CDMSDataCatalog()
-if(len(sys.argv) > 1):
-    dc.mkdir(sys.argv[1])	
-else:
-    print 'Enter directory to construct'
+dc_prod = CDMSDataCatalog(pkg_resources.resource_filename('CDMSDataCatalog', 'cfg/prod.cfg'))
+metadata = Metadata()
+for item in args.metadata:
+    parts = item.split(':')
+    if len(parts) == 2:
+        k = parts[0]
+        parts = parts[1].split('/')
+        if len(parts) == 2:
+            if parts[1] == 's':
+                metadata[k] = parts[0]
+            elif parts[1] == 'i':
+                metadata[k] = int(parts[0])
+if len(metadata.keys()) == len(args.metadata):
+    dc_prod.mkdir(args.folder, parents = args.parents, metadata = metadata)
