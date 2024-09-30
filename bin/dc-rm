@@ -1,10 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from CDMSDataCatalog import *
-import sys
+import argparse
+import pkg_resources
+from CDMSDataCatalog import CDMSDataCatalog
 
-if(len(sys.argv) > 1):
-    dc=CDMSDataCatalog()
-    dc.rm(sys.argv[1])	
-else:
-    print "Enter file to remove from data catalog"
+parser = argparse.ArgumentParser()
+parser.add_argument('path')
+parser.add_argument('--recursive', action = 'store_true')
+args = parser.parse_args()
+
+dc_prod = CDMSDataCatalog(pkg_resources.resource_filename('CDMSDataCatalog', 'cfg/prod.cfg'))
+dc_prod.rm(args.path, args.recursive)
