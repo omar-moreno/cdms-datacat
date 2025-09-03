@@ -325,7 +325,8 @@ class ProcessedData(CDMSDataset):
         Constructor for the CDMS processed dataset class
         """
         # Some checks
-        prodSteps=['BatNoise','BatRoot','BatCalib','Cut', 'PyNoise', 'PyTemplate', 'PyPkl', 'PyPklRRQ']
+        prodSteps=['BatDIDV', 'BatNoise', 'BatRoot', 'BatCalib',
+                   'Cut', 'PyNoise', 'PyTemplate', 'PyPkl', 'PyPklRRQ']
         if(not prodStep in prodSteps):
                 raise ValueError("Please specify data process level (prodStep), options are "+str(prodSteps))
  
@@ -336,9 +337,11 @@ class ProcessedData(CDMSDataset):
       
         #add category to path
         if (prodStep == 'BatNoise') or (prodStep == 'PyNoise'):
-            self.relativePath+='/Noise'
+            self.relativePath +='/Noise'
         elif (prodStep == 'Cut'):
             self.relativePath+='/Cuts'
+        elif (prodStep == 'BatDIDV'):
+            self.relativePath +='/DIDV'
         else:
             if int(nMergeLevel)==0:
                 self.relativePath+='/Unmerged/' + series
