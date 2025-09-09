@@ -7,7 +7,7 @@ setup(name='CDMSDataCatalog',
       version='1.0.1',
       packages=['CDMSDataCatalog'],
       install_requires=[
-          'datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git@0.6.6#subdirectory=client/python',
+          'datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git@0.6.8#subdirectory=client/python',
           'requests',
           'tqdm',
           'Click',
@@ -16,7 +16,7 @@ setup(name='CDMSDataCatalog',
       ],
       author='Noah Kurinsky',
       author_email='kurinsky@fnal.gov',
-      url='https://confluence.slac.stanford.edu/display/CDMS/SuperCDMS+Data+Catalog#section-582118446',
+      url='https://confluence.slac.stanford.edu/x/I4E9Hw',
       scripts=glob('bin/*'),
       package_data={'CDMSDataCatalog': ['cfg/default.cfg', 'cfg/prod.cfg']}
 )
