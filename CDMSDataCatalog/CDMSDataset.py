@@ -1,5 +1,7 @@
 """ Provides the base CDMSDataset class as well as some derived ones"""
 import os
+
+from . import source_list
 from datacat.model import Metadata
 
 
@@ -551,18 +553,7 @@ class ProdSimDataset(CDMSDataset):
                                             'TRIUMF',
                                             'UCB'   ,
                                             'UMN'   ]
-        self.required_values['Source'] = ['Am241',
-                                          'Ba133',
-                                          'Cf252',
-                                          'DMCER',
-                                          'DMCNR',
-                                          'Ge71' ,
-                                          'Si32' ,
-                                          'Pb210',
-                                          'Radon',
-                                          'WIMP' ,
-                                          'SbBe' ,
-                                          'YBe'  ]
+        self.required_values['Source'] = source_list.SOURCES
 
         self.Ancestorpath = [Ancestorpath] if type(Ancestorpath) == str else Ancestorpath
 
