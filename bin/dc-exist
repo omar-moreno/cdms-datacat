@@ -1,0 +1,23 @@
+
+import argparse
+from CDMSDataCatalog import CDMSDataCatalog
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Check if a path exists in the data catalog.")
+    parser.add_argument("path", help="Path to check")
+    parser.add_argument("--version", help="Optional versionId", default=None)
+    parser.add_argument("--site", help="Optional site", default=None)
+
+    args = parser.parse_args()
+
+    dc = CDMSDataCatalog()
+    exists = dc.exist(args.path, args.version, args.site)
+
+    if exists:
+        print(f"The path '{args.path}' exists in the catalog.")
+    else:
+        print(f"The path '{args.path}' does NOT exist in the catalog.")
+
+if __name__ == "__main__":
+    main()
