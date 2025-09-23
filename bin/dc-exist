@@ -4,10 +4,29 @@ from CDMSDataCatalog import CDMSDataCatalog
 
 
 def main():
+    """
+    Checks if a specified ppath exists in the CDMS data catalog.
+
+    The function parses command-line arguments to retrieve a data path
+    (e.g. /CDMS/CUTE). The data path is then passed to the function
+    CDMSDataCatalog.exist to determine if the specified path exists in the
+    catalog. Optionally, a version ID and site can also be specified.
+
+    Note: This is not testing if the a file exists on disk.
+
+    Command-line Arguments:
+        path (str): Required. The data path to check in the catalog.
+        --version (str, optional): Optional version ID of the data.
+        --site (str, optional): Optional site  (e.g. SLAC) where the data
+        exists.
+
+    Output:
+        Prints a message indicating whether the path exists in the catalog
+    """
     parser = argparse.ArgumentParser(description="Check if a path exists in the data catalog.")
     parser.add_argument("path", help="Path to check")
-    parser.add_argument("--version", help="Optional versionId", default=None)
-    parser.add_argument("--site", help="Optional site", default=None)
+    parser.add_argument("--version", help="Optional version ID of the dataset", default=None)
+    parser.add_argument("--site", help="Optional site (e.g. SLAC)", default=None)
 
     args = parser.parse_args()
 
