@@ -5,23 +5,61 @@ import pkg_resources
 from datacat.model import Metadata
 from CDMSDataCatalog import CDMSDataCatalog
 
-parser = argparse.ArgumentParser()
-parser.add_argument('folder')
-parser.add_argument('--parents', action = 'store_true')
-parser.add_argument('--metadata', nargs = '+')
-args = parser.parse_args()
+def parse_metadata(metadata_entries):
+    metadata = Metadata()
+    for entry in metadata_entries:
+        parts = item.split(':')
+        if len(parts) != 2:
+            print('Metadata entry', entry, 'is not formatted correctly: key:value/type')
+            continue
 
-dc_prod = CDMSDataCatalog(pkg_resources.resource_filename('CDMSDataCatalog', 'cfg/prod.cfg'))
-metadata = Metadata()
-for item in args.metadata:
-    parts = item.split(':')
-    if len(parts) == 2:
-        k = parts[0]
-        parts = parts[1].split('/')
-        if len(parts) == 2:
-            if parts[1] == 's':
-                metadata[k] = parts[0]
-            elif parts[1] == 'i':
-                metadata[k] = int(parts[0])
-if len(metadata.keys()) == len(args.metadata):
-    dc_prod.mkdir(args.folder, parents = args.parents, metadata = metadata)
+        key, value = parts
+        value_parts = value.split('/')
+
+        if len(value_parts) != 2:
+            print('The metedata value', value, 'is not formatted correctly: value/type')
+            continue
+
+        value, type_hint = value_parts
+
+        if type_hint == 's':
+            metadata[key] = value
+        elif type_hint == 'i':
+            try:
+                metadata[key] = int(value)
+            except ValueError:
+                print("Invalid input. Please use an valid value.")
+
+    return metadata
+
+
+def main():
+    """
+    Creates a new container (directory) of type "folder" at the given path.
+
+    Command-line Arguments:
+        path (str): Required. The full path to the new directory in the data catalog.
+        --parents (bool, optional): Create the parent directories if needed.
+        --metadata  Optional metadata entries to add to the  directories in the form key:value/type.
+
+    Output:
+        Prints a message if a directory already exists at the given data catalog path.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path', help='Full path to the new directory.')
+    parser.add_argument('--parents', action = 'store_true', help='Create parent directories if needed')
+    parser.add_argument('--metadata', nargs = '+', help='Metadata entries in the form key:value/type')
+
+    args = parser.parse_args()
+
+    dc_prod = CDMSDataCatalog(pkg_resources.resource_filename('CDMSDataCatalog', 'cfg/prod.cfg'))
+
+    metadata = parse_metadata(args.metadata or [])
+
+    if len(metadata) == len(args.metadata or []):
+        dc_prod.mkdir(args.path, parents=args.parents, metadata=metadata)
+    else:
+        print("Warning: Some metadata entries were invalid and have been ignored.")
+
+if __name__ == '__main__':
+    main()
