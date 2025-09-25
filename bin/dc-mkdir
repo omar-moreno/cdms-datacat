@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
-
 import pkg_resources
-from CDMSDataCatalog import CDMSDataCatalog
+
 from datacat.model import Metadata
+
+from CDMSDataCatalog import CDMSDataCatalog
 
 
 def parse_metadata(metadata_entries):
@@ -29,23 +30,27 @@ def parse_metadata(metadata_entries):
     """
     metadata = Metadata()
     for entry in metadata_entries:
-        parts = entry.split(':')
+        parts = entry.split(":")
         if len(parts) != 2:
-            print(f"Metadata entry '{entry}' is not formatted correctly. Expected: key:value/type")
+            print(
+                f"Metadata entry '{entry}' is not formatted correctly. Expected: key:value/type"
+            )
             continue
 
         key, value = parts
-        value_parts = value.split('/')
+        value_parts = value.split("/")
 
         if len(value_parts) != 2:
-            print(f"Metadata value '{value}' is not formatted correctly. Expected: value/type")
+            print(
+                f"Metadata value '{value}' is not formatted correctly. Expected: value/type"
+            )
             continue
 
         value, type_hint = value_parts
 
-        if type_hint == 's':
+        if type_hint == "s":
             metadata[key] = value
-        elif type_hint == 'i':
+        elif type_hint == "i":
             try:
                 metadata[key] = int(value)
             except ValueError:
@@ -73,13 +78,23 @@ def main():
         - Prints an error if the folder already exists or if metadata is invalid.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('path', help='Full path to the new directory.')
-    parser.add_argument('--parents', action = 'store_true', help='Create parent directories if needed')
-    parser.add_argument('--metadata', nargs = '+', help='Metadata entries in the form key:value/type')
+    parser.add_argument("path", help="Full path to the new directory.")
+    parser.add_argument(
+        "--parents",
+        action="store_true",
+        help="Create parent directories if needed",
+    )
+    parser.add_argument(
+        "--metadata",
+        nargs="+",
+        help="Metadata entries in the form key:value/type",
+    )
 
     args = parser.parse_args()
 
-    dc_prod = CDMSDataCatalog(pkg_resources.resource_filename('CDMSDataCatalog', 'cfg/prod.cfg'))
+    dc_prod = CDMSDataCatalog(
+        pkg_resources.resource_filename("CDMSDataCatalog", "cfg/prod.cfg")
+    )
 
     metadata = parse_metadata(args.metadata or [])
 
@@ -87,9 +102,14 @@ def main():
         try:
             dc_prod.mkdir(args.path, parents=args.parents, metadata=metadata)
         except:
-            print(f"Error: The directory '{args.path}' may already exist or an unknown error occurred.")
+            print(
+                f"Error: The directory '{args.path}' may already exist or an unknown error occurred."
+            )
     else:
-        print("Error: Failed to create the directory. Some metadata entries were invalid.")
+        print(
+            "Error: Failed to create the directory. Some metadata entries were invalid."
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
