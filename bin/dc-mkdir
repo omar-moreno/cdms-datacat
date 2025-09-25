@@ -8,18 +8,37 @@ from datacat.model import Metadata
 
 
 def parse_metadata(metadata_entries):
+    """
+    Parse a list of metadata entries in the format key:value/type into a Metadata object.
+
+    Each entry must be formatted as:
+        key:value/type
+
+    Supported types:
+        - 's' for string
+        - 'i' for integer
+
+    Example:
+        title:MyDataset/s author_id:42/i
+
+    Args:
+        metadata_entries (list of str): Metadata entries to parse.
+
+    Returns:
+        Metadata: A dictionary-like object with the parsed key-value pairs.
+    """
     metadata = Metadata()
     for entry in metadata_entries:
         parts = entry.split(':')
         if len(parts) != 2:
-            print('Metadata entry', entry, 'is not formatted correctly: key:value/type')
+            print(f"Metadata entry '{entry}' is not formatted correctly. Expected: key:value/type")
             continue
 
         key, value = parts
         value_parts = value.split('/')
 
         if len(value_parts) != 2:
-            print('The metedata value', value, 'is not formatted correctly: value/type')
+            print(f"Metadata value '{value}' is not formatted correctly. Expected: value/type")
             continue
 
         value, type_hint = value_parts
@@ -30,22 +49,28 @@ def parse_metadata(metadata_entries):
             try:
                 metadata[key] = int(value)
             except ValueError:
-                print("Invalid input. Please use an valid value.")
+                print(f"Invalid integer value for key '{key}': '{value}'")
+        else:
+            print(f"Unsupported type '{type_hint}' for value '{value}'")
 
     return metadata
 
 
 def main():
     """
-    Creates a new container (directory) of type "folder" at the given path.
+    Creates a new directory (container)  in the CDMS Data Catalog at the specified path, with optional metadata.
 
     Command-line Arguments:
         path (str): Required. The full path to the new directory in the data catalog.
-        --parents (bool, optional): Create the parent directories if needed.
-        --metadata  Optional metadata entries to add to the  directories in the form key:value/type.
+        --parents (bool): Optional. Create parent directories if they don't exist.
+        --metadata (list of str): Optional. Metadata entries in the format key:value/type where 'type' is 's' (string) or 'i' (integer)
+
+    Example usage:
+        dc-mkdir /CDMS/Scratch/Test --parents --metadata title:Test/s version:1/i
 
     Output:
-        Prints a message if a directory already exists at the given data catalog path.
+        - Creates the folder in the data catalog.
+        - Prints an error if the folder already exists or if metadata is invalid.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('path', help='Full path to the new directory.')
@@ -59,9 +84,12 @@ def main():
     metadata = parse_metadata(args.metadata or [])
 
     if len(metadata) == len(args.metadata or []):
-        dc_prod.mkdir(args.path, parents=args.parents, metadata=metadata)
+        try:
+            dc_prod.mkdir(args.path, parents=args.parents, metadata=metadata)
+        except:
+            print(f"Error: The directory '{args.path}' may already exist or an unknown error occurred.")
     else:
-        print("Warning: Some metadata entries were invalid and have been ignored.")
+        print("Error: Failed to create the directory. Some metadata entries were invalid.")
 
 if __name__ == '__main__':
     main()
