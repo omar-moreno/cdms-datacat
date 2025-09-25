@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
+
 import pkg_resources
-from datacat.model import Metadata
 from CDMSDataCatalog import CDMSDataCatalog
+from datacat.model import Metadata
+
 
 def parse_metadata(metadata_entries):
     metadata = Metadata()
     for entry in metadata_entries:
-        parts = item.split(':')
+        parts = entry.split(':')
         if len(parts) != 2:
             print('Metadata entry', entry, 'is not formatted correctly: key:value/type')
             continue
