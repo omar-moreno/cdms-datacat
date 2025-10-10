@@ -15,6 +15,14 @@ def main():
     args = parser.parse_args()
 
     dc = CDMSDataCatalog()
+    items = dc.ls(args.path)
+
+    if items is None:
+        return
+
+    if not items:
+        print(f"The path {args.path} is empty")
+
     for item in dc.ls(args.path):
         print(item)
 
