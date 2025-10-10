@@ -5,6 +5,18 @@ from CDMSDataCatalog import CDMSDataCatalog
 
 def main():
     """
+    Lists the contents of the specified path in the CDMS data catalog.
+
+    Args:
+        path (str) : The full path to the directory in the data catalog.
+
+    Example:
+        dc-ls /CDMS/Test
+
+    Output:
+        - If a path is given, a list of items in the path is printed.
+        - If a path is not give, list the items in /CDMS.
+        - If a path doesn't exist, prints an error.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("path",
