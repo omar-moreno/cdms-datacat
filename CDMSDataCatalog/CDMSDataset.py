@@ -519,7 +519,7 @@ class ProdSimDataset(CDMSDataset):
                 ProdTag = '_'.join([MCSetup, MCType, MCVersion])
                 self.metadata['ProdTag'] = ProdTag
                 self.metadata_folder['ProdTag'] = ProdTag
-                self.relativePath += '/'+ProdTag+'/Simulated'
+                self.relativePath += '/Simulated/'+ProdTag
                 self.path_is_valid = True
         if not self.path_is_valid:
             print('ERROR: FridgeRun and ProdTag are undefined, will be required to build folder path')
