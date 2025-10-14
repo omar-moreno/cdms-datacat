@@ -1,7 +1,7 @@
 import sys
 sys.dont_write_bytecode = True
 import subprocess
-import pkg_resources
+from importlib.resources import files
 from .CDMSDataCatalog import CDMSDataCatalog
 from .CDMSDataset import *
 
@@ -49,8 +49,8 @@ def get_dc_path(filePath, dict_metadata, include_last_dir = False, test_folder =
     return None
 
 def register(filePath, dict_metadata, include_last_dir = False, dry_run = False, test_folder = False):
-    dc_default = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/default.cfg'))
-    dc_prod    = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/prod.cfg'   ))
+    dc_default = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
+    dc_prod = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
 
     dataset = build_dataset_from_metadata(filePath, dict_metadata)
 
@@ -94,7 +94,7 @@ def search(path, site = 'All', dofetch = False, fetchargs = {}, **kwargs): # For
     kwargs are only used by search, not fetch
     fetch kwargs are provided by fetchargs
     """
-    config = pkg_resources.resource_filename(__name__, 'cfg/default.cfg')
+    config = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
     dc = CDMSDataCatalog(config)
     datasets = dc.search(path, site = site, **kwargs)
     if dofetch:
@@ -114,7 +114,7 @@ def find_nDump_from_nTriggerId(Series, nTriggerId, Facility, nFridgeRun = None, 
         if type(MCSetup) == str and (MCType == None or MCVersion == None):
             print('ERROR: MCType and MCVersion are both mandatory when using MCSetup optional argument')
             return None
-    config = pkg_resources.resource_filename(__name__, 'cfg/default.cfg')
+    config = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
     dc = CDMSDataCatalog(config)
     datasets = dc.search(relativePath+'/**', site = site, query = 'Series eq "'+Series+'" and nFirstTriggerId lteq '+str(nTriggerId)+' and nLastTriggerId gteq '+str(nTriggerId))
     if len(datasets) == 1:
@@ -271,8 +271,8 @@ def build_dict_metadata_swft(site, fileFormat, filePath_metadata_dataset, filePa
     return dict_metadata
 
 def create_group(groupname):
-    dc_default = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/default.cfg'))
-    dc_prod    = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/prod.cfg'   ))
+    dc_default = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
+    dc_prod = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
 
     relativePath = groupname.rstrip('/') if groupname.find('/CDMS/')  == 0 else '/CDMS/'+groupname.strip('/') # Not enforcing any conventions on relativePath
 
@@ -284,7 +284,7 @@ def create_group(groupname):
     return False
 
 def add_files_to_group(groupname, filePaths):
-    dc = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/prod.cfg'   ))
+    dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
 
     relativePath = groupname.rstrip('/') if groupname.find('/CDMS/')  == 0 else '/CDMS/'+groupname.strip('/')
     group = dc.getgroup(relativePath)
@@ -304,7 +304,7 @@ def add_files_to_group(groupname, filePaths):
     return True
 
 def retrieve_files_from_group(groupname, num_datasets = 1000000000):
-    dc = CDMSDataCatalog(pkg_resources.resource_filename(__name__, 'cfg/default.cfg'))
+    dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
 
     relativePath = groupname.rstrip('/') if groupname.find('/CDMS/')  == 0 else '/CDMS/'+groupname.strip('/')
     group = dc.getgroup(relativePath)
