@@ -92,7 +92,9 @@ def main():
 
     args = parser.parse_args()
 
-    dc_prod = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
+    dc_prod = CDMSDataCatalog(
+        files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
+    )
 
     metadata = parse_metadata(args.metadata or [])
 

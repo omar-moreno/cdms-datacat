@@ -2,31 +2,36 @@
 
 import argparse
 from importlib.resources import files
+
 from CDMSDataCatalog import CDMSDataCatalog, CDMSDataset
 
 parser = argparse.ArgumentParser()
-parser.add_argument('name')
-parser.add_argument('filePath')
-parser.add_argument('dataType')
-parser.add_argument('site')
-parser.add_argument('fileFormat')
-parser.add_argument('--relativePath')
-parser.add_argument('--metadata', nargs = '+')
+parser.add_argument("name")
+parser.add_argument("filePath")
+parser.add_argument("dataType")
+parser.add_argument("site")
+parser.add_argument("fileFormat")
+parser.add_argument("--relativePath")
+parser.add_argument("--metadata", nargs="+")
 args = parser.parse_args()
 
 dc_prod = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
-if type(args.relativePath) == str: # relativePath muest be mandatory until any type of dataset is supported...
-    ds = CDMSDataset(args.name, args.filePath, args.dataType, args.site, args.fileFormat)
+if (
+    type(args.relativePath) == str
+):  # relativePath muest be mandatory until any type of dataset is supported...
+    ds = CDMSDataset(
+        args.name, args.filePath, args.dataType, args.site, args.fileFormat
+    )
     ds.relativePath = args.relativePath
     for item in args.metadata:
-        parts = item.split(':')
+        parts = item.split(":")
         if len(parts) == 2:
             k = parts[0]
-            parts = parts[1].split('/')
+            parts = parts[1].split("/")
             if len(parts) == 2:
-                if parts[1] == 's':
+                if parts[1] == "s":
                     ds.metadata[k] = parts[0]
-                elif parts[1] == 'i':
+                elif parts[1] == "i":
                     ds.metadata[k] = int(parts[0])
     if len(ds.metadata.keys()) == len(args.metadata):
         dc_prod.add(ds)
