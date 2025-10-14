@@ -3,9 +3,9 @@
 import datacat
 from datacat import client_from_config, config_from_file
 import pathlib
-import pkg_resources
 import logging
 
+from importlib.resources import files
 from .fetch import fetchdata, get_default_fetchdir
 from .CDMSDataset import CDMSDataset
 from .CDMSGroup import CDMSGroup
@@ -69,8 +69,8 @@ class CDMSDataCatalog:
         
         # load the configuration file
         if config_file is None:
-            config_file = pkg_resources.resource_filename(__name__,
-                                                          'cfg/default.cfg')
+            config_file = files("CDMSDataCatalog").joinpath('cfg/default.cfg')
+
         config = config_from_file(config_file)
 
         # determine default data fetchdir
