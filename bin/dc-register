@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import pkg_resources
+from importlib.resources import files
 from CDMSDataCatalog import CDMSDataCatalog, CDMSDataset
 
 parser = argparse.ArgumentParser()
@@ -14,7 +14,7 @@ parser.add_argument('--relativePath')
 parser.add_argument('--metadata', nargs = '+')
 args = parser.parse_args()
 
-dc_prod = CDMSDataCatalog(pkg_resources.resource_filename('CDMSDataCatalog', 'cfg/prod.cfg'))
+dc_prod = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
 if type(args.relativePath) == str: # relativePath muest be mandatory until any type of dataset is supported...
     ds = CDMSDataset(args.name, args.filePath, args.dataType, args.site, args.fileFormat)
     ds.relativePath = args.relativePath
