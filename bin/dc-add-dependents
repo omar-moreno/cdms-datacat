@@ -12,7 +12,15 @@ args = parser.parse_args()
 
 dc = CDMSDataCatalog()
 dc_prod = CDMSDataCatalog(pkg_resources.resource_filename('CDMSDataCatalog', 'cfg/prod.cfg'))
-dep_datasets = [dc.get(path) for path in args.dependents] if type(args.dependents) == list else []
+
+dep_datasets = []
+for path in args.dependents:
+    if ("*" not in path) and ("?" not in path):
+        dep_datasets.append(dc.get(path))
+    else:
+        head, sep, tail = path.rpartition('/')
+        dep_datasets.extend(dc.client.search(head + "/", query="resource=~'"+tail+"'"))
+
 dc_prod.addDependents(dc.get(args.dataset), args.dep_type, dep_datasets = dep_datasets)
 
 # TO-DO: implement this functionality for groups
