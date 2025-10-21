@@ -476,6 +476,17 @@ def build_dict_metadata_swft(
         dict_metadata.pop("Series")
     return dict_metadata
 
+def normalize_group_path(group_name : str) -> str:
+    """
+    Ensures the group path starts with '/CDMS/' and removes any
+    leading/trailing slashes.
+    """
+    group_name = group_name.strip("/")
+
+    if group_name.startswith("CDMS"):
+        return f"/{group_name}"
+    else:
+        return f"/CDMS/{group_name}"
 
 def create_group(groupname):
     dc_default = CDMSDataCatalog(
@@ -528,7 +539,6 @@ def add_files_to_group(groupname, filePaths):
 
     dc.addDependents(group, "cdmsgroup", dep_datasets=datasets)
     return True
-
 
 def retrieve_files_from_group(groupname, num_datasets=1000000000):
     dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
