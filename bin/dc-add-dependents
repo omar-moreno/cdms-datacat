@@ -62,7 +62,9 @@ def main() -> None:
         "dataset", help="The main dataset to which dependents will be added."
     )
     parser.add_argument(
-        "dep_type", help="The type/category of the dependent datasets."
+        "dep_type",
+        choices=["predecessor", "successor"],
+        help="The type/category of the dependent datasets."
     )
     parser.add_argument(
         "--dependents",
