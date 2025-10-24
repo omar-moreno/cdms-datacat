@@ -498,14 +498,17 @@ def resolve_datasets(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
     """
     Resolve dataset paths into dataset objects.
 
-    Args:
-        catalog (CDMSDataCatalog): The data catalog client instance used to search for the dataset.
-        paths (list of str): A list of dependent dataset paths (can include wildcards).
-                             The path can either be a datacat path or a path on
-                             disk.
+    Parameters
+    ----------
+        dc :(CDMSDataCatalog)
+            The data catalog client instance used to search for the dataset.
+        paths : List[str]
+            A list of dependent dataset paths (can include wildcards). The
+            path can either be a datacat path or a path on disk.
 
-    Returns:
-        list: A list of resolved dependent dataset objects.
+    Returns
+    List[Dataset]
+        A list of resolved dependent dataset objects.
     """
     if not isinstance(paths, list):
         raise TypeError(
@@ -556,16 +559,45 @@ def create_group(groupname):
     return False
 
 
-def add_files_to_group(groupname, filePaths):
-    dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
+def add_files_to_group(group_name: str, paths: List[str]) -> bool:
+    """
+    Add one or more datasets to an existing group in the CDMS data catalog.
+
+    This function retrieves a group container from the CDMS data catalog using
+    the specified `groupname`, resolves each file path in `paths` to a
+    corresponding `Dataset` object, and registers those datasets as dependents
+    of the group.
+
+    Parameters
+    ----------
+    group_name : str
+        The path of the target group within the CDMS data catalog.
+        The group must already exist in the catalog.
+    paths : List[str]
+        A list of paths corresponding to the datasets that should be added.
+        Each path can be a data catalog path or a direct filesystem path.
+
+    Returns
+    -------
+    bool
+        `True` if all datasets were successfully added to the group, `False`
+        if any error occurred.
+
+    Examples
+    --------
+    >>> add_files_to_group("/CDMS/Test/TestGroup/", ["/CDMS/Scratch/TestBackground/test*2*"])
+    >>> add_files_to_group("/CDMS/Test/TestGroup/", ["/CDMS/Scratch/TestBackground/test12.txt"])
+    """
+    dc: CDMSDataCatalog = CDMSDataCatalog(
+        files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
+    )
 
     try:
         # Get the group container from the data catalog.
-        relativePath = normalize_group_path(groupname)
-        group = dc.getgroup(relativePath)
+        group: str = dc.getgroup(normalize_group_path(group_name))
 
         # Convert the list of paths to datasets.
-        datasets: List[Dataset] = resolve_datasets(dc, filePaths)
+        datasets: List[Dataset] = resolve_datasets(dc, paths)
 
         # Add the datasets to the group.
         dc.addDependents(group, "cdmsgroup", dep_datasets=datasets)
@@ -580,16 +612,23 @@ def remove_files_from_group(group_name: str, paths: List[str]) -> bool:
     """
     Removes datasets from the specified group in the CDMS Data Catalog.
 
-    Args:
-        group_name (str): The name of the group from which datasets will be
-        removed.
-        paths (List[str]): A list of file paths corresponding to the datasets
-        that should be removed. The paths can either be paths on disk or
-        data catalog paths.  Both can include wildcards.
+    Parameters
+    ----------
+    group_name : (str)
+        The name of the group from which datasets will be removed.
+    paths : List[str]
+        A list of file paths corresponding to the datasets that should be
+        removed. The paths can either be paths on disk or data catalog paths.
+        Both can include wildcards.
 
-    Returns:
-        bool: Returns `True` if the operation was successful, otherwise
-        `False`.
+    Returns
+    -------
+    bool
+        Returns `True` if the operation was successful, otherwise `False`.
+
+    Examples
+    --------
+    >>> remove_files_from_group("/CDMS/Test/TestGroup", ["/CDMS/Scratch/TestBackground/test1*.txt"])
     """
     dc: CDMSDataCatalog = CDMSDataCatalog(
         files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
@@ -597,7 +636,7 @@ def remove_files_from_group(group_name: str, paths: List[str]) -> bool:
 
     try:
         # Retrieve the group container that will be modified.
-        group = dc.getgroup(normalize_group_path(group_name))
+        group: str = dc.getgroup(normalize_group_path(group_name))
 
         # Convert the list of paths to datasets.
         group_datasets: List[Dataset] = resolve_datasets(dc, paths)
