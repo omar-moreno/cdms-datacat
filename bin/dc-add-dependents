@@ -55,7 +55,8 @@ def main() -> None:
     """
 
     parser = argparse.ArgumentParser(
-        description="Adds a list of dependent datasets to a dataset in the data catalog."
+        description="Adds a list of dependent datasets to a dataset in the data catalog.",
+        usage="dc-add-dependents dataset dep_type --dependents DEPENDENTS [DEPENDENTS ...]"
     )
     parser.add_argument(
         "dataset", help="The main dataset to which dependents will be added."
