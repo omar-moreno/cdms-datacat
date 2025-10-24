@@ -3,6 +3,7 @@ import sys
 sys.dont_write_bytecode = True
 import subprocess
 from importlib.resources import files
+from typing import List
 
 from datacat.model import Dataset
 
@@ -10,7 +11,6 @@ from CDMSDataCatalog import CDMSDataCatalog
 
 from .CDMSDataset import *
 
-from typing import List
 
 def build_dataset_from_metadata(filePath, dict_metadata):
     input_ds = {"filename": filePath.split("/")[-1], "filePath": filePath}
@@ -480,7 +480,8 @@ def build_dict_metadata_swft(
         dict_metadata.pop("Series")
     return dict_metadata
 
-def normalize_group_path(group_name : str) -> str:
+
+def normalize_group_path(group_name: str) -> str:
     """
     Ensures the group path starts with '/CDMS/' and removes any
     leading/trailing slashes.
@@ -491,6 +492,7 @@ def normalize_group_path(group_name : str) -> str:
         return f"/{group_name}"
     else:
         return f"/CDMS/{group_name}"
+
 
 def resolve_datasets(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
     """
@@ -506,7 +508,9 @@ def resolve_datasets(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
         list: A list of resolved dependent dataset objects.
     """
     if not isinstance(paths, list):
-        raise TypeError(f"'paths' must be a list, but got {type(paths).__name__}")
+        raise TypeError(
+            f"'paths' must be a list, but got {type(paths).__name__}"
+        )
 
     dependents: List[Dataset] = []
 
@@ -531,6 +535,7 @@ def resolve_datasets(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
 
     return dependents
 
+
 def create_group(groupname):
     dc_default = CDMSDataCatalog(
         files("CDMSDataCatalog").joinpath("cfg/default.cfg")
@@ -549,6 +554,7 @@ def create_group(groupname):
     else:
         print("WARNING: group " + groupname + " already exists")
     return False
+
 
 def add_files_to_group(groupname, filePaths):
     dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
@@ -569,7 +575,8 @@ def add_files_to_group(groupname, filePaths):
 
     return True
 
-def remove_files_from_group(group_name : str, paths: List[str]) -> bool:
+
+def remove_files_from_group(group_name: str, paths: List[str]) -> bool:
     """
     Removes datasets from the specified group in the CDMS Data Catalog.
 
@@ -602,6 +609,7 @@ def remove_files_from_group(group_name : str, paths: List[str]) -> bool:
         return False
 
     return True
+
 
 def retrieve_files_from_group(groupname, num_datasets=1000000000):
     dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
