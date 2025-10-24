@@ -4,9 +4,13 @@ sys.dont_write_bytecode = True
 import subprocess
 from importlib.resources import files
 
-from .CDMSDataCatalog import CDMSDataCatalog
+from datacat.model import Dataset
+
+from CDMSDataCatalog import CDMSDataCatalog
+
 from .CDMSDataset import *
 
+from typing import List
 
 def build_dataset_from_metadata(filePath, dict_metadata):
     input_ds = {"filename": filePath.split("/")[-1], "filePath": filePath}
@@ -488,6 +492,45 @@ def normalize_group_path(group_name : str) -> str:
     else:
         return f"/CDMS/{group_name}"
 
+def resolve_datasets(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
+    """
+    Resolve dataset paths into dataset objects.
+
+    Args:
+        catalog (CDMSDataCatalog): The data catalog client instance used to search for the dataset.
+        paths (list of str): A list of dependent dataset paths (can include wildcards).
+                             The path can either be a datacat path or a path on
+                             disk.
+
+    Returns:
+        list: A list of resolved dependent dataset objects.
+    """
+    if not isinstance(paths, list):
+        raise TypeError(f"'paths' must be a list, but got {type(paths).__name__}")
+
+    dependents: List[Dataset] = []
+
+    for path in paths:
+        print(path)
+        # Check if the path is a data catalog path or a path on disk. If it's
+        # a path on disk, convert it to a data catalog path.
+        if path.count("/CDMS/") == 1:
+            path_after_cdms = path.split("/CDMS/")[1]
+            path = f"/CDMS/{path_after_cdms}"
+
+        if ("*" not in path) and ("?" not in path):
+            # Direct path to a dataset (no wildcards)
+            dependents.append(dc.get(path))
+        else:
+            # Path contains wildcards, perform a search
+            head, _, tail = path.rpartition("/")
+            query_path = head + "/" if head else ""
+            query = f"name=~'{tail}'"
+            results = dc.client.search(query_path, query=query)
+            dependents.extend(results)
+
+    return dependents
+
 def create_group(groupname):
     dc_default = CDMSDataCatalog(
         files("CDMSDataCatalog").joinpath("cfg/default.cfg")
@@ -496,11 +539,7 @@ def create_group(groupname):
         files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
     )
 
-    relativePath = (
-        groupname.rstrip("/")
-        if groupname.find("/CDMS/") == 0
-        else "/CDMS/" + groupname.strip("/")
-    )  # Not enforcing any conventions on relativePath
+    relativePath = normalize_group_path(groupname)
 
     if not dc_default.exist(relativePath):
         dc_prod.mkgroup(
@@ -511,42 +550,62 @@ def create_group(groupname):
         print("WARNING: group " + groupname + " already exists")
     return False
 
-
 def add_files_to_group(groupname, filePaths):
     dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
 
-    relativePath = (
-        groupname.rstrip("/")
-        if groupname.find("/CDMS/") == 0
-        else "/CDMS/" + groupname.strip("/")
+    try:
+        # Get the group container from the data catalog.
+        relativePath = normalize_group_path(groupname)
+        group = dc.getgroup(relativePath)
+
+        # Convert the list of paths to datasets.
+        datasets: List[Dataset] = resolve_datasets(dc, filePaths)
+
+        # Add the datasets to the group.
+        dc.addDependents(group, "cdmsgroup", dep_datasets=datasets)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
+    return True
+
+def remove_files_from_group(group_name : str, paths: List[str]) -> bool:
+    """
+    Removes datasets from the specified group in the CDMS Data Catalog.
+
+    Args:
+        group_name (str): The name of the group from which datasets will be
+        removed.
+        paths (List[str]): A list of file paths corresponding to the datasets
+        that should be removed. The paths can either be paths on disk or
+        data catalog paths.  Both can include wildcards.
+
+    Returns:
+        bool: Returns `True` if the operation was successful, otherwise
+        `False`.
+    """
+    dc: CDMSDataCatalog = CDMSDataCatalog(
+        files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
     )
-    group = dc.getgroup(relativePath)
 
-    datasets = []
-    for filePath in filePaths:
-        try:
-            if (
-                filePath.find("/CDMS/") == 0
-            ):  # Case 1: filePath is Data Catalog path
-                datasets.append(dc.get(filePath))
-            elif (
-                filePath.count("/CDMS/") == 1
-            ):  # Case 2: filePath is actual path on disk, requires single occurrence of '/CDMS/'
-                datasets.append(dc.get("/CDMS/" + filePath.split("/CDMS/")))
-        except:
-            print("ERROR: cannot find Data Catalog entry for file " + filePath)
-            return False
+    try:
+        # Retrieve the group container that will be modified.
+        group = dc.getgroup(normalize_group_path(group_name))
 
-    dc.addDependents(group, "cdmsgroup", dep_datasets=datasets)
+        # Convert the list of paths to datasets.
+        group_datasets: List[Dataset] = resolve_datasets(dc, paths)
+
+        # Remove the datasets from the groups.
+        dc.removeDependents(group, "cdmsgroup", dep_datasets=group_datasets)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
     return True
 
 def retrieve_files_from_group(groupname, num_datasets=1000000000):
     dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
 
-    relativePath = (
-        groupname.rstrip("/")
-        if groupname.find("/CDMS/") == 0
-        else "/CDMS/" + groupname.strip("/")
-    )
+    relativePath = normalize_group_path(groupname)
     group = dc.getgroup(relativePath)
     return dc.getDependents(group, "cdmsgroup", 1, num_datasets)
