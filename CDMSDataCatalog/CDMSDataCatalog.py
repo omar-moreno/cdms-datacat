@@ -1,36 +1,38 @@
-""" Primary data catalog user interface """
+"""Primary data catalog user interface"""
+
+import logging
+import pathlib
+from importlib.resources import files
 
 import datacat
 from datacat import client_from_config, config_from_file
-import pathlib
-import pkg_resources
-import logging
 
-from .fetch import fetchdata, get_default_fetchdir
+from . import paths
 from .CDMSDataset import CDMSDataset
 from .CDMSGroup import CDMSGroup
-from . import paths
+from .fetch import fetchdata, get_default_fetchdir
 
-__all__ = ['CDMSDataCatalog']
+__all__ = ["CDMSDataCatalog"]
 
 log = logging.getLogger(__name__)
 
-def corrPathCDMS(path):
-    if(path[0] != '/'):
-        path = "/"+path
 
-    if(path[1:5] != "CDMS"):
-        path = "/CDMS"+path
+def corrPathCDMS(path):
+    if path[0] != "/":
+        path = "/" + path
+
+    if path[1:5] != "CDMS":
+        path = "/CDMS" + path
 
     return path
 
 
 def getFileFormat(filePath):
-    return ''.join(pathlib.Path(filePath).suffixes).strip('.')
+    return "".join(pathlib.Path(filePath).suffixes).strip(".")
 
 
 class CDMSDataCatalog:
-    """ Data catalog client class.
+    """Data catalog client class.
     This is the primary class that users will interact with in the analysis
     environment.  The most useful methods are:
 
@@ -47,7 +49,7 @@ class CDMSDataCatalog:
     """
 
     def __init__(self, config_file=None, default_fetchdir=None):
-        """ ##Constructor
+        """##Constructor
         Args:
             config_file (str): location of config file with client settings
             default_fetchdir (str): root directory for downloading data
@@ -56,21 +58,21 @@ class CDMSDataCatalog:
         [configparser](https://docs.python.org/3/library/configparser.html)
         syntax.  All settings should be in the `[defaults]` section.
         Suggested approach is to copy `cfg/default.cfg` as a starting point.
-        Recognized heys are: 
-        
+        Recognized heys are:
+
         * url: base URL for accessing the catalog web interface
         * auth_type: web authentication standard
         * auth_key_id: authentication id
         * auth_secret_key: authentication public key
         * default_fetchdir: same as `default_fetchdir` argument
 
-        
+
         """
-        
+
         # load the configuration file
         if config_file is None:
-            config_file = pkg_resources.resource_filename(__name__,
-                                                          'cfg/default.cfg')
+            config_file = files("CDMSDataCatalog").joinpath("cfg/default.cfg")
+
         config = config_from_file(config_file)
 
         # determine default data fetchdir
@@ -79,27 +81,28 @@ class CDMSDataCatalog:
             self.default_fetchdir = get_default_fetchdir()
             # see if it was specified in the config file
             try:
-                self.default_fetchdir = config['defaults']['default_fetchdir']
-            except KeyError: # this is not in the config file
+                self.default_fetchdir = config["defaults"]["default_fetchdir"]
+            except KeyError:  # this is not in the config file
                 pass
-        
+
         self.client = client_from_config(config)
-        
-    def ls(self, path='/CDMS/'):
-        """ Return contents of a datacat path, by default look in /CDMS/
-        """
+
+    def ls(self, path="/CDMS/"):
+        """Return contents of a datacat path, by default look in /CDMS/"""
         path = corrPathCDMS(path)
         try:
-            return list(map(lambda child:child.path, self.client.children(path)))
-            #for child in self.client.children(path):
-                #print( child.path)
+            return list(
+                map(lambda child: child.path, self.client.children(path))
+            )
+            # for child in self.client.children(path):
+            # print( child.path)
         except TypeError:
             print("Cannot ls, %s is a dataset" % path)
         except BaseException:
             print("Path does not exist")
 
     def exist(self, path, versionId=None, site=None):
-        """ Test if the given path exists in the data catalog.
+        """Test if the given path exists in the data catalog.
         Note: This is NOT testing if the actual file exists on disk
         """
         path = corrPathCDMS(path)
@@ -107,7 +110,7 @@ class CDMSDataCatalog:
         return do_exist
 
     def rm(self, path, recursive=False, verbose=True):
-        """ Remove an entry from the catalog. Obviously this should only be
+        """Remove an entry from the catalog. Obviously this should only be
         used by experts with extreme caution!
 
         Args:
@@ -119,11 +122,11 @@ class CDMSDataCatalog:
         """
         path = corrPathCDMS(path)
 
-        if(verbose):
+        if verbose:
             print(path)
-        if(recursive):
+        if recursive:
             try:
-                if(type(self.client.path(path)) == datacat.model.Dataset):
+                if type(self.client.path(path)) == datacat.model.Dataset:
                     response = self.client.rmds(path)
                     print(response)
                     return
@@ -135,11 +138,11 @@ class CDMSDataCatalog:
                 for child in self.client.children(path):
                     self.rm(child.path, recursive=True)
 
-                ctype = 'folder'
-                if(type(self.client.path(path)) == datacat.model.Group):
-                    ctype = 'group'
+                ctype = "folder"
+                if type(self.client.path(path)) == datacat.model.Group:
+                    ctype = "group"
 
-                if(verbose):
+                if verbose:
                     print(path)
                 try:
                     response = self.client.rmdir(path, type=ctype)
@@ -149,16 +152,16 @@ class CDMSDataCatalog:
                 return
         else:
             try:
-                if(type(self.client.path(path)) == datacat.model.Dataset):
+                if type(self.client.path(path)) == datacat.model.Dataset:
                     self.client.rmds(path)
                 else:
                     self.client.rmdir(path)
             except Exception as e:
                 print(e)
-                raise IOError("Couldn't delete "+path)
+                raise IOError("Couldn't delete " + path)
 
     def mkgroup(self, path, parents=False, metadata=None):
-        """ Create a new group"
+        """Create a new group"
         Args:
             path(str): full path to the new group
             parents(bool): create any missing higher-level groups on the way
@@ -167,26 +170,30 @@ class CDMSDataCatalog:
         self.client.mkgroup(path, parents=parents, metadata=metadata)
         return
 
-    def getgroup(self, path, site='All'):
+    def getgroup(self, path, site="All"):
         """Convert a path (string) to a full CDMSGroup object"""
         path = corrPathCDMS(path)
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
 
-    def mkdir(self, path, parents=False, metadata=None): ### ELA: modified this function to include metadata argument
-        """ Create a new directory
+    def mkdir(
+        self, path, parents=False, metadata=None
+    ):  ### ELA: modified this function to include metadata argument
+        """Create a new directory
         Args:
             path (str): full path to the new directory
             parents (bool): create any missing higher-level directories on the
                 way (similar to `mkdir -p`)
         """
         path = corrPathCDMS(path)
-        self.client.mkdir(path, parents=parents, metadata=metadata) ### ELA: see above comment...
+        self.client.mkdir(
+            path, parents=parents, metadata=metadata
+        )  ### ELA: see above comment...
         return
 
-    def search(self, path, site='All', getallmetadata=False, **kwargs):
-        """ Call `client.search` and return sorted CDMSDatasets
-        
+    def search(self, path, site="All", getallmetadata=False, **kwargs):
+        """Call `client.search` and return sorted CDMSDatasets
+
         See https://github.com/slaclab/datacat/wiki/Search-Syntax for the
         nominal syntax for path wildcards and query operators. (NB: the syntax
         for returning folders rather than datasets doesn't seem to work!)
@@ -220,7 +227,7 @@ class CDMSDataCatalog:
             results = [CDMSDataset.fromDataset(res) for res in results]
         return results
 
-    def get(self, path, site='All'):
+    def get(self, path, site="All"):
         """Convert a path (string) to a full CDMSDataset object"""
         path = corrPathCDMS(path)
         rawds = self.client.path(path, site=site)
@@ -233,47 +240,60 @@ class CDMSDataCatalog:
             replace (bool):  If true, overwrite an existing entry at that path
             catch_errors (bool): If False, allow errors to propagate
         """
-        if(CDMSds.dataType == 'DatacatQuery'):
+        if CDMSds.dataType == "DatacatQuery":
             raise ValueError(
-                'Cannot commit dataset with type "DatacatQuery", invalid type')
+                'Cannot commit dataset with type "DatacatQuery", invalid type'
+            )
         try:
             path = corrPathCDMS(CDMSds.relativePath)
-            if(not self.client.exists(path)):
+            if not self.client.exists(path):
                 self.mkdir(path, parents=True)
-            DSexists = self.client.exists(path+'/'+CDMSds.datasetName)
-            if(DSexists):
-                if(replace):
-                    print('Replacing existing dataset:', path, '/',
-                          CDMSds.datasetName)
-                    self.rm(path+'/'+CDMSds.datasetName)
+            DSexists = self.client.exists(path + "/" + CDMSds.datasetName)
+            if DSexists:
+                if replace:
+                    print(
+                        "Replacing existing dataset:",
+                        path,
+                        "/",
+                        CDMSds.datasetName,
+                    )
+                    self.rm(path + "/" + CDMSds.datasetName)
                 else:
-                    print('Skipping existing dataset:', path, '/',
-                          CDMSds.datasetName)
+                    print(
+                        "Skipping existing dataset:",
+                        path,
+                        "/",
+                        CDMSds.datasetName,
+                    )
 
-           #####################
-           # This is to try and get size and checksum for files that are not at SLAC (as metadata)
+            #####################
+            # This is to try and get size and checksum for files that are not at SLAC (as metadata)
 
-            if(not DSexists or replace):
-            # Maybe a Cleaner way to implement if Crawler is before this (which I do not think it is)
-            #if(scan_result =! {"scanStatus": "MISSING"}):
-                if(CDMSds.site == 'SLAC'):
-                    ds = self.client.mkds(path,
-                                          CDMSds.datasetName,
-                                          CDMSds.fileType,
-                                          CDMSds.fileFormat,
-                                          versionMetadata=CDMSds.metadata,
-                                          resource=CDMSds.filePath,
-                                          site=CDMSds.site)
+            if not DSexists or replace:
+                # Maybe a Cleaner way to implement if Crawler is before this (which I do not think it is)
+                # if(scan_result =! {"scanStatus": "MISSING"}):
+                if CDMSds.site == "SLAC":
+                    ds = self.client.mkds(
+                        path,
+                        CDMSds.datasetName,
+                        CDMSds.fileType,
+                        CDMSds.fileFormat,
+                        versionMetadata=CDMSds.metadata,
+                        resource=CDMSds.filePath,
+                        site=CDMSds.site,
+                    )
                 else:
-                    ds = self.client.mkds(path,
-                                          CDMSds.datasetName,
-                                          CDMSds.fileType,
-                                          CDMSds.fileFormat,
-                                          versionMetadata=CDMSds.metadata,
-                                          resource=CDMSds.filePath,
-                                          site=CDMSds.site,
-                                          size=CDMSds.filesize,
-                                          checksum=CDMSds.crcchecksum)
+                    ds = self.client.mkds(
+                        path,
+                        CDMSds.datasetName,
+                        CDMSds.fileType,
+                        CDMSds.fileFormat,
+                        versionMetadata=CDMSds.metadata,
+                        resource=CDMSds.filePath,
+                        site=CDMSds.site,
+                        size=CDMSds.filesize,
+                        checksum=CDMSds.crcchecksum,
+                    )
                 CDMSds.rawDataset = ds
         except Exception as e:
             if catch_errors:
@@ -281,7 +301,7 @@ class CDMSDataCatalog:
                 print("Could not create dataset")
             else:
                 raise
-    
+
     def addLoc(self, path, site, resource, catch_errors=True):
         """Add a new dataset location to an existing registered dataset
         Args:
@@ -292,16 +312,19 @@ class CDMSDataCatalog:
             A representation of the dataset that was just created.
         """
         try:
-            DSexists = self.client.exists(path) 
-            if(DSexists):
+            DSexists = self.client.exists(path)
+            if DSexists:
                 ds_check = self.client.path(path, versionId="current")
                 dsaddLoc = self.client.mkloc(path, site, resource)
-                ds_return = self.client.path(path, versionId="current") 
+                ds_return = self.client.path(path, versionId="current")
                 try:
                     for loc in ds_return.locations:
-                        print("Dataset site: %s at location %s "%(loc.site, loc.resource))
+                        print(
+                            "Dataset site: %s at location %s "
+                            % (loc.site, loc.resource)
+                        )
                 except:
-                    print('Dataset location cannot be found')
+                    print("Dataset location cannot be found")
             else:
                 print("Dataset does not exist")
 
@@ -313,13 +336,15 @@ class CDMSDataCatalog:
                 raise
 
     def fetch(self, path, **kwargs):
-        """ fetch (download) dataset at `path`.
+        """fetch (download) dataset at `path`.
         See `CDMSDataCatalog.fetch.fetchdata` for
         different possible forms for `path` and additional arguments"""
-        kwargs.setdefault('dest', self.default_fetchdir)
+        kwargs.setdefault("dest", self.default_fetchdir)
         return fetchdata(self, path, **kwargs)
 
-    def getDependents(self, dep_container, dep_type, max_depth, chunk_size, **kwargs):
+    def getDependents(
+        self, dep_container, dep_type, max_depth, chunk_size, **kwargs
+    ):
         """
         Retrieves dependents up to the provided "chunk_size" at a time, subject to "max_depth".
 
@@ -335,9 +360,15 @@ class CDMSDataCatalog:
                 if hasattr(container, "versionMetadata"):
                     if container.versionMetadata.get("dependencyName"):
                         # refresh container for latest
-                        container = self.client.path(container.path, versionId=container.versionId, site='All')
+                        container = self.client.path(
+                            container.path,
+                            versionId=container.versionId,
+                            site="All",
+                        )
             except Exception:
-                raise ValueError('Unqualified dataset passed as dependency container')
+                raise ValueError(
+                    "Unqualified dataset passed as dependency container"
+                )
         elif isinstance(dep_container, CDMSGroup):
             try:
                 container = dep_container.rawGroup
@@ -346,10 +377,14 @@ class CDMSDataCatalog:
                         # refresh container for latest
                         container = self.client.path(container.path)
             except Exception:
-                raise ValueError("qualified group passed as dependency container")
+                raise ValueError(
+                    "qualified group passed as dependency container"
+                )
         else:
             container = dep_container
-        return self.client.get_dependents(container, dep_type, max_depth, chunk_size, **kwargs)
+        return self.client.get_dependents(
+            container, dep_type, max_depth, chunk_size, **kwargs
+        )
 
     def getNextDependents(self, dep_container, **kwargs):
         """
@@ -361,15 +396,21 @@ class CDMSDataCatalog:
             try:
                 container = dep_container.rawDataset
             except Exception:
-                raise ValueError('Unqualified dataset passed as dependency container')
+                raise ValueError(
+                    "Unqualified dataset passed as dependency container"
+                )
         elif isinstance(dep_container, CDMSGroup):
             try:
                 container = dep_container.rawGroup
             except Exception:
-                raise ValueError("Unqualified group passed as dependency container")
+                raise ValueError(
+                    "Unqualified group passed as dependency container"
+                )
         return self.client.get_next_dependents(container, **kwargs)
 
-    def checkDependencyCycles(self, dep_container, dep_type, dep_dss=None, dep_grps=None):
+    def checkDependencyCycles(
+        self, dep_container, dep_type, dep_dss=None, dep_grps=None
+    ):
         """
         Check existing cycles in dep_container and if dependents are to be added.
             :param dep_container: Parent container object to add dependents to
@@ -379,9 +420,18 @@ class CDMSDataCatalog:
             :param dep_grps: The groups we wish to use as children of the parent container
             :return ts: the topological sorter object in graphlib
         """
-        return self.client.check_dependency_cycles(dep_container, dep_type, dep_dss, dep_grps)
+        return self.client.check_dependency_cycles(
+            dep_container, dep_type, dep_dss, dep_grps
+        )
 
-    def addDependents(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
+    def addDependents(
+        self,
+        dep_container,
+        dep_type,
+        dep_datasets=None,
+        dep_groups=None,
+        **kwargs,
+    ):
         """
          Attach new dependents to container object.
         :param dep_container: Parent container object to add dependents to
@@ -394,39 +444,52 @@ class CDMSDataCatalog:
             try:
                 container = dep_container.rawDataset
             except Exception:
-                raise ValueError('Unqualified CDMSDataset passed as dependency container')
+                raise ValueError(
+                    "Unqualified CDMSDataset passed as dependency container"
+                )
         elif isinstance(dep_container, CDMSGroup):
             try:
                 container = dep_container.rawGroup
             except Exception:
-                raise ValueError('Unqualified CDMSGroup passed as dependency container')
+                raise ValueError(
+                    "Unqualified CDMSGroup passed as dependency container"
+                )
         else:
             container = dep_container
         dep_grps = []
-        for group in (dep_groups or []):
+        for group in dep_groups or []:
             if isinstance(group, CDMSGroup):
                 try:
                     dep_grps.append(group.rawGroup)
                 except Exception:
-                    raise ValueError('Unqualified group passed as dependent')
+                    raise ValueError("Unqualified group passed as dependent")
             else:
                 dep_grps.append(group)
         dep_dss = []
-        for dataset in (dep_datasets or []):
+        for dataset in dep_datasets or []:
             if isinstance(dataset, CDMSDataset):
                 try:
                     dep_dss.append(dataset.rawDataset)
                 except Exception:
-                    raise ValueError('Unqualified dataset passed as dependent')
+                    raise ValueError("Unqualified dataset passed as dependent")
             else:
                 dep_dss.append(dataset)
-        ret = self.client.add_dependents(container, dep_type, dep_dss, dep_grps, **kwargs)
+        ret = self.client.add_dependents(
+            container, dep_type, dep_dss, dep_grps, **kwargs
+        )
         if isinstance(dep_container, CDMSDataset):
             dep_container.rawDataset = ret
         elif isinstance(dep_container, CDMSGroup):
             dep_container.rawGroup = ret
 
-    def removeDependents(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
+    def removeDependents(
+        self,
+        dep_container,
+        dep_type,
+        dep_datasets=None,
+        dep_groups=None,
+        **kwargs,
+    ):
         """
         Remove dependents from container object provided
         :param dep_container: Parent container object to remove dependents from
@@ -438,42 +501,58 @@ class CDMSDataCatalog:
             try:
                 container = dep_container.rawDataset
             except Exception:
-                raise ValueError('Unqualified dataset passed as dependency container')
+                raise ValueError(
+                    "Unqualified dataset passed as dependency container"
+                )
         elif isinstance(dep_container, CDMSGroup):
             try:
                 container = dep_container.rawGroup
             except Exception:
-                raise ValueError('Unqualified group passed as dependency container')
+                raise ValueError(
+                    "Unqualified group passed as dependency container"
+                )
         else:
             container = dep_container
         dep_grps = []
-        for group in (dep_groups or []):
+        for group in dep_groups or []:
             if isinstance(group, CDMSGroup):
                 try:
                     dep_grps.append(group.rawGroup)
                 except Exception:
-                    raise ValueError('Unqualified group passed as dependent')
+                    raise ValueError("Unqualified group passed as dependent")
             else:
                 dep_grps.append(group)
         dep_dss = []
-        for dataset in (dep_datasets or []):
+        for dataset in dep_datasets or []:
             if isinstance(dataset, CDMSDataset):
                 try:
                     dep_dss.append(dataset.rawDataset)
                 except Exception:
-                    raise ValueError('Unqualified dataset passed as dependent')
+                    raise ValueError("Unqualified dataset passed as dependent")
             else:
                 dep_dss.append(dataset)
-        ret = self.client.remove_dependents(container, dep_type, dep_dss, dep_grps, **kwargs)
+        ret = self.client.remove_dependents(
+            container, dep_type, dep_dss, dep_grps, **kwargs
+        )
         if isinstance(dep_container, CDMSDataset):
             dep_container.rawDataset = ret
         elif isinstance(dep_container, CDMSGroup):
             dep_container.rawGroup = ret
 
-    def buildDataSearch(self, Facility='*', nFridgeRun='*', ProdType='*', 
-                        ProdTag='*', nMergeLevel=None, Series='*', 
-                        ProdStep=None, filename=None, query=None, **kwargs):
-        """ Construct the data catalog path and query string for CDMS
+    def buildDataSearch(
+        self,
+        Facility="*",
+        nFridgeRun="*",
+        ProdType="*",
+        ProdTag="*",
+        nMergeLevel=None,
+        Series="*",
+        ProdStep=None,
+        filename=None,
+        query=None,
+        **kwargs,
+    ):
+        """Construct the data catalog path and query string for CDMS
         datasets. Arguments starting with a capital are generally directly
         equivalent to metadata arguments.  Arguments can take the following
         forms:
@@ -500,7 +579,7 @@ class CDMSDataCatalog:
             filename (str): the name of the actual file
             query (str): additional `datacat.client.Client.search` query.
                          See [here](https://github.com/slaclab/datacat/wiki/Search-Syntax)
-                         for the syntax. 
+                         for the syntax.
             **kwargs: additional metadata selectors. See the documentation
                       for the relevant `CDMSDataset` class for the list of
                       metadata
@@ -521,45 +600,53 @@ class CDMSDataCatalog:
         def checksimple(param_, name_, query_, force=False):
             if force or not paths.is_simple_arg(param_):
                 query.append(paths.build_query_phrase(name_, param_))
-                return '*'
+                return "*"
             return param_
-        
+
         # handle special 'last' case for nFridgeRun
-        if nFridgeRun == 'last' or nFridgeRun == -1:
-            if not paths.is_simple_arg(Facility, allowstar=False,
-                                       allownone=False):
+        if nFridgeRun == "last" or nFridgeRun == -1:
+            if not paths.is_simple_arg(
+                Facility, allowstar=False, allownone=False
+            ):
                 raise ValueError("Can't find last fridge run without facility")
             nFridgeRun = self.getLastFridgeRunNumber(Facility)
 
-        Facility = checksimple(Facility, 'Facility', query)
-        nFridgeRun = checksimple(nFridgeRun, 'nFridgeRun', query)
-        ProdType = checksimple(ProdType, 'ProdType', query)
-        ProdTag = checksimple(ProdTag, 'ProdTag', query)
-        nMergeLevel = checksimple(nMergeLevel, 'nMergeLevel', query)
-        Series = checksimple(Series, 'Series', query,
-                             force=Series is not None)
-        ProdStep = checksimple(ProdStep, 'ProdStep', query,
-                               force=ProdStep is not None)
+        Facility = checksimple(Facility, "Facility", query)
+        nFridgeRun = checksimple(nFridgeRun, "nFridgeRun", query)
+        ProdType = checksimple(ProdType, "ProdType", query)
+        ProdTag = checksimple(ProdTag, "ProdTag", query)
+        nMergeLevel = checksimple(nMergeLevel, "nMergeLevel", query)
+        Series = checksimple(Series, "Series", query, force=Series is not None)
+        ProdStep = checksimple(
+            ProdStep, "ProdStep", query, force=ProdStep is not None
+        )
 
-        path = paths.getpath_data(Facility, nFridgeRun, ProdType, ProdTag, 
-                                  nMergeLevel, Series, ProdStep, filename)
-        if path.endswith('*') and not path.endswith('**'):
-            path += '*'
+        path = paths.getpath_data(
+            Facility,
+            nFridgeRun,
+            ProdType,
+            ProdTag,
+            nMergeLevel,
+            Series,
+            ProdStep,
+            filename,
+        )
+        if path.endswith("*") and not path.endswith("**"):
+            path += "*"
 
         # handle additional query args from kwargs, convert to string
         # todo: handle nDataType here
         for k, v in kwargs.items():
             query.append(paths.build_query_phrase(k, v))
-        query = ' and '.join(query)
-        
+        query = " and ".join(query)
+
         return path, query
-        
 
     def findData(self, query=None, dofetch=False, fetchargs={}, **kwargs):
-        """ Run a query to find data against the data catalog
+        """Run a query to find data against the data catalog
         Args:
           query (str):  The datacat client query (filter) to run. Can be blank,
-                        in which case it will be entirely built from kwargs. 
+                        in which case it will be entirely built from kwargs.
           dofetch (bool): If True, call fetch on all the result data (i.e.,
                           find the corresponding files on local disk)
           fetchargs (dict): keyword arguments to be passed to `fetch.fetchdata`
@@ -576,7 +663,7 @@ class CDMSDataCatalog:
            The same, but restricted to 'release' level data
            >>> dc.findData(Facility='CUTE', nFridgeRun=14, ProdStep='BatNoise',
            ...             ProdType='release')
-           
+
            Find raw data entries for a series range:
            >>> dc.findData(Series=slice('23200300_000000', '23200305_000000'),
            ...             ProdType='raw')
@@ -596,7 +683,7 @@ class CDMSDataCatalog:
            ...             dofetch=True,
            ...             fetchargs=dict(dest='.', destRelative=False))
         """
-        site = kwargs.pop('site', 'All')
+        site = kwargs.pop("site", "All")
         path, query = self.buildDataSearch(**kwargs)
         # should we catch exceptions here, or let them bubble?
         log.debug("Searching path %s with additional query '%s'", path, query)
@@ -604,11 +691,16 @@ class CDMSDataCatalog:
         if dofetch:
             datasets = self.fetch(datasets, **fetchargs)
         return datasets
-  
 
-    def getProductionInfo(self,facility='',fridgeRun='', processingType='',
-                          productionTagList=[], verbose=True):
-        """ Get production tag list and metadata
+    def getProductionInfo(
+        self,
+        facility="",
+        fridgeRun="",
+        processingType="",
+        productionTagList=[],
+        verbose=True,
+    ):
+        """Get production tag list and metadata
 
         Args:
             facility (str): 'CUTE', 'SLAC', 'NEXUS', etc.   (required)
@@ -625,43 +717,40 @@ class CDMSDataCatalog:
             Find all release tags for CUTE latest run
             >>> dc.getProductionInfo('CUTE', 'last', 'release')
         """
-        # check arguments    
+        # check arguments
         if not facility or not fridgeRun:
             print('Required arguments: "facility" and "fridgeRun"')
             return
 
-     
         if not processingType:
             if verbose:
                 print('No "processingType" provided. Will use "release"!')
-            processingType = 'release'
-
+            processingType = "release"
 
         output_dict = dict()
-        
+
         # ====================
         # Build path
         # ====================
 
         # fridge run
         run_name = str(fridgeRun)
-        if run_name=='last':
+        if run_name == "last":
             run_number = self.getLastFridgeRunNumber(facility)
             if run_number == -999999:
-                print('ERROR: unable to find last fridge run number!')
+                print("ERROR: unable to find last fridge run number!")
                 return
-            run_name = 'R' + str(run_number)
+            run_name = "R" + str(run_number)
             if verbose:
-                print('Last Run: ' + run_name)
-        elif run_name[0]!='R':
-            run_name = 'R' + str(fridgeRun)
-            
-        
-        datacatalog_path = '/CDMS/' + facility + '/' + run_name  +'/Processed/'
-        if processingType == 'release':
-            datacatalog_path  =  datacatalog_path  + 'Releases'
-        elif processingType == 'test':
-            datacatalog_path  =  datacatalog_path  + 'Tests'
+                print("Last Run: " + run_name)
+        elif run_name[0] != "R":
+            run_name = "R" + str(fridgeRun)
+
+        datacatalog_path = "/CDMS/" + facility + "/" + run_name + "/Processed/"
+        if processingType == "release":
+            datacatalog_path = datacatalog_path + "Releases"
+        elif processingType == "test":
+            datacatalog_path = datacatalog_path + "Tests"
         else:
             print('ERROR: processingType should be either "release" or "test"')
             return output_dict
@@ -671,13 +760,15 @@ class CDMSDataCatalog:
         # ====================
 
         try:
-            folder_list  = self.client.children(datacatalog_path)
+            folder_list = self.client.children(datacatalog_path)
         except:
-            print('ERROR: Problem reading datacatalog path: ' +  datacatalog_path)
+            print(
+                "ERROR: Problem reading datacatalog path: " + datacatalog_path
+            )
             return output_dict
 
         for datacat_folder in folder_list:
-           
+
             # get metadata
             prod_tag = datacat_folder.name
 
@@ -687,22 +778,27 @@ class CDMSDataCatalog:
                     continue
 
             folder_metadata = dict()
-            if (hasattr(datacat_folder,'metadata')):
-                folder_metadata= dict(datacat_folder.metadata)
-                
+            if hasattr(datacat_folder, "metadata"):
+                folder_metadata = dict(datacat_folder.metadata)
+
             # output
             output_dict[prod_tag] = folder_metadata
-            
-            
-            
-        return  output_dict
 
+        return output_dict
 
-
-    def getSeriesInfo(self, facility, fridgeRun, seriesList=[], isInSLAC=True, 
-                      dataTypeList=[], beginDateTime=[],endDateTime=[],
-                      includeMetadata=True, verbose=True):
-        """ Get Series list and  metadata
+    def getSeriesInfo(
+        self,
+        facility,
+        fridgeRun,
+        seriesList=[],
+        isInSLAC=True,
+        dataTypeList=[],
+        beginDateTime=[],
+        endDateTime=[],
+        includeMetadata=True,
+        verbose=True,
+    ):
+        """Get Series list and  metadata
 
         Args:
             facility (str): 'CUTE', 'SLAC', 'NEXUS', etc.   (required)
@@ -727,104 +823,115 @@ class CDMSDataCatalog:
         """
 
         output_dict = dict()
-        output_list = list() # if not metadata included, just list of series
+        output_list = list()  # if not metadata included, just list of series
 
         # =====================
-        # Check arguments 
-        # ===================== 
+        # Check arguments
+        # =====================
         if not facility or not fridgeRun:
             print('Required arguments: "facility" and "fridgeRun"')
             return
-     
-            
+
         if dataTypeList and not isInSLAC:
-            print('ERROR: DataType can only be check if data in SLAC, please set "isInSLAC=True"!')
+            print(
+                'ERROR: DataType can only be check if data in SLAC, please set "isInSLAC=True"!'
+            )
             return
 
         if beginDateTime:
             beginDateTime = str(beginDateTime)
-            if (len(beginDateTime)!=6 and len(beginDateTime)!=11 and len(beginDateTime)!=13):
-                print('ERROR: Format of beginDateTime available: YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS')
-           
+            if (
+                len(beginDateTime) != 6
+                and len(beginDateTime) != 11
+                and len(beginDateTime) != 13
+            ):
+                print(
+                    "ERROR: Format of beginDateTime available: YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS"
+                )
+
         if endDateTime:
             endDateTime = str(endDateTime)
-            if (len(endDateTime)!=6 and len(endDateTime)!=11 and len(endDateTime)!=13):
-                print('ERROR: Format of endDateTime available: YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS')
-           
-                
-        if dataTypeList and type(dataTypeList)!=list:
+            if (
+                len(endDateTime) != 6
+                and len(endDateTime) != 11
+                and len(endDateTime) != 13
+            ):
+                print(
+                    "ERROR: Format of endDateTime available: YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS"
+                )
+
+        if dataTypeList and type(dataTypeList) != list:
             dataTypeList = [dataTypeList]
 
-        if seriesList and type(seriesList)!=list:
+        if seriesList and type(seriesList) != list:
             seriesList = [seriesList]
 
         # =====================
         # Get Series folders
         # from data catalog
         # =====================
-        
-              
+
         # fridge run
         run_name = str(fridgeRun)
-        if run_name=='last':
+        if run_name == "last":
             run_number = self.getLastFridgeRunNumber(facility)
             if run_number == -999999:
-                print('ERROR: unable to find last fridge run number!')
+                print("ERROR: unable to find last fridge run number!")
                 return
-            run_name = 'R' + str(run_number)
+            run_name = "R" + str(run_number)
             if verbose:
-                print('Last Run: ' + run_name)
-        elif run_name[0]!='R':
-            run_name = 'R' + str(fridgeRun)
-                              
+                print("Last Run: " + run_name)
+        elif run_name[0] != "R":
+            run_name = "R" + str(fridgeRun)
+
         # list of series
-        datacatalog_path = '/CDMS/' + facility+ '/' + run_name + '/Raw'
+        datacatalog_path = "/CDMS/" + facility + "/" + run_name + "/Raw"
         folder_list = list()
         try:
-            folder_list  = self.client.children(datacatalog_path)
+            folder_list = self.client.children(datacatalog_path)
         except:
-            print('ERROR: Problem reading datacatalog path: ' +  datacatalog_path)
+            print(
+                "ERROR: Problem reading datacatalog path: " + datacatalog_path
+            )
             return
 
-       
-        
         # ====================
-        # Loop and Filter 
+        # Loop and Filter
         # ====================
         for datacat_folder in folder_list:
-            
+
             # series name and metadata
             series = datacat_folder.name
             series_metadata = dict()
-            if (hasattr(datacat_folder,'metadata')):
-                series_metadata= dict(datacat_folder.metadata)
+            if hasattr(datacat_folder, "metadata"):
+                series_metadata = dict(datacat_folder.metadata)
 
             # check series name
-            if (len(series) != 13 and len(series) != 15):
-                continue    
-        
-            # check facility
-            facility_id  = int(series[0:2])
-            facility_name = self.getFacilityName(facility_id)
-            if (facility_name != facility):
+            if len(series) != 13 and len(series) != 15:
                 continue
-        
+
+            # check facility
+            facility_id = int(series[0:2])
+            facility_name = self.getFacilityName(facility_id)
+            if facility_name != facility:
+                continue
+
             # check if in series list
             if seriesList:
                 if series not in seriesList:
                     continue
-        
+
             # check in SLAC
             if isInSLAC:
-                if (('nIsInSLAC' not in series_metadata)
-                    or  ('nIsInSLAC' in series_metadata and 
-                         int(series_metadata['nIsInSLAC'])==0)): 
+                if ("nIsInSLAC" not in series_metadata) or (
+                    "nIsInSLAC" in series_metadata
+                    and int(series_metadata["nIsInSLAC"]) == 0
+                ):
                     continue
 
-
             # check data type
-            if dataTypeList and type(dataTypeList)!=list:
-                data_type = int(series_metadata['nDataType'])
+            if dataTypeList and type(dataTypeList) != list:
+                data_type = int(series_metadata["nDataType"])
                 if data_type not in dataTypeList:
                     continue
 
@@ -832,60 +939,72 @@ class CDMSDataCatalog:
             if beginDateTime or endDateTime:
 
                 # remove underscore and facility id
-                pos_underscore = series.find('_')
-                series_time = series[pos_underscore-6:]
-                series_time =  series_time.replace('_','')
-                if len(series_time)==10:
-                    series_time += '00'
-                    
+                pos_underscore = series.find("_")
+                series_time = series[pos_underscore - 6 :]
+                series_time = series_time.replace("_", "")
+                if len(series_time) == 10:
+                    series_time += "00"
+
                 # begin date
                 if beginDateTime:
-                    start = beginDateTime.replace('_','')
+                    start = beginDateTime.replace("_", "")
                     if len(start) < 12:
-                        for ii in range(0,12-len(start)):
-                            start+='0'
-                    if (len(start) != len(series_time)):
-                        print('\nWARNING: Format of "beginDateTime" not understood...')
-                        print('It should be YYMMDD, YYMMDD_HHMM or YYMMDD_HHMMSS')
+                        for ii in range(0, 12 - len(start)):
+                            start += "0"
+                    if len(start) != len(series_time):
+                        print(
+                            '\nWARNING: Format of "beginDateTime" not understood...'
+                        )
+                        print(
+                            "It should be YYMMDD, YYMMDD_HHMM or YYMMDD_HHMMSS"
+                        )
                         return output_dict
-                    if int(series_time)<int(start):
+                    if int(series_time) < int(start):
                         continue
-
 
                 # end date
                 if endDateTime:
-                    end = endDateTime.replace('_','')
+                    end = endDateTime.replace("_", "")
                     if len(end) < 12:
-                        for ii in range(0,12-len(end)):
-                            end+='0'
-                    if (len(end) != len(series_time)):
-                        print('\nWARNING: Format of "endDateTime" not understood...') 
-                        print('It should be YYMMDD, YYMMDD_HHMM or YYMMDD_HHMMSS')
+                        for ii in range(0, 12 - len(end)):
+                            end += "0"
+                    if len(end) != len(series_time):
+                        print(
+                            '\nWARNING: Format of "endDateTime" not understood...'
+                        )
+                        print(
+                            "It should be YYMMDD, YYMMDD_HHMM or YYMMDD_HHMMSS"
+                        )
                         return output_dict
-                    if int(series_time)>int(end):
+                    if int(series_time) > int(end):
                         continue
-                
+
             # output
             if includeMetadata:
                 output_dict[series] = series_metadata
             else:
                 output_list.append(series)
-    
+
         if includeMetadata:
             return output_dict
         else:
             return output_list
 
-    
-
-
-    def getRawDataList(self,facility, fridgeRun, location = 'SLAC',
-                       seriesList=[], dataTypeList=[],
-                       beginDateTime=[],endDateTime=[], verbose=True):
-        """ Get raw data file list
+    def getRawDataList(
+        self,
+        facility,
+        fridgeRun,
+        location="SLAC",
+        seriesList=[],
+        dataTypeList=[],
+        beginDateTime=[],
+        endDateTime=[],
+        verbose=True,
+    ):
+        """Get raw data file list
 
         Args:
-            facility (str): 'CUTE', 'SLAC', 'NEXUS', etc.   (required) 
+            facility (str): 'CUTE', 'SLAC', 'NEXUS', etc.   (required)
             fridgeRun (int): 'last OR 10, 11, etc   (required)
             location (str): 'SLAC','SNOLAB', etc. [default: data files located at 'SLAC')
             seriesList (list of str): ['231217_1200', '231224_1010', ...]
@@ -894,7 +1013,7 @@ class CDMSDataCatalog:
                 (Default if empty:  return all data types except test data -1)
             beginDateTime (str): YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS
             endDateTime (str): same as begin
-           
+
         Returns:
             dictionary of {series: [list of raw files in series]}
 
@@ -904,7 +1023,7 @@ class CDMSDataCatalog:
         """
 
         # initialize output
-        output_dict  = dict()
+        output_dict = dict()
 
         # ======================
         # Check Input arguments
@@ -912,94 +1031,108 @@ class CDMSDataCatalog:
         if not facility or not fridgeRun:
             print('Required arguments: "facility" and "fridgeRun"')
             return
-        
-      
+
         # fridge run
         run_name = str(fridgeRun)
-        if run_name=='last':
+        if run_name == "last":
             run_number = self.getLastFridgeRunNumber(facility)
             if run_number == -999999:
-                print('ERROR: unable to find last fridge run number!')
+                print("ERROR: unable to find last fridge run number!")
                 return
-            run_name = 'R' + str(run_number)
-        elif run_name[0]!='R':
-            run_name = 'R' + str(fridgeRun)
-            
-        
-        if dataTypeList and type(dataTypeList)!=list:
+            run_name = "R" + str(run_number)
+        elif run_name[0] != "R":
+            run_name = "R" + str(fridgeRun)
+
+        if dataTypeList and type(dataTypeList) != list:
             dataTypeList = [dataTypeList]
 
-        if seriesList and type(seriesList)!=list:
+        if seriesList and type(seriesList) != list:
             seriesList = [seriesList]
-            
+
         # get list of series
 
         # if location is SLAC, then filter based on folder metadata
         isInSLAC = True
-        if location!='SLAC':
-            isInSLAC = False 
-            
+        if location != "SLAC":
+            isInSLAC = False
+
         # ======================
         # Get list of series
         # ======================
-        
-        series_list = self.getSeriesInfo(facility=facility,fridgeRun=fridgeRun,
-                                         seriesList=seriesList, isInSLAC=isInSLAC, 
-                                         dataTypeList=dataTypeList, 
-                                         beginDateTime=beginDateTime,endDateTime=endDateTime,
-                                         includeMetadata=False)
-        
+
+        series_list = self.getSeriesInfo(
+            facility=facility,
+            fridgeRun=fridgeRun,
+            seriesList=seriesList,
+            isInSLAC=isInSLAC,
+            dataTypeList=dataTypeList,
+            beginDateTime=beginDateTime,
+            endDateTime=endDateTime,
+            includeMetadata=False,
+        )
+
         if not series_list:
-            print('WARNING: No series found! Check arguments')
+            print("WARNING: No series found! Check arguments")
             return
 
-        print('Will search the file list for ' + str(len(series_list)) + ' series!')
-        print('Be patient! It may take a while...')
-    
-        
+        print(
+            "Will search the file list for "
+            + str(len(series_list))
+            + " series!"
+        )
+        print("Be patient! It may take a while...")
+
         # ======================
         # Get files
         # ======================
 
-        # loop and get files 
+        # loop and get files
         for series in series_list:
-        
+
             # get files
-            datacatalog_path =  '/CDMS/' + facility +'/' + run_name + '/Raw/' + series
+            datacatalog_path = (
+                "/CDMS/" + facility + "/" + run_name + "/Raw/" + series
+            )
             raw_datasets = []
-        
+
             try:
-                raw_datasets = self.client.children(datacatalog_path,site=location)
+                raw_datasets = self.client.children(
+                    datacatalog_path, site=location
+                )
             except:
                 continue
-            
+
             if not raw_datasets:
                 continue
-            
+
             file_list = []
-            for dataset in  raw_datasets:
+            for dataset in raw_datasets:
                 file_list.append(dataset.resource)
 
             output_dict[series] = file_list
-            
 
-
-                            
         return output_dict
 
-
-
-    def getProcessedDataList(self,facility, fridgeRun, productionTag,
-                             fileType='submerged', location = 'SLAC',
-                             seriesList=[], dataTypeList=[], 
-                             beginDateTime='',endDateTime='',
-                             outputSeriesDictFormat=False, verbose=True):
-        """ Get processed data file list
+    def getProcessedDataList(
+        self,
+        facility,
+        fridgeRun,
+        productionTag,
+        fileType="submerged",
+        location="SLAC",
+        seriesList=[],
+        dataTypeList=[],
+        beginDateTime="",
+        endDateTime="",
+        outputSeriesDictFormat=False,
+        verbose=True,
+    ):
+        """Get processed data file list
 
         Args:
-            facility (str): 'CUTE', 'SLAC', 'NEXUS', etc.   (required) 
+            facility (str): 'CUTE', 'SLAC', 'NEXUS', etc.   (required)
             fridgeRun (int): 'last',or  10, 11, etc  (required)
-            productionTag (str): production tag, example 'Prodv5.9.3' (required) 
+            productionTag (str): production tag, example 'Prodv5.9.3' (required)
             fileType (str): 'unmerged', 'submerged','merged','noise'
                             (default: 'submerged')
             location (str): 'SLAC','SNOLAB', etc.
@@ -1009,10 +1142,10 @@ class CDMSDataCatalog:
             dataTypeList (list of int): [-1,0,1,2,..]
                 (Default if empty:  return all data types except test data -1)
             beginDateTime (str): YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS
-            endDateTime (str): same format as begin  
+            endDateTime (str): same format as begin
             outputSeriesDictFormat (bool): if True return a dictionary with
                 key=Series number, value: list of files
-           
+
         Returns:
             dict: if outputSeriesDictFormat is True
             list: if outputSeriesDictFormat is False
@@ -1021,182 +1154,223 @@ class CDMSDataCatalog:
             * refactor to use `findData`
         """
 
-
-
         # initlize ouput
-        output_dict  = dict() # outputSeriesDictFormat=True
-        output_list  = list() # outputSeriesDictFormat=False
-
+        output_dict = dict()  # outputSeriesDictFormat=True
+        output_list = list()  # outputSeriesDictFormat=False
 
         # ======================
         # Check Input arguments
         # ======================
         if not facility or not fridgeRun or not productionTag:
-            print('ERROR: Required arguments = "facility", "fridgeRun", and "productionTag"')
+            print(
+                'ERROR: Required arguments = "facility", "fridgeRun", and "productionTag"'
+            )
             if not productionTag:
-                print('Use function "getProductionInfo" to get list of available tags!')
+                print(
+                    'Use function "getProductionInfo" to get list of available tags!'
+                )
             return
-             
 
         if not fileType:
             if verbose:
                 print('No file type provided! Will use "submerged')
-            fileType = 'Submerged'
+            fileType = "Submerged"
 
-        if dataTypeList and type(dataTypeList)!=list:
+        if dataTypeList and type(dataTypeList) != list:
             dataTypeList = [dataTypeList]
 
-        if seriesList and type(seriesList)!=list:
+        if seriesList and type(seriesList) != list:
             seriesList = [seriesList]
-        
+
         fileType = fileType[0].capitalize() + fileType[1:]
-        if fileType!='Submerged' and  fileType!='Merged' and fileType!='Unmerged' and fileType!='Noise':
-            print('ERROR: "fileType" argument should be "noise","merged", "submerged", or "unmerged"')
+        if (
+            fileType != "Submerged"
+            and fileType != "Merged"
+            and fileType != "Unmerged"
+            and fileType != "Noise"
+        ):
+            print(
+                'ERROR: "fileType" argument should be "noise","merged", "submerged", or "unmerged"'
+            )
             return
-        
-        
+
         if beginDateTime:
             beginDateTime = str(beginDateTime)
-            if (len(beginDateTime)!=6 and len(beginDateTime)!=11 and len(beginDateTime)!=13):
-                print('ERROR: Format available for  "beginDateTime": YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS')
+            if (
+                len(beginDateTime) != 6
+                and len(beginDateTime) != 11
+                and len(beginDateTime) != 13
+            ):
+                print(
+                    'ERROR: Format available for  "beginDateTime": YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS'
+                )
                 return
-            beginDateTime = beginDateTime.replace('_','')
+            beginDateTime = beginDateTime.replace("_", "")
             if len(beginDateTime) < 12:
-                for ii in range(0,12-len(beginDateTime)):
-                    beginDateTime+='0'
-            
-           
+                for ii in range(0, 12 - len(beginDateTime)):
+                    beginDateTime += "0"
+
         if endDateTime:
             endDateTime = str(endDateTime)
-            if (len(endDateTime)!=6 and len(endDateTime)!=11 and len(endDateTime)!=13):
-                print('ERROR: Format available for "endDateTime": YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS')
+            if (
+                len(endDateTime) != 6
+                and len(endDateTime) != 11
+                and len(endDateTime) != 13
+            ):
+                print(
+                    'ERROR: Format available for "endDateTime": YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS'
+                )
                 return
-            endDateTime = endDateTime.replace('_','')
+            endDateTime = endDateTime.replace("_", "")
             if len(endDateTime) < 12:
-                for ii in range(0,12-len(endDateTime)):
-                    endDateTime+='0'
-
+                for ii in range(0, 12 - len(endDateTime)):
+                    endDateTime += "0"
 
         # get fridge run
         run_name = str(fridgeRun)
-        if run_name=='last':
+        if run_name == "last":
             run_number = self.getLastFridgeRunNumber(facility)
             if run_number == -999999:
-                print('ERROR: unable to find last fridge run number!')
+                print("ERROR: unable to find last fridge run number!")
                 return
-            run_name = 'R' + str(run_number)
+            run_name = "R" + str(run_number)
             if verbose:
-                print('Last Run: ' + run_name)
-        elif run_name[0]!='R':
-            run_name = 'R' + str(fridgeRun)
-            
+                print("Last Run: " + run_name)
+        elif run_name[0] != "R":
+            run_name = "R" + str(fridgeRun)
 
         # check if release or tests
-        base_path = '/CDMS/' + facility + '/' + run_name + '/Processed'
+        base_path = "/CDMS/" + facility + "/" + run_name + "/Processed"
         productionType = str()
         try:
-            if self.exist(base_path +'/Releases/' + productionTag):
-                productionType = 'Releases'
-            elif self.exist(base_path +'/Tests/' + productionTag):
-                productionType = 'Tests'
+            if self.exist(base_path + "/Releases/" + productionTag):
+                productionType = "Releases"
+            elif self.exist(base_path + "/Tests/" + productionTag):
+                productionType = "Tests"
         except:
-            print('ERROR: Problem accessing data catalog!')
+            print("ERROR: Problem accessing data catalog!")
             return
 
-        if not  productionType:
-            print('ERROR: No data with tag "' + productionTag + '" found in the datacatalog!')
-            print('Use function "getProductionInfo" to get list of available tags.')
+        if not productionType:
+            print(
+                'ERROR: No data with tag "'
+                + productionTag
+                + '" found in the datacatalog!'
+            )
+            print(
+                'Use function "getProductionInfo" to get list of available tags.'
+            )
             return
 
-
-        if seriesList and not isinstance(seriesList,list):
+        if seriesList and not isinstance(seriesList, list):
             seriesList = [seriesList]
 
-        if dataTypeList and not isinstance(dataTypeList,list):
+        if dataTypeList and not isinstance(dataTypeList, list):
             dataTypeList = [dataTypeList]
-            
+
         # ======================
         # Get datasets
         # ======================
-       
-        # full path
-        base_path += '/' + productionType + '/' + productionTag + '/' + fileType
-        if fileType=='Unmerged':
-            base_path += '/*'
 
+        # full path
+        base_path += (
+            "/" + productionType + "/" + productionTag + "/" + fileType
+        )
+        if fileType == "Unmerged":
+            base_path += "/*"
 
         # build filter string
-        query = 'nIsJunk==0' 
+        query = "nIsJunk==0"
         if seriesList:
             query += ' and (Series=="{}"'.format(seriesList[0])
             for series in seriesList[1:]:
-                query+= ' or Series=="{}"'.format(series)
-            query+= ')'
+                query += ' or Series=="{}"'.format(series)
+            query += ")"
         if dataTypeList:
-            query+=' and (nDataType=='+str(dataTypeList[0])
+            query += " and (nDataType==" + str(dataTypeList[0])
             for data_type in dataTypeList[1:]:
-                query+=' or nDataType=='+str(data_type)
-            query+= ')'   
+                query += " or nDataType==" + str(data_type)
+            query += ")"
         if beginDateTime:
-            query+=' and nSeriesDateTime>='+str(beginDateTime)
+            query += " and nSeriesDateTime>=" + str(beginDateTime)
         if endDateTime:
-            query+=' and nSeriesDateTime<='+str(endDateTime)
+            query += " and nSeriesDateTime<=" + str(endDateTime)
 
-        show = ['Series']
+        show = ["Series"]
         dataset_list = []
         try:
-            dataset_list =  self.search(base_path,site=location,query=query,show=show)
+            dataset_list = self.search(
+                base_path, site=location, query=query, show=show
+            )
         except:
-            print('ERROR: Problem accessing data catalog!')
-            print('Perhaps the files were produced prior January 2020 and do not have the proper metadata?')
+            print("ERROR: Problem accessing data catalog!")
+            print(
+                "Perhaps the files were produced prior January 2020 and do not have the proper metadata?"
+            )
             return
 
         if not dataset_list:
-            print('WARNING: No processed file found for "'+productionTag+'". Check data catalog!')
-            return 
+            print(
+                'WARNING: No processed file found for "'
+                + productionTag
+                + '". Check data catalog!'
+            )
+            return
 
         # loop datasets
         for dataset in dataset_list:
-            series = dataset.metadata['Series']
-            file_name = dataset.filePath 
+            series = dataset.metadata["Series"]
+            file_name = dataset.filePath
             if outputSeriesDictFormat:
                 if series not in output_dict:
                     output_dict[series] = []
                 output_dict[series].append(file_name)
             else:
                 output_list.append(file_name)
-                                
+
         if outputSeriesDictFormat:
             return output_dict
         else:
             return output_list
 
-
-
     def getFacilityName(self, facility_id):
-        """ Convert numeric facility ID (series name 2-digit prefix) to string
+        """Convert numeric facility ID (series name 2-digit prefix) to string
         Args:
             facility_id (int): the ID to convert
         Returns:
             string: name of facility or empty string if not found.
         """
-            
+
         facility = str()
 
         # list of facilities
-        facilities_dict= {1:'Soudan',2:'UCB',3:'CWRU',4:'UFL',5:'TAMU',6:'Queens',
-                          7:'UMN',8:'Denver',9:'SLAC',
-                          21:'TRIUMF',22:'FNAL',23:'CUTE',24:'SNOLAB',25:'NEXUS',26:'TUNL',
-                          51:'DMC',99:'DAQTesting'}  
+        facilities_dict = {
+            1: "Soudan",
+            2: "UCB",
+            3: "CWRU",
+            4: "UFL",
+            5: "TAMU",
+            6: "Queens",
+            7: "UMN",
+            8: "Denver",
+            9: "SLAC",
+            21: "TRIUMF",
+            22: "FNAL",
+            23: "CUTE",
+            24: "SNOLAB",
+            25: "NEXUS",
+            26: "TUNL",
+            51: "DMC",
+            99: "DAQTesting",
+        }
 
         if facility_id in facilities_dict:
             facility = facilities_dict[facility_id]
 
         return facility
 
-        
-    def getLastFridgeRunNumber(self, facility='CUTE'):
-        """ Get the number for the most recent fridge run for `facility`.
+    def getLastFridgeRunNumber(self, facility="CUTE"):
+        """Get the number for the most recent fridge run for `facility`.
         If any error is encountered, return -999999
         Args:
             facility (str): facility name
@@ -1205,9 +1379,9 @@ class CDMSDataCatalog:
         """
 
         last_run = -999999
-        
+
         # base path
-        base_path = '/CDMS/' + facility
+        base_path = "/CDMS/" + facility
 
         # run list
         folder_list = list()
@@ -1216,16 +1390,16 @@ class CDMSDataCatalog:
         except:
             print(f'ERROR: Unable to read datacatalog path "{base_path}"!')
             return last_run
-        
+
         if not folder_list:
-            print(f'ERROR: No fridge run found in {datacat_path}')
+            print(f"ERROR: No fridge run found in {datacat_path}")
             return last_run
 
         for datacat_folder in folder_list:
             run = datacat_folder.name
             try:
                 last_run = max(last_run, int(run[1:]))
-            except ValueError: #run is not a number?
+            except ValueError:  # run is not a number?
                 pass
 
         return last_run
