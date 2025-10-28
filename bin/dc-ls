@@ -1,8 +1,42 @@
 #!/usr/bin/env python3
 
-import sys
+import argparse
 from CDMSDataCatalog import CDMSDataCatalog
 
-dc = CDMSDataCatalog()
-for item in dc.ls(sys.argv[1] if len(sys.argv) > 1 else '/CDMS'):
-    print(item)
+def main():
+    """
+    Lists the contents of the specified path in the CDMS data catalog.
+
+    Args:
+        path (str) : The full path to the directory in the data catalog.
+
+    Example:
+        dc-ls /CDMS/Test
+
+    Output:
+        - If a path is given, a list of items in the path is printed.
+        - If a path is not give, list the items in /CDMS.
+        - If a path doesn't exist, prints an error.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("path",
+                        nargs="?",
+                        default="/CDMS",
+                        help="Path in the CDMS data catalog to list (default: /CDMS)")
+
+    args = parser.parse_args()
+
+    dc = CDMSDataCatalog()
+    items = dc.ls(args.path)
+
+    if items is None:
+        return
+
+    if not items:
+        print(f"The path {args.path} is empty")
+
+    for item in dc.ls(args.path):
+        print(item)
+
+if __name__ == "__main__":
+    main()
