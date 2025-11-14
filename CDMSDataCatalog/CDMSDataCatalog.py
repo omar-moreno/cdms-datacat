@@ -17,14 +17,51 @@ __all__ = ["CDMSDataCatalog"]
 log = logging.getLogger(__name__)
 
 
-def corrPathCDMS(path):
+def normalize_group_path(path: str) -> str:
+    """
+    Ensures that the given path starts with '/CDMS/' and is properly 
+    formatted.
+
+    
+    This function performs the following checks and modifications:
+    1. If the path is empty, it returns '/CDMS' as the default.
+    2. If the path does not start with '/', a '/' is prepended.
+    3. If the path does not start with '/CDMS', '/CDMS' is prepended (removing
+       any leading slashes before).
+    4. If the path already starts with '/CDMS', it is returned unchanged,
+       ensuring that there are no redundant prefixes.
+    5. Trailing slashes are removed from the final path.
+
+    Args:
+        path (str): The path to be corrected. Can be either absolute or 
+                    relative.
+
+    Returns:
+        str: The corrected path, ensuring it starts with '/CDMS/' and has no
+             trailing slashes.
+
+    Example:
+        >>> normalize_group_path ("/CUTE/Raw/Run1")
+        '/CDMS/CUTE/Raw/Run1'
+
+        >> normalize_group_path("")
+        '/CDMS'
+    """
+
+    # If the path is empty, return "/CDMS" as a default
+    if not path:
+        return "/CDMS"
+
+    # Ensure the path starts with "/"
     if path[0] != "/":
         path = "/" + path
 
-    if path[1:5] != "CDMS":
-        path = "/CDMS" + path
+    # Check if the path starts with "/CDMS", otherwise add it
+    if not path.startswith("/CDMS"):
+        path = "/CDMS" + path.lstrip("/")
 
-    return path
+    # Remove the trailing slash and return the normalized path
+    return path.rstrip("/")
 
 
 def getFileFormat(filePath):
@@ -89,7 +126,7 @@ class CDMSDataCatalog:
 
     def ls(self, path="/CDMS/"):
         """Return contents of a datacat path, by default look in /CDMS/"""
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         try:
             return list(
                 map(lambda child: child.path, self.client.children(path))
@@ -105,7 +142,7 @@ class CDMSDataCatalog:
         """Test if the given path exists in the data catalog.
         Note: This is NOT testing if the actual file exists on disk
         """
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         do_exist = self.client.exists(path, versionId, site)
         return do_exist
 
@@ -120,7 +157,7 @@ class CDMSDataCatalog:
                 if this is False...
             verbose (bool): provide more information about what's happening
         """
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
 
         if verbose:
             print(path)
@@ -172,7 +209,7 @@ class CDMSDataCatalog:
 
     def getgroup(self, path, site="All"):
         """Convert a path (string) to a full CDMSGroup object"""
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
 
@@ -185,7 +222,7 @@ class CDMSDataCatalog:
             parents (bool): create any missing higher-level directories on the
                 way (similar to `mkdir -p`)
         """
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         self.client.mkdir(
             path, parents=parents, metadata=metadata
         )  ### ELA: see above comment...
@@ -217,7 +254,7 @@ class CDMSDataCatalog:
             >>> dc.search('/CDMS/CUTE/R14/Processed/Releases/**',
             ...           query='nMergeLevel == 2')
         """
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         results = self.client.search(path, site=site, **kwargs)
         # results come back unsorted, which is not what we want
         results.sort(key=lambda res: res.path)
@@ -229,7 +266,7 @@ class CDMSDataCatalog:
 
     def get(self, path, site="All"):
         """Convert a path (string) to a full CDMSDataset object"""
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         rawds = self.client.path(path, site=site)
         return CDMSDataset.fromDataset(rawds)
 
@@ -245,7 +282,7 @@ class CDMSDataCatalog:
                 'Cannot commit dataset with type "DatacatQuery", invalid type'
             )
         try:
-            path = corrPathCDMS(CDMSds.relativePath)
+            path = normalize_group_path(CDMSds.relativePath)
             if not self.client.exists(path):
                 self.mkdir(path, parents=True)
             DSexists = self.client.exists(path + "/" + CDMSds.datasetName)
