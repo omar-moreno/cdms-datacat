@@ -221,9 +221,16 @@ class CDMSDataCatalog:
         # Normalize the group path before using it
         path = normalize_group_path(path)
 
+        # If additional metadata is passed, merge it with the initial "State"
+        # metadata value. By default, a group will be in an "Open" state when
+        # first created.
+        init_metadata = {"State": "Open"}
+        if metadata is not None:
+            init_metadata = init_metadata | metadata
+
         # Attempt to create the group, handle the case where it already exists
         if not self.exist(path):
-            self.client.mkgroup(path, parents=parents, metadata=metadata)
+            self.client.mkgroup(path, parents=parents, metadata=init_metadata)
             return True
         else:
             print(f"WARNING: group {path} already exists")
