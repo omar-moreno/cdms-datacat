@@ -3,6 +3,7 @@
 import logging
 import pathlib
 from importlib.resources import files
+from typing import Dict, Optional
 
 import datacat
 from datacat import client_from_config, config_from_file
