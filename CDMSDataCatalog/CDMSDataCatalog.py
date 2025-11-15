@@ -395,6 +395,46 @@ class CDMSDataCatalog:
             else:
                 raise
 
+    def add_metadata(
+        self, path: str, metadata: dict, replace: bool = False
+    ) -> bool:
+        """
+        Adds or updates metadata for the specified container (folder, group).
+
+        Args:
+            path (str): The path to the folder or group.
+            metadata (dict): The metadata to add or update.
+            replace (bool): Whether to replace existing metadata (default is False).
+
+        Returns:
+            bool: True if metadata was successfully added or updated, False otherwise.
+        """
+
+        # Normalize the group path
+        path = normalize_group_path(path)
+
+        # Retrieve the container (folder, group) to add metadata to
+        container = self.client.path(path)
+        container_metadata = container.metadata
+
+        existing_entries = set(metadata.keys()) & set(
+            container_metadata.keys()
+        )
+
+        if existing_entries and not replace:
+            print(
+                f"The following metadata already exists: {existing_entries}. To override them, set 'replace=True'."
+            )
+            return False
+
+        # Update the containers metadata with the new metadata
+        container.metadata = metadata
+
+        # Commit the changes
+        self.client.patchdir(container.path, container)
+
+        return True
+
     def fetch(self, path, **kwargs):
         """fetch (download) dataset at `path`.
         See `CDMSDataCatalog.fetch.fetchdata` for
