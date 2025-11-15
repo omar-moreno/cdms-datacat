@@ -476,31 +476,6 @@ def build_dict_metadata_swft(
         dict_metadata.pop("Series")
     return dict_metadata
 
-
-def create_group(groupname):
-    dc_default = CDMSDataCatalog(
-        files("CDMSDataCatalog").joinpath("cfg/default.cfg")
-    )
-    dc_prod = CDMSDataCatalog(
-        files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
-    )
-
-    relativePath = (
-        groupname.rstrip("/")
-        if groupname.find("/CDMS/") == 0
-        else "/CDMS/" + groupname.strip("/")
-    )  # Not enforcing any conventions on relativePath
-
-    if not dc_default.exist(relativePath):
-        dc_prod.mkgroup(
-            relativePath, parents=True
-        )  # Not attaching any metadata to group
-        return True
-    else:
-        print("WARNING: group " + groupname + " already exists")
-    return False
-
-
 def add_files_to_group(groupname, filePaths):
     dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
 

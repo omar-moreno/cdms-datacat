@@ -3,6 +3,7 @@
 import logging
 import pathlib
 from importlib.resources import files
+from typing import Dict, Optional
 
 import datacat
 from datacat import client_from_config, config_from_file
@@ -17,14 +18,51 @@ __all__ = ["CDMSDataCatalog"]
 log = logging.getLogger(__name__)
 
 
-def corrPathCDMS(path):
+def normalize_group_path(path: str) -> str:
+    """
+    Ensures that the given path starts with '/CDMS/' and is properly
+    formatted.
+
+
+    This function performs the following checks and modifications:
+    1. If the path is empty, it returns '/CDMS' as the default.
+    2. If the path does not start with '/', a '/' is prepended.
+    3. If the path does not start with '/CDMS', '/CDMS' is prepended (removing
+       any leading slashes before).
+    4. If the path already starts with '/CDMS', it is returned unchanged,
+       ensuring that there are no redundant prefixes.
+    5. Trailing slashes are removed from the final path.
+
+    Args:
+        path (str): The path to be corrected. Can be either absolute or
+                    relative.
+
+    Returns:
+        str: The corrected path, ensuring it starts with '/CDMS/' and has no
+             trailing slashes.
+
+    Example:
+        >>> normalize_group_path("/CUTE/Raw/Run1")
+        '/CDMS/CUTE/Raw/Run1'
+
+        >> normalize_group_path("")
+        '/CDMS'
+    """
+
+    # If the path is empty, return "/CDMS" as a default
+    if not path:
+        return "/CDMS"
+
+    # Ensure the path starts with "/"
     if path[0] != "/":
         path = "/" + path
 
-    if path[1:5] != "CDMS":
-        path = "/CDMS" + path
+    # Check if the path starts with "/CDMS", otherwise add it
+    if not path.startswith("/CDMS"):
+        path = "/CDMS" + path.lstrip("/")
 
-    return path
+    # Remove the trailing slash and return the normalized path
+    return path.rstrip("/")
 
 
 def getFileFormat(filePath):
@@ -89,7 +127,7 @@ class CDMSDataCatalog:
 
     def ls(self, path="/CDMS/"):
         """Return contents of a datacat path, by default look in /CDMS/"""
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         try:
             return list(
                 map(lambda child: child.path, self.client.children(path))
@@ -105,7 +143,7 @@ class CDMSDataCatalog:
         """Test if the given path exists in the data catalog.
         Note: This is NOT testing if the actual file exists on disk
         """
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         do_exist = self.client.exists(path, versionId, site)
         return do_exist
 
@@ -120,7 +158,7 @@ class CDMSDataCatalog:
                 if this is False...
             verbose (bool): provide more information about what's happening
         """
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
 
         if verbose:
             print(path)
@@ -160,19 +198,48 @@ class CDMSDataCatalog:
                 print(e)
                 raise IOError("Couldn't delete " + path)
 
-    def mkgroup(self, path, parents=False, metadata=None):
-        """Create a new group"
-        Args:
-            path(str): full path to the new group
-            parents(bool): create any missing higher-level groups on the way
-            metadata(dict): additional metadata
+    def mkgroup(
+        self,
+        path: str,
+        parents: bool = False,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> bool:
         """
-        self.client.mkgroup(path, parents=parents, metadata=metadata)
-        return
+        Create a new group at the specified path.
+
+        Args:
+            path (str): Full path to the new group.
+            parents (bool): If True, create any missing higher-level groups.
+            metadata (dict, optional): Additional metadata to associate with
+                the group.
+
+        Returns:
+            bool: True is the group was successfully created, False if it
+                  already exists.
+        """
+
+        # Normalize the group path before using it
+        path = normalize_group_path(path)
+
+        # If additional metadata is passed, merge it with the initial "State"
+        # metadata value. By default, a group will be in an "Open" state when
+        # first created.
+        init_metadata = {"State": "Open"}
+        if metadata is not None:
+            init_metadata = init_metadata | metadata
+
+        # Attempt to create the group, handle the case where it already exists
+        if not self.exist(path):
+            self.client.mkgroup(path, parents=parents, metadata=init_metadata)
+            return True
+        else:
+            print(f"WARNING: group {path} already exists")
+
+        return False
 
     def getgroup(self, path, site="All"):
         """Convert a path (string) to a full CDMSGroup object"""
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
 
@@ -185,7 +252,7 @@ class CDMSDataCatalog:
             parents (bool): create any missing higher-level directories on the
                 way (similar to `mkdir -p`)
         """
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         self.client.mkdir(
             path, parents=parents, metadata=metadata
         )  ### ELA: see above comment...
@@ -217,7 +284,7 @@ class CDMSDataCatalog:
             >>> dc.search('/CDMS/CUTE/R14/Processed/Releases/**',
             ...           query='nMergeLevel == 2')
         """
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         results = self.client.search(path, site=site, **kwargs)
         # results come back unsorted, which is not what we want
         results.sort(key=lambda res: res.path)
@@ -229,7 +296,7 @@ class CDMSDataCatalog:
 
     def get(self, path, site="All"):
         """Convert a path (string) to a full CDMSDataset object"""
-        path = corrPathCDMS(path)
+        path = normalize_group_path(path)
         rawds = self.client.path(path, site=site)
         return CDMSDataset.fromDataset(rawds)
 
@@ -245,7 +312,7 @@ class CDMSDataCatalog:
                 'Cannot commit dataset with type "DatacatQuery", invalid type'
             )
         try:
-            path = corrPathCDMS(CDMSds.relativePath)
+            path = normalize_group_path(CDMSds.relativePath)
             if not self.client.exists(path):
                 self.mkdir(path, parents=True)
             DSexists = self.client.exists(path + "/" + CDMSds.datasetName)
@@ -334,6 +401,46 @@ class CDMSDataCatalog:
                 print("Could not add data location to Dataset")
             else:
                 raise
+
+    def add_metadata(
+        self, path: str, metadata: dict, replace: bool = False
+    ) -> bool:
+        """
+        Adds or updates metadata for the specified container (folder, group).
+
+        Args:
+            path (str): The path to the folder or group.
+            metadata (dict): The metadata to add or update.
+            replace (bool): Whether to replace existing metadata (default is False).
+
+        Returns:
+            bool: True if metadata was successfully added or updated, False otherwise.
+        """
+
+        # Normalize the group path
+        path = normalize_group_path(path)
+
+        # Retrieve the container (folder, group) to add metadata to
+        container = self.client.path(path)
+        container_metadata = container.metadata
+
+        existing_entries = set(metadata.keys()) & set(
+            container_metadata.keys()
+        )
+
+        if existing_entries and not replace:
+            print(
+                f"The following metadata already exists: {existing_entries}. To override them, set 'replace=True'."
+            )
+            return False
+
+        # Update the containers metadata with the new metadata
+        container.metadata = metadata
+
+        # Commit the changes
+        self.client.patchdir(container.path, container)
+
+        return True
 
     def fetch(self, path, **kwargs):
         """fetch (download) dataset at `path`.
