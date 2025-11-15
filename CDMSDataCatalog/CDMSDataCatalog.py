@@ -19,10 +19,10 @@ log = logging.getLogger(__name__)
 
 def normalize_group_path(path: str) -> str:
     """
-    Ensures that the given path starts with '/CDMS/' and is properly 
+    Ensures that the given path starts with '/CDMS/' and is properly
     formatted.
 
-    
+
     This function performs the following checks and modifications:
     1. If the path is empty, it returns '/CDMS' as the default.
     2. If the path does not start with '/', a '/' is prepended.
@@ -33,7 +33,7 @@ def normalize_group_path(path: str) -> str:
     5. Trailing slashes are removed from the final path.
 
     Args:
-        path (str): The path to be corrected. Can be either absolute or 
+        path (str): The path to be corrected. Can be either absolute or
                     relative.
 
     Returns:
@@ -41,7 +41,7 @@ def normalize_group_path(path: str) -> str:
              trailing slashes.
 
     Example:
-        >>> normalize_group_path ("/CUTE/Raw/Run1")
+        >>> normalize_group_path("/CUTE/Raw/Run1")
         '/CDMS/CUTE/Raw/Run1'
 
         >> normalize_group_path("")
@@ -197,15 +197,37 @@ class CDMSDataCatalog:
                 print(e)
                 raise IOError("Couldn't delete " + path)
 
-    def mkgroup(self, path, parents=False, metadata=None):
-        """Create a new group"
-        Args:
-            path(str): full path to the new group
-            parents(bool): create any missing higher-level groups on the way
-            metadata(dict): additional metadata
+    def mkgroup(
+        self,
+        path: str,
+        parents: bool = False,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> bool:
         """
-        self.client.mkgroup(path, parents=parents, metadata=metadata)
-        return
+        Create a new group at the specified path.
+
+        Args:
+            path (str): Full path to the new group.
+            parents (bool): If True, create any missing higher-level groups.
+            metadata (dict, optional): Additional metadata to associate with
+                the group.
+
+        Returns:
+            bool: True is the group was successfully created, False if it
+                  already exists.
+        """
+
+        # Normalize the group path before using it
+        path = normalize_group_path(path)
+
+        # Attempt to create the group, handle the case where it already exists
+        if not self.exist(path):
+            self.client.mkgroup(path, parents=parents, metadata=metadata)
+            return True
+        else:
+            print(f"WARNING: group {path} already exists")
+
+        return False
 
     def getgroup(self, path, site="All"):
         """Convert a path (string) to a full CDMSGroup object"""
