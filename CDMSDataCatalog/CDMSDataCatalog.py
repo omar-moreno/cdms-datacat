@@ -243,6 +243,59 @@ class CDMSDataCatalog:
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
 
+    def add_files_to_group(self, path: str, file_paths: Iterable[str]) -> bool:
+        """
+        Add one or more dataset files to an open group.
+
+        Parameters
+        ----------
+        path : str Path to the group that should receive the files.
+        file_paths : Iterable[str] A sequence of file paths. Paths may be:
+            - A Data Catalog path starting with "/CDMS/"
+            - A filesystem path containing exactly one "/CDMS/", which will be
+              converted to a Data Catalog path.
+
+        Returns
+        -------
+        bool
+            True if all files were added successfully, False otherwise.
+        """
+        # Normalize the group path before using it
+        path = normalize_path(path)
+
+        # Get the group associated with the given path.
+        group = self.getgroup(path)
+
+        # Check that the group can be modified.
+        if not self.group_is_open(group):
+            print(f"The group {group.name} is closed and can't be modified.")
+            return False
+
+        datasets = []
+        for file_path in file_paths:
+            try:
+                print(file_path.count("/CDMS/"))
+                # Case 1: Already a data catalog path
+                if file_path.startswith("/CDMS/"):
+                    datasets.append(self.get(file_path))
+                # Case 2: A disk path containing exactly one "/CDMS/"
+                elif file_path.count("/CDMS/") == 1:
+                    _, subpath = file_path.split("/CDMS/", 1)
+                    catalog_path = "/CDMS/" + subpath
+                    datasets.append(self.get(catalog_path))
+                else:
+                    print(f"ERROR: unrecognized CDMS path format: {file_path}")
+                    return False
+            except Exception:
+                print(
+                    f"ERROR: cannot find Data Catalog entry for file {file_path}"
+                )
+                return False
+
+        # Add all datasets to the group
+        self.addDependents(group, "cdmsgroup", dep_datasets=datasets)
+        return True
+
     def close_group(self, path: str):
         """
         Close a metadata group at the specified path.
