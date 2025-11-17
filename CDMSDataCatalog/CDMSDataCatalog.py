@@ -18,7 +18,7 @@ __all__ = ["CDMSDataCatalog"]
 log = logging.getLogger(__name__)
 
 
-def normalize_group_path(path: str) -> str:
+def normalize_path(path: str) -> str:
     """
     Ensures that the given path starts with '/CDMS/' and is properly
     formatted.
@@ -42,10 +42,10 @@ def normalize_group_path(path: str) -> str:
              trailing slashes.
 
     Example:
-        >>> normalize_group_path("/CUTE/Raw/Run1")
+        >>> normalize_path("/CUTE/Raw/Run1")
         '/CDMS/CUTE/Raw/Run1'
 
-        >> normalize_group_path("")
+        >> normalize_path("")
         '/CDMS'
     """
 
@@ -127,7 +127,7 @@ class CDMSDataCatalog:
 
     def ls(self, path="/CDMS/"):
         """Return contents of a datacat path, by default look in /CDMS/"""
-        path = normalize_group_path(path)
+        path = normalize_path(path)
         try:
             return list(
                 map(lambda child: child.path, self.client.children(path))
@@ -143,7 +143,7 @@ class CDMSDataCatalog:
         """Test if the given path exists in the data catalog.
         Note: This is NOT testing if the actual file exists on disk
         """
-        path = normalize_group_path(path)
+        path = normalize_path(path)
         do_exist = self.client.exists(path, versionId, site)
         return do_exist
 
@@ -158,7 +158,7 @@ class CDMSDataCatalog:
                 if this is False...
             verbose (bool): provide more information about what's happening
         """
-        path = normalize_group_path(path)
+        path = normalize_path(path)
 
         if verbose:
             print(path)
@@ -219,7 +219,7 @@ class CDMSDataCatalog:
         """
 
         # Normalize the group path before using it
-        path = normalize_group_path(path)
+        path = normalize_path(path)
 
         # If additional metadata is passed, merge it with the initial "State"
         # metadata value. By default, a group will be in an "Open" state when
@@ -239,7 +239,7 @@ class CDMSDataCatalog:
 
     def getgroup(self, path, site="All"):
         """Convert a path (string) to a full CDMSGroup object"""
-        path = normalize_group_path(path)
+        path = normalize_path(path)
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
 
@@ -252,7 +252,7 @@ class CDMSDataCatalog:
             parents (bool): create any missing higher-level directories on the
                 way (similar to `mkdir -p`)
         """
-        path = normalize_group_path(path)
+        path = normalize_path(path)
         self.client.mkdir(
             path, parents=parents, metadata=metadata
         )  ### ELA: see above comment...
@@ -284,7 +284,7 @@ class CDMSDataCatalog:
             >>> dc.search('/CDMS/CUTE/R14/Processed/Releases/**',
             ...           query='nMergeLevel == 2')
         """
-        path = normalize_group_path(path)
+        path = normalize_path(path)
         results = self.client.search(path, site=site, **kwargs)
         # results come back unsorted, which is not what we want
         results.sort(key=lambda res: res.path)
@@ -296,7 +296,7 @@ class CDMSDataCatalog:
 
     def get(self, path, site="All"):
         """Convert a path (string) to a full CDMSDataset object"""
-        path = normalize_group_path(path)
+        path = normalize_path(path)
         rawds = self.client.path(path, site=site)
         return CDMSDataset.fromDataset(rawds)
 
@@ -312,7 +312,7 @@ class CDMSDataCatalog:
                 'Cannot commit dataset with type "DatacatQuery", invalid type'
             )
         try:
-            path = normalize_group_path(CDMSds.relativePath)
+            path = normalize_path(CDMSds.relativePath)
             if not self.client.exists(path):
                 self.mkdir(path, parents=True)
             DSexists = self.client.exists(path + "/" + CDMSds.datasetName)
@@ -418,7 +418,7 @@ class CDMSDataCatalog:
         """
 
         # Normalize the group path
-        path = normalize_group_path(path)
+        path = normalize_path(path)
 
         # Retrieve the container (folder, group) to add metadata to
         container = self.client.path(path)
