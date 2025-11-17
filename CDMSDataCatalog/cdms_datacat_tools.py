@@ -476,34 +476,6 @@ def build_dict_metadata_swft(
         dict_metadata.pop("Series")
     return dict_metadata
 
-def add_files_to_group(groupname, filePaths):
-    dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
-
-    relativePath = (
-        groupname.rstrip("/")
-        if groupname.find("/CDMS/") == 0
-        else "/CDMS/" + groupname.strip("/")
-    )
-    group = dc.getgroup(relativePath)
-
-    datasets = []
-    for filePath in filePaths:
-        try:
-            if (
-                filePath.find("/CDMS/") == 0
-            ):  # Case 1: filePath is Data Catalog path
-                datasets.append(dc.get(filePath))
-            elif (
-                filePath.count("/CDMS/") == 1
-            ):  # Case 2: filePath is actual path on disk, requires single occurrence of '/CDMS/'
-                datasets.append(dc.get("/CDMS/" + filePath.split("/CDMS/")))
-        except:
-            print("ERROR: cannot find Data Catalog entry for file " + filePath)
-            return False
-
-    dc.addDependents(group, "cdmsgroup", dep_datasets=datasets)
-    return True
-
 
 def retrieve_files_from_group(groupname, num_datasets=1000000000):
     dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
