@@ -480,7 +480,6 @@ def build_dict_metadata_swft(
         dict_metadata.pop("Series")
     return dict_metadata
 
-
 def normalize_group_path(group_name: str) -> str:
     """
     Ensures the group path starts with '/CDMS/' and removes any
@@ -492,7 +491,6 @@ def normalize_group_path(group_name: str) -> str:
         return f"/{group_name}"
     else:
         return f"/CDMS/{group_name}"
-
 
 def resolve_datasets(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
     """
@@ -538,76 +536,6 @@ def resolve_datasets(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
 
     return dependents
 
-
-def create_group(groupname):
-    dc_default = CDMSDataCatalog(
-        files("CDMSDataCatalog").joinpath("cfg/default.cfg")
-    )
-    dc_prod = CDMSDataCatalog(
-        files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
-    )
-
-    relativePath = normalize_group_path(groupname)
-
-    if not dc_default.exist(relativePath):
-        dc_prod.mkgroup(
-            relativePath, parents=True
-        )  # Not attaching any metadata to group
-        return True
-    else:
-        print("WARNING: group " + groupname + " already exists")
-    return False
-
-
-def add_files_to_group(group_name: str, paths: List[str]) -> bool:
-    """
-    Add one or more datasets to an existing group in the CDMS data catalog.
-
-    This function retrieves a group container from the CDMS data catalog using
-    the specified `groupname`, resolves each file path in `paths` to a
-    corresponding `Dataset` object, and registers those datasets as dependents
-    of the group.
-
-    Parameters
-    ----------
-    group_name : str
-        The path of the target group within the CDMS data catalog.
-        The group must already exist in the catalog.
-    paths : List[str]
-        A list of paths corresponding to the datasets that should be added.
-        Each path can be a data catalog path or a direct filesystem path.
-
-    Returns
-    -------
-    bool
-        `True` if all datasets were successfully added to the group, `False`
-        if any error occurred.
-
-    Examples
-    --------
-    >>> add_files_to_group("/CDMS/Test/TestGroup/", ["/CDMS/Scratch/TestBackground/test*2*"])
-    >>> add_files_to_group("/CDMS/Test/TestGroup/", ["/CDMS/Scratch/TestBackground/test12.txt"])
-    """
-    dc: CDMSDataCatalog = CDMSDataCatalog(
-        files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
-    )
-
-    try:
-        # Get the group container from the data catalog.
-        group: str = dc.getgroup(normalize_group_path(group_name))
-
-        # Convert the list of paths to datasets.
-        datasets: List[Dataset] = resolve_datasets(dc, paths)
-
-        # Add the datasets to the group.
-        dc.addDependents(group, "cdmsgroup", dep_datasets=datasets)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return False
-
-    return True
-
-
 def remove_files_from_group(group_name: str, paths: List[str]) -> bool:
     """
     Removes datasets from the specified group in the CDMS Data Catalog.
@@ -648,11 +576,3 @@ def remove_files_from_group(group_name: str, paths: List[str]) -> bool:
         return False
 
     return True
-
-
-def retrieve_files_from_group(groupname, num_datasets=1000000000):
-    dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
-
-    relativePath = normalize_group_path(groupname)
-    group = dc.getgroup(relativePath)
-    return dc.getDependents(group, "cdmsgroup", 1, num_datasets)
