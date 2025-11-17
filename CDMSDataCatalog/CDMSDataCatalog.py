@@ -3,7 +3,7 @@
 import logging
 import pathlib
 from importlib.resources import files
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, List, Optional
 
 import datacat
 from datacat import client_from_config, config_from_file
@@ -295,6 +295,45 @@ class CDMSDataCatalog:
         # Add all datasets to the group
         self.addDependents(group, "cdmsgroup", dep_datasets=datasets)
         return True
+
+    def retrieve_files_from_group(
+        self, path: str, num_datasets: int = 1_000_000_000
+    ) -> List[CDMSDataset]:
+        """
+        Retrieve CDMSDataset objects associated with the given group.
+
+        Parameters
+        ----------
+        path : str
+            The path to the group whose datasets should be retrieved.
+        num_datasets : int, optional
+            The maximum number of datasets to return. Defaults to a very large
+            value, effectively returning all dependents.
+
+        Returns
+        -------
+        List[CDMSDataset]
+            A list of CDMSDataset objects associated with the specified group.
+            Returns an empty list if the group does not exist or retrieval fails
+        """
+        # Normalize the group path before using it
+        path = normalize_path(path)
+
+        try:
+            # Get the group associated with the given path.
+            group = self.getgroup(path)
+        except Exception as e:
+            print(f"ERROR: Could not retrieve group at path '{path}': {e}")
+            return []
+
+        try:
+            # Retrieve dependents associated with this group
+            return self.getDependents(group, "cdmsgroup", 1, num_datasets)
+        except Exception as e:
+            print(
+                f"ERROR: Failed to retrieve datasets for group '{group.name}': {e}"
+            )
+            return []
 
     def close_group(self, path: str):
         """

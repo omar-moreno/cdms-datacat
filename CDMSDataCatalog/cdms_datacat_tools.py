@@ -475,15 +475,3 @@ def build_dict_metadata_swft(
     ) and "Series" in dict_metadata.keys():  # This statement might not be necessary in the future
         dict_metadata.pop("Series")
     return dict_metadata
-
-
-def retrieve_files_from_group(groupname, num_datasets=1000000000):
-    dc = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
-
-    relativePath = (
-        groupname.rstrip("/")
-        if groupname.find("/CDMS/") == 0
-        else "/CDMS/" + groupname.strip("/")
-    )
-    group = dc.getgroup(relativePath)
-    return dc.getDependents(group, "cdmsgroup", 1, num_datasets)
