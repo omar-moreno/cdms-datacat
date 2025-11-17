@@ -243,6 +243,40 @@ class CDMSDataCatalog:
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
 
+    def close_group(self, path: str):
+        """
+        Close a metadata group at the specified path.
+
+        Parameters
+        ----------
+        path : str
+            The path to the group that should be closed. The path will be
+            normalized before being used.
+
+        """
+        # Normalize the group path before using it
+        path = normalize_path(path)
+
+        # Close the group
+        self.add_metadata(path, {"State": "Closed"}, replace=True)
+
+    def open_group(self, path: str):
+        """
+        Open a metadata group at the specified path.
+
+        Parameters
+        ----------
+        path : str
+            The path to the group that should be opened. The path will be
+            normalized before being used.
+
+        """
+        # Normalize the group path before using it
+        path = normalize_path(path)
+
+        # Close the group
+        self.add_metadata(path, {"State": "Open"}, replace=True)
+
     def mkdir(
         self, path, parents=False, metadata=None
     ):  ### ELA: modified this function to include metadata argument
