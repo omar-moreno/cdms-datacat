@@ -3,7 +3,7 @@
 import logging
 import pathlib
 from importlib.resources import files
-from typing import Dict, Optional
+from typing import Dict, Iterable, Optional
 
 import datacat
 from datacat import client_from_config, config_from_file
@@ -276,6 +276,32 @@ class CDMSDataCatalog:
 
         # Close the group
         self.add_metadata(path, {"State": "Open"}, replace=True)
+
+    def group_is_open(self, group: CDMSGroup) -> bool:
+        """
+        Determine whether a metadata group is currently open.
+
+        This method inspects the group's metadata and returns ``True`` if the
+        value associated with the ``"State"`` key is ``"Open"``. If the key is
+        missing or has any other value, the method returns ``False``.
+
+        Parameters
+        ----------
+        group : CDMSGroup
+            The group whose open/closed state should be checked.
+
+        Returns
+        -------
+        bool ``True`` if the group is marked as open, ``False`` otherwise.
+
+        Notes
+        -----
+        A group's state is tracked via its ``"State"`` metadata field. Other
+        methods in this class (e.g., `open_group` or `close_group`) are expected
+        to update this field accordingly
+        """
+        # If the group is open, return true.
+        return group.metadata["State"] == "Open"
 
     def mkdir(
         self, path, parents=False, metadata=None
