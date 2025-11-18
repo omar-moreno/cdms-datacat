@@ -7,6 +7,7 @@ from typing import Dict, Iterable, List, Optional
 
 import datacat
 from datacat import client_from_config, config_from_file
+from datacat.model import Dataset
 
 from . import paths
 from .CDMSDataset import CDMSDataset
@@ -124,6 +125,48 @@ class CDMSDataCatalog:
                 pass
 
         self.client = client_from_config(config)
+
+    def resolve_datasets(self, paths: List[str]) -> List[Dataset]:
+        """
+        Resolve dataset paths into dataset objects.
+
+        Parameters
+        ----------
+            paths : List[str]
+                A list of dependent dataset paths (can include wildcards). The
+                path can either be a datacat path or a path on disk.
+
+        Returns
+        -------
+        List[Dataset]
+            A list of resolved dependent dataset objects.
+        """
+        if not isinstance(paths, list):
+            raise TypeError(
+                f"'paths' must be a list, but got {type(paths).__name__}"
+            )
+
+        dependents: List[Dataset] = []
+
+        for path in paths:
+            # Check if the path is a data catalog path or a path on disk. If it's
+            # a path on disk, convert it to a data catalog path.
+            if path.count("/CDMS/") == 1:
+                path_after_cdms = path.split("/CDMS/")[1]
+                path = f"/CDMS/{path_after_cdms}"
+
+            if ("*" not in path) and ("?" not in path):
+                # Direct path to a dataset (no wildcards)
+                dependents.append(self.get(path))
+            else:
+                # Path contains wildcards, perform a search
+                head, _, tail = path.rpartition("/")
+                query_path = head + "/" if head else ""
+                query = f"name=~'{tail}'"
+                results = self.client.search(query_path, query=query)
+                dependents.extend(results)
+
+        return dependents
 
     def ls(self, path="/CDMS/"):
         """Return contents of a datacat path, by default look in /CDMS/"""
@@ -294,6 +337,48 @@ class CDMSDataCatalog:
 
         # Add all datasets to the group
         self.addDependents(group, "cdmsgroup", dep_datasets=datasets)
+        return True
+
+    def remove_files_from_group(
+        self, group_name: str, paths: List[str]
+    ) -> bool:
+        """
+        Removes datasets from the specified group in the CDMS Data Catalog.
+
+        Parameters
+        ----------
+        group_name : (str)
+            The name of the group from which datasets will be removed.
+        paths : List[str]
+            A list of file paths corresponding to the datasets that should be
+            removed. The paths can either be paths on disk or data catalog paths.
+            Both can include wildcards.
+
+        Returns
+        -------
+        bool
+            Returns `True` if the operation was successful, otherwise `False`.
+
+        Examples
+        --------
+        >>> remove_files_from_group("/CDMS/Test/TestGroup", ["/CDMS/Scratch/TestBackground/test1*.txt"])
+        """
+
+        try:
+            # Retrieve the group container that will be modified.
+            group = self.getgroup(normalize_path(group_name))
+
+            # Convert the list of paths to datasets.
+            group_datasets: List[Dataset] = self.resolve_datasets(paths)
+
+            # Remove the datasets from the groups.
+            self.removeDependents(
+                group, "cdmsgroup", dep_datasets=group_datasets
+            )
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return False
+
         return True
 
     def retrieve_files_from_group(
