@@ -3,9 +3,11 @@
 import logging
 import pathlib
 from importlib.resources import files
+from typing import Dict, Iterable, List, Optional
 
 import datacat
 from datacat import client_from_config, config_from_file
+from datacat.model import Dataset
 
 from . import paths
 from .CDMSDataset import CDMSDataset
@@ -17,14 +19,51 @@ __all__ = ["CDMSDataCatalog"]
 log = logging.getLogger(__name__)
 
 
-def corrPathCDMS(path):
+def normalize_path(path: str) -> str:
+    """
+    Ensures that the given path starts with '/CDMS/' and is properly
+    formatted.
+
+
+    This function performs the following checks and modifications:
+    1. If the path is empty, it returns '/CDMS' as the default.
+    2. If the path does not start with '/', a '/' is prepended.
+    3. If the path does not start with '/CDMS', '/CDMS' is prepended (removing
+       any leading slashes before).
+    4. If the path already starts with '/CDMS', it is returned unchanged,
+       ensuring that there are no redundant prefixes.
+    5. Trailing slashes are removed from the final path.
+
+    Args:
+        path (str): The path to be corrected. Can be either absolute or
+                    relative.
+
+    Returns:
+        str: The corrected path, ensuring it starts with '/CDMS/' and has no
+             trailing slashes.
+
+    Example:
+        >>> normalize_path("/CUTE/Raw/Run1")
+        '/CDMS/CUTE/Raw/Run1'
+
+        >> normalize_path("")
+        '/CDMS'
+    """
+
+    # If the path is empty, return "/CDMS" as a default
+    if not path:
+        return "/CDMS"
+
+    # Ensure the path starts with "/"
     if path[0] != "/":
         path = "/" + path
 
-    if path[1:5] != "CDMS":
-        path = "/CDMS" + path
+    # Check if the path starts with "/CDMS", otherwise add it
+    if not path.startswith("/CDMS"):
+        path = "/CDMS" + path.lstrip("/")
 
-    return path
+    # Remove the trailing slash and return the normalized path
+    return path.rstrip("/")
 
 
 def getFileFormat(filePath):
@@ -87,9 +126,51 @@ class CDMSDataCatalog:
 
         self.client = client_from_config(config)
 
+    def resolve_datasets(self, paths: List[str]) -> List[Dataset]:
+        """
+        Resolve dataset paths into dataset objects.
+
+        Parameters
+        ----------
+            paths : List[str]
+                A list of dependent dataset paths (can include wildcards). The
+                path can either be a datacat path or a path on disk.
+
+        Returns
+        -------
+        List[Dataset]
+            A list of resolved dependent dataset objects.
+        """
+        if not isinstance(paths, list):
+            raise TypeError(
+                f"'paths' must be a list, but got {type(paths).__name__}"
+            )
+
+        dependents: List[Dataset] = []
+
+        for path in paths:
+            # Check if the path is a data catalog path or a path on disk. If it's
+            # a path on disk, convert it to a data catalog path.
+            if path.count("/CDMS/") == 1:
+                path_after_cdms = path.split("/CDMS/")[1]
+                path = f"/CDMS/{path_after_cdms}"
+
+            if ("*" not in path) and ("?" not in path):
+                # Direct path to a dataset (no wildcards)
+                dependents.append(self.get(path))
+            else:
+                # Path contains wildcards, perform a search
+                head, _, tail = path.rpartition("/")
+                query_path = head + "/" if head else ""
+                query = f"name=~'{tail}'"
+                results = self.client.search(query_path, query=query)
+                dependents.extend(results)
+
+        return dependents
+
     def ls(self, path="/CDMS/"):
         """Return contents of a datacat path, by default look in /CDMS/"""
-        path = corrPathCDMS(path)
+        path = normalize_path(path)
         try:
             return list(
                 map(lambda child: child.path, self.client.children(path))
@@ -105,7 +186,7 @@ class CDMSDataCatalog:
         """Test if the given path exists in the data catalog.
         Note: This is NOT testing if the actual file exists on disk
         """
-        path = corrPathCDMS(path)
+        path = normalize_path(path)
         do_exist = self.client.exists(path, versionId, site)
         return do_exist
 
@@ -120,7 +201,7 @@ class CDMSDataCatalog:
                 if this is False...
             verbose (bool): provide more information about what's happening
         """
-        path = corrPathCDMS(path)
+        path = normalize_path(path)
 
         if verbose:
             print(path)
@@ -160,21 +241,244 @@ class CDMSDataCatalog:
                 print(e)
                 raise IOError("Couldn't delete " + path)
 
-    def mkgroup(self, path, parents=False, metadata=None):
-        """Create a new group"
-        Args:
-            path(str): full path to the new group
-            parents(bool): create any missing higher-level groups on the way
-            metadata(dict): additional metadata
+    def mkgroup(
+        self,
+        path: str,
+        parents: bool = False,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> bool:
         """
-        self.client.mkgroup(path, parents=parents, metadata=metadata)
-        return
+        Create a new group at the specified path.
+
+        Args:
+            path (str): Full path to the new group.
+            parents (bool): If True, create any missing higher-level groups.
+            metadata (dict, optional): Additional metadata to associate with
+                the group.
+
+        Returns:
+            bool: True is the group was successfully created, False if it
+                  already exists.
+        """
+
+        # Normalize the group path before using it
+        path = normalize_path(path)
+
+        # If additional metadata is passed, merge it with the initial "State"
+        # metadata value. By default, a group will be in an "Open" state when
+        # first created.
+        init_metadata = {"State": "Open"}
+        if metadata is not None:
+            init_metadata = init_metadata | metadata
+
+        # Attempt to create the group, handle the case where it already exists
+        if not self.exist(path):
+            self.client.mkgroup(path, parents=parents, metadata=init_metadata)
+            return True
+        else:
+            print(f"WARNING: group {path} already exists")
+
+        return False
 
     def getgroup(self, path, site="All"):
         """Convert a path (string) to a full CDMSGroup object"""
-        path = corrPathCDMS(path)
+        path = normalize_path(path)
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
+
+    def add_files_to_group(self, path: str, file_paths: Iterable[str]) -> bool:
+        """
+        Add one or more dataset files to an open group.
+
+        Parameters
+        ----------
+        path : str Path to the group that should receive the files.
+        file_paths : Iterable[str] A sequence of file paths. Paths may be:
+            - A Data Catalog path starting with "/CDMS/"
+            - A filesystem path containing exactly one "/CDMS/", which will be
+              converted to a Data Catalog path.
+
+        Returns
+        -------
+        bool
+            True if all files were added successfully, False otherwise.
+        """
+        # Normalize the group path before using it
+        path = normalize_path(path)
+
+        # Get the group associated with the given path.
+        group = self.getgroup(path)
+
+        # Check that the group can be modified.
+        if not self.group_is_open(group):
+            print(f"The group {group.name} is closed and can't be modified.")
+            return False
+
+        datasets = []
+        for file_path in file_paths:
+            try:
+                print(file_path.count("/CDMS/"))
+                # Case 1: Already a data catalog path
+                if file_path.startswith("/CDMS/"):
+                    datasets.append(self.get(file_path))
+                # Case 2: A disk path containing exactly one "/CDMS/"
+                elif file_path.count("/CDMS/") == 1:
+                    _, subpath = file_path.split("/CDMS/", 1)
+                    catalog_path = "/CDMS/" + subpath
+                    datasets.append(self.get(catalog_path))
+                else:
+                    print(f"ERROR: unrecognized CDMS path format: {file_path}")
+                    return False
+            except Exception:
+                print(
+                    f"ERROR: cannot find Data Catalog entry for file {file_path}"
+                )
+                return False
+
+        # Add all datasets to the group
+        self.addDependents(group, "cdmsgroup", dep_datasets=datasets)
+        return True
+
+    def remove_files_from_group(
+        self, group_name: str, paths: List[str]
+    ) -> bool:
+        """
+        Removes datasets from the specified group in the CDMS Data Catalog.
+
+        Parameters
+        ----------
+        group_name : (str)
+            The name of the group from which datasets will be removed.
+        paths : List[str]
+            A list of file paths corresponding to the datasets that should be
+            removed. The paths can either be paths on disk or data catalog paths.
+            Both can include wildcards.
+
+        Returns
+        -------
+        bool
+            Returns `True` if the operation was successful, otherwise `False`.
+
+        Examples
+        --------
+        >>> remove_files_from_group("/CDMS/Test/TestGroup", ["/CDMS/Scratch/TestBackground/test1*.txt"])
+        """
+
+        try:
+            # Retrieve the group container that will be modified.
+            group = self.getgroup(normalize_path(group_name))
+
+            # Convert the list of paths to datasets.
+            group_datasets: List[Dataset] = self.resolve_datasets(paths)
+
+            # Remove the datasets from the groups.
+            self.removeDependents(
+                group, "cdmsgroup", dep_datasets=group_datasets
+            )
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return False
+
+        return True
+
+    def retrieve_files_from_group(
+        self, path: str, num_datasets: int = 1_000_000_000
+    ) -> List[CDMSDataset]:
+        """
+        Retrieve CDMSDataset objects associated with the given group.
+
+        Parameters
+        ----------
+        path : str
+            The path to the group whose datasets should be retrieved.
+        num_datasets : int, optional
+            The maximum number of datasets to return. Defaults to a very large
+            value, effectively returning all dependents.
+
+        Returns
+        -------
+        List[CDMSDataset]
+            A list of CDMSDataset objects associated with the specified group.
+            Returns an empty list if the group does not exist or retrieval fails
+        """
+        # Normalize the group path before using it
+        path = normalize_path(path)
+
+        try:
+            # Get the group associated with the given path.
+            group = self.getgroup(path)
+        except Exception as e:
+            print(f"ERROR: Could not retrieve group at path '{path}': {e}")
+            return []
+
+        try:
+            # Retrieve dependents associated with this group
+            return self.getDependents(group, "cdmsgroup", 1, num_datasets)
+        except Exception as e:
+            print(
+                f"ERROR: Failed to retrieve datasets for group '{group.name}': {e}"
+            )
+            return []
+
+    def close_group(self, path: str):
+        """
+        Close a metadata group at the specified path.
+
+        Parameters
+        ----------
+        path : str
+            The path to the group that should be closed. The path will be
+            normalized before being used.
+
+        """
+        # Normalize the group path before using it
+        path = normalize_path(path)
+
+        # Close the group
+        self.add_metadata(path, {"State": "Closed"}, replace=True)
+
+    def open_group(self, path: str):
+        """
+        Open a metadata group at the specified path.
+
+        Parameters
+        ----------
+        path : str
+            The path to the group that should be opened. The path will be
+            normalized before being used.
+
+        """
+        # Normalize the group path before using it
+        path = normalize_path(path)
+
+        # Close the group
+        self.add_metadata(path, {"State": "Open"}, replace=True)
+
+    def group_is_open(self, group: CDMSGroup) -> bool:
+        """
+        Determine whether a metadata group is currently open.
+
+        This method inspects the group's metadata and returns ``True`` if the
+        value associated with the ``"State"`` key is ``"Open"``. If the key is
+        missing or has any other value, the method returns ``False``.
+
+        Parameters
+        ----------
+        group : CDMSGroup
+            The group whose open/closed state should be checked.
+
+        Returns
+        -------
+        bool ``True`` if the group is marked as open, ``False`` otherwise.
+
+        Notes
+        -----
+        A group's state is tracked via its ``"State"`` metadata field. Other
+        methods in this class (e.g., `open_group` or `close_group`) are expected
+        to update this field accordingly
+        """
+        # If the group is open, return true.
+        return group.metadata["State"] == "Open"
 
     def mkdir(
         self, path, parents=False, metadata=None
@@ -185,7 +489,7 @@ class CDMSDataCatalog:
             parents (bool): create any missing higher-level directories on the
                 way (similar to `mkdir -p`)
         """
-        path = corrPathCDMS(path)
+        path = normalize_path(path)
         self.client.mkdir(
             path, parents=parents, metadata=metadata
         )  ### ELA: see above comment...
@@ -217,7 +521,7 @@ class CDMSDataCatalog:
             >>> dc.search('/CDMS/CUTE/R14/Processed/Releases/**',
             ...           query='nMergeLevel == 2')
         """
-        path = corrPathCDMS(path)
+        path = normalize_path(path)
         results = self.client.search(path, site=site, **kwargs)
         # results come back unsorted, which is not what we want
         results.sort(key=lambda res: res.path)
@@ -229,7 +533,7 @@ class CDMSDataCatalog:
 
     def get(self, path, site="All"):
         """Convert a path (string) to a full CDMSDataset object"""
-        path = corrPathCDMS(path)
+        path = normalize_path(path)
         rawds = self.client.path(path, site=site)
         return CDMSDataset.fromDataset(rawds)
 
@@ -245,7 +549,7 @@ class CDMSDataCatalog:
                 'Cannot commit dataset with type "DatacatQuery", invalid type'
             )
         try:
-            path = corrPathCDMS(CDMSds.relativePath)
+            path = normalize_path(CDMSds.relativePath)
             if not self.client.exists(path):
                 self.mkdir(path, parents=True)
             DSexists = self.client.exists(path + "/" + CDMSds.datasetName)
@@ -334,6 +638,46 @@ class CDMSDataCatalog:
                 print("Could not add data location to Dataset")
             else:
                 raise
+
+    def add_metadata(
+        self, path: str, metadata: dict, replace: bool = False
+    ) -> bool:
+        """
+        Adds or updates metadata for the specified container (folder, group).
+
+        Args:
+            path (str): The path to the folder or group.
+            metadata (dict): The metadata to add or update.
+            replace (bool): Whether to replace existing metadata (default is False).
+
+        Returns:
+            bool: True if metadata was successfully added or updated, False otherwise.
+        """
+
+        # Normalize the group path
+        path = normalize_path(path)
+
+        # Retrieve the container (folder, group) to add metadata to
+        container = self.client.path(path)
+        container_metadata = container.metadata
+
+        existing_entries = set(metadata.keys()) & set(
+            container_metadata.keys()
+        )
+
+        if existing_entries and not replace:
+            print(
+                f"The following metadata already exists: {existing_entries}. To override them, set 'replace=True'."
+            )
+            return False
+
+        # Update the containers metadata with the new metadata
+        container.metadata = metadata
+
+        # Commit the changes
+        self.client.patchdir(container.path, container)
+
+        return True
 
     def fetch(self, path, **kwargs):
         """fetch (download) dataset at `path`.
