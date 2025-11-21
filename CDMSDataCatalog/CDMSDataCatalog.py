@@ -383,12 +383,17 @@ class CDMSDataCatalog:
             group = self.getgroup(normalize_path(group_name))
 
             # Convert the list of paths to datasets.
-            group_datasets: List[Dataset] = self.resolve_datasets(paths)
+            datasets: List[Dataset] = self.resolve_datasets(paths)
 
             # Remove the datasets from the groups.
             self.removeDependents(
-                group, "cdmsgroup", dep_datasets=group_datasets
+                group, DepType.PREDECESSOR.value, dep_datasets=datasets
             )
+            for dataset in datasets:
+                self.removeDependents(
+                    dataset, DepType.SUCCESSOR.value, dep_groups=[group]
+                )
+
         except Exception as e:
             print(f"An error occurred: {e}")
             return False
