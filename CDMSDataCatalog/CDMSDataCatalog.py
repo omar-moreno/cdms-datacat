@@ -2,6 +2,7 @@
 
 import logging
 import pathlib
+from enum import Enum
 from importlib.resources import files
 from typing import Dict, Iterable, List, Optional
 
@@ -68,6 +69,11 @@ def normalize_path(path: str) -> str:
 
 def getFileFormat(filePath):
     return "".join(pathlib.Path(filePath).suffixes).strip(".")
+
+
+class DepType(Enum):
+    PREDECESSOR = "predecessor"
+    SUCCESSOR = "successor"
 
 
 class CDMSDataCatalog:
@@ -335,8 +341,16 @@ class CDMSDataCatalog:
                 )
                 return False
 
-        # Add all datasets to the group
-        self.addDependents(group, "cdmsgroup", dep_datasets=datasets)
+        # Add all datasets to the group as predecessors
+        self.addDependents(
+            group, DepType.PREDECESSOR.value, dep_datasets=datasets
+        )
+
+        for dataset in datasets:
+            self.addDependents(
+                dataset, DepType.SUCCESSOR.value, dep_groups=[group]
+            )
+
         return True
 
     def remove_files_from_group(
