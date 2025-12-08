@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""
+dc-add-group
+
+A command-line tool for creating groups in the CDMS Data Catalog.
+
+This tool wraps the `CDMSDataCatalog.mkgroup()` API and provides convenient
+command-line access for users.
+
+--------------
+Usage Examples
+--------------
+
+Create a simple group:
+    $ dc-add-group /CDMS/Scratch/TestGroup
+
+Create a group and any missing parent containers:
+    $ dc-add-group /CDMS/Scratch/TestContainer/TestGroup --parents
+
+Attach metadata (comma-separated key:value pairs):
+    $ dc-add-group /CDMS/Scratch/TestGroup \
+        --metadata user:me,type:analysis,priority:high
+
+-----------
+EXIT STATUS
+-----------
+0  – Group created successfully  
+1  – Group creation failed or exception occurred 
+
+"""
+
+import argparse
+from argparse import Namespace
+from importlib.resources import files
+from typing import Dict, Iterable, List, Optional
+
+from CDMSDataCatalog import CDMSDataCatalog
+
+
+def parse_metadata(
+    meta_args: Optional[Iterable[str]],
+) -> Optional[Dict[str, str]]:
+    """
+    Parse metadata entries provided through passed via --metadata.
+
+    Each --metadata argument may contain one or more comma-separated key:value pairs.
+    For example:
+        --metadata user:me,type:analysis,priority:high
+
+    Args:
+        meta_args (Iterable[str] or None):
+            Zero or more metadata argument strings, where each string
+            may contain multiple comma-separated key:value pairs.
+
+    Returns:
+        Optional[Dict[str, str]]:
+            A dictionary of parsed metadata, or None if the user
+            supplied no metadata flags.
+
+    Raises:
+        ValueError: If a metadata field does not contain ':'.
+    """
+    if not meta_args:
+        return None
+
+    metadata: Dict[str, str] = {}
+
+    for entry in meta_args:
+        # Split by comma for multiple entries in one flag
+        parts: List[str] = entry.split(",")
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            if ":" not in part:
+                raise ValueError(
+                    f"Invalid metadata segment: '{part}'. Expected key:value."
+                )
+            key, value = part.split(":", 1)
+            metadata[key] = value
+
+    return metadata
+
+
+def main():
+    """
+    Main entry point for the CLI application.
+
+    Parses arguments, initializes the CDMSDataCatalog client, and attemps to
+    create a group at the requested path.
+    """
+    parser = argparse.ArgumentParser(
+        description=(
+            "Create a new group at the specified data catalog path. "
+            "Optionally create missing parent groups and attach metadata."
+        )
+    )
+
+    parser.add_argument("path", help="Full path to the group container.")
+
+    parser.add_argument(
+        "-p",
+        "--parents",
+        action="store_true",
+        help="Create missing parent groups if needed",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--metadata",
+        metavar="KEY=VALUE[,KEY=VALUE...]",
+        action="append",
+        help=(
+            "Metadata entries to associate with the group. "
+            "You may specify multiple entries in one flag, sperated by commas. "
+        ),
+    )
+    args: Namespace = parser.parse_args()
+
+    # Parse metadata
+    metadata: Optional[Dict[str, str]] = parse_metadata(args.metadata)
+
+    # Initialize the datacat client
+    dc: CDMSDataCatalog = CDMSDataCatalog(
+        files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
+    )
+
+    try:
+        success: bool = dc.mkgroup(
+            args.path, parents=args.parents, metadata=metadata
+        )
+    except Exception as exc:
+        print(f"ERROR: Failed to create group '{args.path}': {exc}")
+        exit(1)
+
+    if success:
+        print(f"Group '{args.path}' created successfully.")
+        exit(0)
+
+
+if __name__ == "__main__":
+    main()
