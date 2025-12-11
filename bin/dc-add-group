@@ -30,7 +30,7 @@ EXIT STATUS
 """
 
 import argparse
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
 from importlib.resources import files
 from typing import Dict, Iterable, List, Optional
 
@@ -82,14 +82,14 @@ def parse_metadata(
     return metadata
 
 
-def main():
+def main() -> None:
     """
     Main entry point for the CLI application.
 
     Parses arguments, initializes the CDMSDataCatalog client, and attemps to
     create a group at the requested path.
     """
-    parser = argparse.ArgumentParser(
+    parser: ArgumentParser = argparse.ArgumentParser(
         description=(
             "Create a new group at the specified data catalog path. "
             "Optionally create missing parent groups and attach metadata."
