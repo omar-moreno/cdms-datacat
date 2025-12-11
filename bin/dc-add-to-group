@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""
+dc-add-to-group
+
+A command-line tool to add one or more datasets to an open group in
+the CDMS Data Catalog.
+
+--------------
+Usage Examples
+--------------
+
+Add files to a group:
+    $ dc-add-to-group /CDMS/Scratch/TestGroup /CDMS/Scratch/TestBackground/test1.txt /CDMS/Scratch/TestBackground/test2.txt
+
+Add multiple files using wildcards (shell expands them):
+    $ dc-add-to-group /CDMS/Scratch/TestGroup /CDMS/Scratch/TestBackground/test*
+
+-----------
+EXIT STATUS
+-----------
+    0 – All files added successfully
+    1 – Some or all files failed to be added
+"""
+
+import argparse
+from argparse import ArgumentParser, Namespace
+from importlib.resources import files
+from typing import Iterable, List
+
+from CDMSDataCatalog import CDMSDataCatalog
+
+
+def main() -> None:
+    """
+    Main entry point for the CLI application.
+
+    Parses arguments, initializes the CDMSDataCatalog client, and attemps to
+    add datasets to a group at the requested path.
+    """
+    parser: ArgumentParser = argparse.ArgumentParser(
+        description=(
+            "Add one or more datasets to an open group in the CDMS Data Catalog."
+        )
+    )
+
+    parser.add_argument(
+        "path",
+        type=str,
+        help="Path to the group that should receive the datasets.",
+    )
+
+    parser.add_argument(
+        "datasets",
+        type=str,
+        nargs="+",
+        help="One or more dataset file paths (CDMS paths or filesystem paths containing /CDMS/).",
+    )
+    args: Namespace = parser.parse_args()
+
+    group_path: str = args.path
+    file_paths: List[str] = args.datasets
+
+    # Initialize the datacat client
+    dc: CDMSDataCatalog = CDMSDataCatalog(
+        files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
+    )
+
+    try:
+        success: bool = dc.add_files_to_group(group_path, file_paths)
+    except Exception as exc:
+        print(f"ERROR: Failed to add files to group '{group_path}': {exc}")
+        exit(1)
+
+    if success:
+        print(
+            f"Successfully added {len(file_paths)} file(s) to group '{group_path}'."
+        )
+        exit(0)
+
+    print(f"Failed to add files to group '{group_path}'.")
+    exit(1)
+
+
+if __name__ == "__main__":
+    main()
