@@ -1,14 +1,53 @@
 #!/usr/bin/env python3
+"""
+dc-rm
 
-import argparse
+A command-line tool for removing entries (directory, datasets and groups)
+from the CDMS Data Catalog.
+
+--------------
+Usage Examples
+--------------
+
+Remove a dataset
+    $ dc-rm /CDMS/Scratch/TestDependents/predecessor1.txt
+
+Recursively remove a container i.e. remove all the datasets it contains.
+    $ dc-rm /CDMS/Scratch/TestDependents/ --recursive
+
+Remove a group
+    $ dc-rm /CDMS/Scratch/TestGroup
+
+"""
+
+import click
 from importlib.resources import files
 
 from CDMSDataCatalog import CDMSDataCatalog
 
-parser = argparse.ArgumentParser()
-parser.add_argument("path")
-parser.add_argument("--recursive", action="store_true")
-args = parser.parse_args()
 
-dc_prod = CDMSDataCatalog(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
-dc_prod.rm(args.path, args.recursive)
+@click.command()
+@click.argument("path", type=str)
+@click.option("--recursive", "-r", is_flag=True, help="Remove recursively")
+def main(path: str, recursive: bool) -> None:
+    """
+    Remove an entry (directory, datasets or group) from the CDMS Data
+    Catalog.
+
+    Args:
+        path (str): The data catalog path to remove.
+        --recursive, -r: Remove paths recursively.
+    """
+
+    dc_prod = CDMSDataCatalog(
+        files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
+    )
+    try:
+        dc_prod.rm(path, recursive)
+        click.echo(f"Removed {path!r}")
+    except IOError as io:
+        print(f"ERROR: {io}")
+
+
+if __name__ == "__main__":
+    main()
