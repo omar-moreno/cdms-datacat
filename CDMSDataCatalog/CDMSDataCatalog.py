@@ -292,23 +292,41 @@ class CDMSDataCatalog:
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
 
-    def add_files_to_group(self, path: str, file_paths: Iterable[str]) -> bool:
+    def add_to_group(
+        self,
+        path: str,
+        dataset_paths: Iterable[str] = [],
+        group_paths: Iterable[str] = [],
+    ) -> bool:
         """
         Add one or more dataset files to an open group.
 
         Parameters
         ----------
         path : str Path to the group that should receive the files.
-        file_paths : Iterable[str] A sequence of file paths. Paths may be:
+        dataset_paths : Iterable[str] A sequence of dataset paths. Paths may be:
             - A Data Catalog path starting with "/CDMS/"
             - A filesystem path containing exactly one "/CDMS/", which will be
               converted to a Data Catalog path.
+        group_paths: Iterable[str] A sequence of group paths. Only Data Catalog
+            paths are allowed.
 
         Returns
         -------
         bool
             True if all files were added successfully, False otherwise.
         """
+
+        # Make sure a list of datasets or groups has been specified
+        if not (dataset_paths or group_paths):
+            print("ERROR: A list of datasets or groups needs to be specified.")
+            return False
+
+        # Don't allow the case where both a list of groups and datasets have been specified.
+        if dataset_paths and group_paths:
+            print("ERROR: Can't specify both a list of groups and datasets.")
+            return False
+
         # Normalize the group path before using it
         path = normalize_path(path)
 
@@ -320,36 +338,59 @@ class CDMSDataCatalog:
             print(f"The group {group.name} is closed and can't be modified.")
             return False
 
-        datasets = []
-        for file_path in file_paths:
-            try:
-                print(file_path.count("/CDMS/"))
-                # Case 1: Already a data catalog path
-                if file_path.startswith("/CDMS/"):
-                    datasets.append(self.get(file_path))
-                # Case 2: A disk path containing exactly one "/CDMS/"
-                elif file_path.count("/CDMS/") == 1:
-                    _, subpath = file_path.split("/CDMS/", 1)
-                    catalog_path = "/CDMS/" + subpath
-                    datasets.append(self.get(catalog_path))
-                else:
-                    print(f"ERROR: unrecognized CDMS path format: {file_path}")
+        if dataset_paths:
+            datasets = []
+            for ds_path in dataset_paths:
+                try:
+                    # Case 1: Already a data catalog path
+                    if ds_path.startswith("/CDMS/"):
+                        datasets.append(self.get(ds_path))
+                    # Case 2: A disk path containing exactly one "/CDMS/"
+                    elif ds_path.count("/CDMS/") == 1:
+                        _, subpath = ds_path.split("/CDMS/", 1)
+                        catalog_path = "/CDMS/" + subpath
+                        datasets.append(self.get(catalog_path))
+                    else:
+                        print(
+                            f"ERROR: unrecognized CDMS path format: {ds_path}"
+                        )
+                        return False
+                except Exception:
+                    print(
+                        f"ERROR: cannot find Data Catalog entry for dataset {ds_path}"
+                    )
                     return False
-            except Exception:
-                print(
-                    f"ERROR: cannot find Data Catalog entry for file {file_path}"
-                )
-                return False
 
-        # Add all datasets to the group as predecessors
-        self.addDependents(
-            group, DepType.PREDECESSOR.value, dep_datasets=datasets
-        )
-
-        for dataset in datasets:
+            # Add all datasets to the group as predecessors
             self.addDependents(
-                dataset, DepType.SUCCESSOR.value, dep_groups=[group]
+                group, DepType.PREDECESSOR.value, dep_datasets=datasets
             )
+
+            for dataset in datasets:
+                self.addDependents(
+                    dataset, DepType.SUCCESSOR.value, dep_groups=[group]
+                )
+        else:
+            groups = []
+            for g_path in group_paths:
+                try:
+                    g_path = normalize_path(g_path)
+                    groups.append(self.getgroup(g_path))
+                except Exception:
+                    print(
+                        f"ERROR: cannot find Data Catalog entry for group {g_path}"
+                    )
+                    return False
+
+            # Add all group to the group as predecessors
+            self.addDependents(
+                group, DepType.PREDECESSOR.value, dep_groups=groups
+            )
+
+            for g in groups:
+                self.addDependents(
+                    g, DepType.SUCCESSOR.value, dep_groups=[group]
+                )
 
         return True
 
