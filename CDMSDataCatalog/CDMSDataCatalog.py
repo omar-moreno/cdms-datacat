@@ -394,8 +394,11 @@ class CDMSDataCatalog:
 
         return True
 
-    def remove_files_from_group(
-        self, group_name: str, paths: List[str]
+    def remove_from_group(
+        self,
+        path: str,
+        dataset_paths: Iterable[str] = [],
+        group_paths: Iterable[str] = [],
     ) -> bool:
         """
         Removes datasets from the specified group in the CDMS Data Catalog.
@@ -419,21 +422,54 @@ class CDMSDataCatalog:
         >>> remove_files_from_group("/CDMS/Test/TestGroup", ["/CDMS/Scratch/TestBackground/test1*.txt"])
         """
 
+        # Make sure a list of datasets or groups has been specified
+        if not (dataset_paths or group_paths):
+            print("ERROR: A list of datasets or groups needs to be specified.")
+            return False
+
+        # Don't allow the case where both a list of groups and datasets have been specified.
+        if dataset_paths and group_paths:
+            print("ERROR: Can't specify both a list of groups and datasets.")
+            return False
+
+        # Retrieve the group container that will be modified.
+        group = self.getgroup(normalize_path(path))
+
+        # Check that the group can be modified.
+        if not self.group_is_open(group):
+            print(f"The group {group.name} is closed and can't be modified.")
+            return False
+
         try:
-            # Retrieve the group container that will be modified.
-            group = self.getgroup(normalize_path(group_name))
+            if dataset_paths:
 
-            # Convert the list of paths to datasets.
-            datasets: List[Dataset] = self.resolve_datasets(paths)
+                # Convert the list of paths to datasets.
+                datasets: List[Dataset] = self.resolve_datasets(dataset_paths)
 
-            # Remove the datasets from the groups.
-            self.removeDependents(
-                group, DepType.PREDECESSOR.value, dep_datasets=datasets
-            )
-            for dataset in datasets:
+                # Remove the datasets from the groups.
                 self.removeDependents(
-                    dataset, DepType.SUCCESSOR.value, dep_groups=[group]
+                    group, DepType.PREDECESSOR.value, dep_datasets=datasets
                 )
+
+                for dataset in datasets:
+                    self.removeDependents(
+                        dataset, DepType.SUCCESSOR.value, dep_groups=[group]
+                    )
+            else:
+                groups = []
+                for g_path in group_paths:
+                    g_path = normalize_path(g_path)
+                    groups.append(self.getgroup(g_path))
+
+                # Add all group to the group as predecessors
+                self.removeDependents(
+                    group, DepType.PREDECESSOR.value, dep_groups=groups
+                )
+
+                for g in groups:
+                    self.removeDependents(
+                        g, DepType.SUCCESSOR.value, dep_groups=[group]
+                    )
 
         except Exception as e:
             print(f"An error occurred: {e}")
