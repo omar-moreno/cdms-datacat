@@ -314,7 +314,7 @@ class CDMSDataCatalog:
         Returns
         -------
         bool
-            True if all files were added successfully, False otherwise.
+            True if all datasets or groups were added successfully, False otherwise.
         """
 
         # Make sure a list of datasets or groups has been specified
