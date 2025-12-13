@@ -34,6 +34,35 @@ import click
 from CDMSDataCatalog import CDMSDataCatalog
 
 
+def resolve_paths(dc: CDMSDataCatalog, paths: List[str]) -> List[str]:
+    """
+    Resolve paths that include wildcards.
+
+    Args:
+        catalog (CDMSDataCatalog): The catalog to search for the dataset.
+        paths (list of str): A list of paths (can include wildcards).
+
+    Returns:
+        list: A list of resolved paths.
+    """
+    resolved_paths: List[str] = []
+
+    for path in paths:
+        if ("*" not in path) and ("?" not in path):
+            # Direct path to a dataset (no wildcards)
+            resolved_paths.append(path)
+        else:
+            # Path contains wildcards, perform a search
+            head, _, tail = path.rpartition("/")
+            query_path = head + "/" if head else ""
+            query = f"name=~'{tail}'"
+            results = dc.client.search(query_path, query=query)
+            for dataset in results:
+                resolved_paths.append(dataset.path)
+
+    return resolved_paths
+
+
 def parse_comma_list(
     ctx: click.Context, param: click.Parameter, value: str
 ) -> List[str]:
@@ -82,6 +111,7 @@ def main(group_path: str, datasets: List[str], groups: List[str]) -> None:
 
     try:
         if datasets:
+            datasets = resolve_paths(dc, datasets)
             success: bool = dc.remove_from_group(
                 group_path, dataset_paths=datasets
             )
