@@ -2,7 +2,7 @@
 """
 dc-add-to-group
 
-A command-line tool to add one or more datasets to an open group in
+A command-line tool to add one or more datasets or groups to an open group in
 the CDMS Data Catalog.
 
 --------------
@@ -10,55 +10,100 @@ Usage Examples
 --------------
 
 Add files to a group:
-    $ dc-add-to-group /CDMS/Scratch/TestGroup /CDMS/Scratch/TestBackground/test1.txt /CDMS/Scratch/TestBackground/test2.txt
+    $ dc-add-to-group /CDMS/Scratch/TestGroup --datasets /CDMS/Scratch/TestBackground/test1.txt,/CDMS/Scratch/TestBackground/test2.txt
 
-Add multiple files using wildcards (shell expands them):
-    $ dc-add-to-group /CDMS/Scratch/TestGroup /CDMS/Scratch/TestBackground/test*
+Add multiple files using wildcards:
+    $ dc-add-to-group /CDMS/Scratch/TestGroup --datasets /CDMS/Scratch/TestBackground/test*
+
+Add groups to a group:
+    $ dc-add-to-group /CDMS/Scratch/TestGroup --groups /CDMS/Scratch/TestGroup1,/CDMS/Scratch/TestGroup2
+
 
 -----------
 EXIT STATUS
 -----------
-    0 – All files added successfully
-    1 – Some or all files failed to be added
+    0 – All groups/datasets added successfully
+    1 – Some or all groups/datasets failed to be added
 """
 
-import argparse
-from argparse import ArgumentParser, Namespace
+import sys
 from importlib.resources import files
-from typing import Iterable, List
+from typing import List
+
+import click
+from datacat.model import Dataset
 
 from CDMSDataCatalog import CDMSDataCatalog
 
 
-def main() -> None:
+def resolve_dependents(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
     """
-    Main entry point for the CLI application.
+    Resolve dataset paths into dataset objects.
 
-    Parses arguments, initializes the CDMSDataCatalog client, and attemps to
-    add datasets to a group at the requested path.
+    Args:
+        catalog (CDMSDataCatalog): The catalog to search for the dataset.
+        paths (list of str): A list of dependent dataset paths (can include wildcards).
+
+    Returns:
+        list: A list of resolved dependent dataset objects.
     """
-    parser: ArgumentParser = argparse.ArgumentParser(
-        description=(
-            "Add one or more datasets to an open group in the CDMS Data Catalog."
-        )
-    )
+    dependents: List[Dataset] = []
 
-    parser.add_argument(
-        "path",
-        type=str,
-        help="Path to the group that should receive the datasets.",
-    )
+    for path in paths:
+        if ("*" not in path) and ("?" not in path):
+            # Direct path to a dataset (no wildcards)
+            dependents.append(dc.get(path))
+        else:
+            # Path contains wildcards, perform a search
+            head, _, tail = path.rpartition("/")
+            query_path = head + "/" if head else ""
+            query = f"name=~'{tail}'"
+            results = dc.client.search(query_path, query=query)
+            dependents.extend(results)
 
-    parser.add_argument(
-        "datasets",
-        type=str,
-        nargs="+",
-        help="One or more dataset file paths (CDMS paths or filesystem paths containing /CDMS/).",
-    )
-    args: Namespace = parser.parse_args()
+    return dependents
 
-    group_path: str = args.path
-    file_paths: List[str] = args.datasets
+
+def parse_comma_list(
+    ctx: click.Context, param: click.Parameter, value: str
+) -> List[str]:
+    """
+    A custom callback to parse a comma-separated list of datasets into a list of strings.
+    """
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+@click.command()
+@click.argument("group_path", type=str)
+@click.option(
+    "--datasets",
+    "-d",
+    type=str,
+    multiple=False,
+    help="Dataset file paths (comma delimited). Supports wildcards (*, ?).",
+    callback=parse_comma_list,
+)
+@click.option(
+    "--groups",
+    "-g",
+    type=str,
+    multiple=False,
+    help="Group paths (space-seperated).",
+    callback=parse_comma_list,
+)
+def main(group_path: str, datasets: List[str], groups: List[str]) -> None:
+    """
+    Add one of more datasets/groups to an open group in the CDMS Data
+    Catalog.
+
+    Args:
+        path (str): The group that the datasets or groups will be added to.
+        --datasets, -d (List[str]): Dataset file paths (comma delimited). Supports
+            wildcards (*, ?).
+        --groups, -g (List[str]): Group paths (comma delimited).
+    """
 
     # Initialize the datacat client
     dc: CDMSDataCatalog = CDMSDataCatalog(
@@ -66,19 +111,25 @@ def main() -> None:
     )
 
     try:
-        success: bool = dc.add_files_to_group(group_path, file_paths)
+        if datasets:
+            success: bool = dc.add_to_group(group_path, dataset_paths=datasets)
+
+            if success:
+                click.echo(
+                    f"Successfully added {len(datasets)} file(s) to group '{group_path}'."
+                )
+
+        if groups:
+            success = dc.add_to_group(group_path, group_paths=groups)
+            if success:
+                click.echo(
+                    f"Successfully added {len(groups)} group(s) to group '{group_path}'."
+                )
     except Exception as exc:
-        print(f"ERROR: Failed to add files to group '{group_path}': {exc}")
-        exit(1)
-
-    if success:
-        print(
-            f"Successfully added {len(file_paths)} file(s) to group '{group_path}'."
+        click.echo(
+            f"ERROR: Failed to add (datasets/groups) to group '{group_path}': {exc}"
         )
-        exit(0)
-
-    print(f"Failed to add files to group '{group_path}'.")
-    exit(1)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
