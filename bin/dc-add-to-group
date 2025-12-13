@@ -31,37 +31,37 @@ from importlib.resources import files
 from typing import List
 
 import click
-from datacat.model import Dataset
 
 from CDMSDataCatalog import CDMSDataCatalog
 
 
-def resolve_dependents(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
+def resolve_paths(dc: CDMSDataCatalog, paths: List[str]) -> List[str]:
     """
-    Resolve dataset paths into dataset objects.
+    Resolve paths that include wildcards.
 
     Args:
         catalog (CDMSDataCatalog): The catalog to search for the dataset.
-        paths (list of str): A list of dependent dataset paths (can include wildcards).
+        paths (list of str): A list of paths (can include wildcards).
 
     Returns:
-        list: A list of resolved dependent dataset objects.
+        list: A list of resolved paths.
     """
-    dependents: List[Dataset] = []
+    resolved_paths: List[str] = []
 
     for path in paths:
         if ("*" not in path) and ("?" not in path):
             # Direct path to a dataset (no wildcards)
-            dependents.append(dc.get(path))
+            resolved_paths.append(path)
         else:
             # Path contains wildcards, perform a search
             head, _, tail = path.rpartition("/")
             query_path = head + "/" if head else ""
             query = f"name=~'{tail}'"
             results = dc.client.search(query_path, query=query)
-            dependents.extend(results)
+            for dataset in results:
+                resolved_paths.append(dataset.path)
 
-    return dependents
+    return resolved_paths
 
 
 def parse_comma_list(
@@ -112,6 +112,7 @@ def main(group_path: str, datasets: List[str], groups: List[str]) -> None:
 
     try:
         if datasets:
+            datasets = resolve_paths(dc, datasets)
             success: bool = dc.add_to_group(group_path, dataset_paths=datasets)
 
             if success:
