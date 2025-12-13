@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+"""
+dc-rm-from-group
+
+A command-line tool to add one or more datasets or groups to an open group in
+the CDMS Data Catalog.
+
+--------------
+Usage Examples
+--------------
+
+Add files to a group:
+    $ dc-add-to-group /CDMS/Scratch/TestGroup --datasets /CDMS/Scratch/TestBackground/test1.txt,/CDMS/Scratch/TestBackground/test2.txt
+
+Add multiple files using wildcards:
+    $ dc-add-to-group /CDMS/Scratch/TestGroup --datasets /CDMS/Scratch/TestBackground/test*
+
+Add groups to a group:
+    $ dc-add-to-group /CDMS/Scratch/TestGroup --groups /CDMS/Scratch/TestGroup1,/CDMS/Scratch/TestGroup2
+
+
+-----------
+EXIT STATUS
+-----------
+    0 – All groups/datasets added successfully
+    1 – Some or all groups/datasets failed to be added
+"""
+
+import sys
+from importlib.resources import files
+from typing import List
+
+import click
+from datacat.model import Dataset
+
+from CDMSDataCatalog import CDMSDataCatalog
+
+
+def parse_comma_list(
+    ctx: click.Context, param: click.Parameter, value: str
+) -> List[str]:
+    """
+    A custom callback to parse a comma-separated list of datasets into a list of strings.
+    """
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+@click.command()
+@click.argument("group_path", type=str)
+@click.option(
+    "--datasets",
+    "-d",
+    type=str,
+    multiple=False,
+    help="Dataset file paths (comma-separated). Supports wildcards (*, ?).",
+    callback=parse_comma_list,
+)
+@click.option(
+    "--groups",
+    "-g",
+    type=str,
+    multiple=False,
+    help="Group paths (comma-seperated).",
+    callback=parse_comma_list,
+)
+def main(group_path: str, datasets: List[str], groups: List[str]) -> None:
+    """
+    Remove one of more datasets/groups from an open group in the CDMS Data
+    Catalog.
+
+    Args:
+        path (str): The group that the datasets or groups will be removed from.
+        --datasets, -d (List[str]): Dataset file paths (comma-seperated). Supports
+            wildcards (*, ?).
+        --groups, -g (List[str]): Group paths (comma-seperated).
+    """
+
+    # Initialize the datacat client
+    dc: CDMSDataCatalog = CDMSDataCatalog(
+        files("CDMSDataCatalog").joinpath("cfg/prod.cfg")
+    )
+
+    try:
+        if datasets:
+            success: bool = dc.remove_from_group(
+                group_path, dataset_paths=datasets
+            )
+
+            if success:
+                click.echo(
+                    f"Successfully removed {len(datasets)} file(s) from group '{group_path}'."
+                )
+
+        if groups:
+            success = dc.remove_from_group(group_path, group_paths=groups)
+            if success:
+                click.echo(
+                    f"Successfully remove {len(groups)} group(s) from group '{group_path}'."
+                )
+    except Exception as exc:
+        click.echo(
+            f"ERROR: Failed to remove (datasets/groups) from group '{group_path}': {exc}"
+        )
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
