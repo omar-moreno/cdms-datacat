@@ -2,28 +2,27 @@
 """
 dc-rm-from-group
 
-A command-line tool to add one or more datasets or groups to an open group in
+A command-line tool to remove one or more datasets or groups from an open group in
 the CDMS Data Catalog.
 
 --------------
 Usage Examples
 --------------
 
-Add files to a group:
-    $ dc-add-to-group /CDMS/Scratch/TestGroup --datasets /CDMS/Scratch/TestBackground/test1.txt,/CDMS/Scratch/TestBackground/test2.txt
+Remove files from a group:
+    $ dc-rm-from-group /CDMS/Scratch/TestGroup --datasets /CDMS/Scratch/TestBackground/test1.txt,/CDMS/Scratch/TestBackground/test2.txt
 
-Add multiple files using wildcards:
-    $ dc-add-to-group /CDMS/Scratch/TestGroup --datasets /CDMS/Scratch/TestBackground/test*
+Remove multiple files using wildcards:
+    $ dc-rm-from-group /CDMS/Scratch/TestGroup --datasets /CDMS/Scratch/TestBackground/test*
 
-Add groups to a group:
+Remove groups from a group:
     $ dc-add-to-group /CDMS/Scratch/TestGroup --groups /CDMS/Scratch/TestGroup1,/CDMS/Scratch/TestGroup2
-
 
 -----------
 EXIT STATUS
 -----------
-    0 – All groups/datasets added successfully
-    1 – Some or all groups/datasets failed to be added
+    0 – All groups/datasets removed successfully
+    1 – Some or all groups/datasets failed to be removed
 """
 
 import sys
@@ -31,7 +30,6 @@ from importlib.resources import files
 from typing import List
 
 import click
-from datacat.model import Dataset
 
 from CDMSDataCatalog import CDMSDataCatalog
 
