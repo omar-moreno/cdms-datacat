@@ -321,7 +321,10 @@ class ProcessedData(CDMSDataset):
                  nEventsEORTS=0,
                  analysis = 'All',
                  cutName ='cGood',
-                 cutVersion ='0'):
+                 cutVersion ='0',
+                 nRestrictedLevel=-1,
+                 nDataDivisionPercent=100,
+                 nDataDivisionSeed=0):
         
         """
         Constructor for the CDMS processed dataset class
@@ -348,7 +351,16 @@ class ProcessedData(CDMSDataset):
             if int(nMergeLevel)==0:
                 self.relativePath+='/Unmerged/' + series
             elif int(nMergeLevel)==1:
-                self.relativePath+='/Submerged'
+                self.relativePath +='/Submerged'
+                if int(nRestrictedLevel) == -1:
+                    nRestrictedLevel = 0 # always open
+                elif int(nRestrictedLevel) == 0:
+                    self.relativePath += '/open'
+                elif int(nRestrictedLevel) == 1:
+                    self.relativePath += '/reserved'
+                elif int(nRestrictedLevel) == 2:
+                    self.relativePath += '/restricted'
+                
             elif int(nMergeLevel)==2:
                 self.relativePath+='/Merged'
             
@@ -384,7 +396,12 @@ class ProcessedData(CDMSDataset):
             self.metadata["nEvEORR"] = int(nEventsEORR)
             self.metadata["nEvBORTS"] =int(nEventsBORTS)
             self.metadata["nEvEORTS"] = int(nEventsEORTS)
-               
+
+            if int(nMergeLevel)==1:
+                self.metadata["nRestrictedLevel"] = int(nRestrictedLevel)
+                self.metadata["nDataDivisionSeed"] = int(nDataDivisionSeed)
+                self.metadata["nDataDivisionPercent"] = int(nDataDivisionPercent)
+    
             if int(nMergeLevel)==0:
                 self.metadata["nDump"] = int(nDump)
             else:
@@ -397,15 +414,12 @@ class ProcessedData(CDMSDataset):
         if prodStep=='BatCalib':
             self.metadata["CalibProcessingConfig"] = calib_processing_config
             self.metadata["CalibAnalysisConfig"] = calibration_config
-        
-
 
         if prodStep=='Cut':
             self.metadata["Analysis"] = analysis
             self.metadata["CutName"] = cutName
             self.metadata["CutVersion"] = CutVersion
-
-
+            
 
 class ProcessedIVdIdVData(CDMSDataset):
 
