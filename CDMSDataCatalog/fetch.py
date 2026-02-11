@@ -50,6 +50,7 @@ def get_default_fetchdir():
                  '/scratch/group/mitchcomp/CDMS/data',  #TAMU HPRC
                  '/scratch/group/cdms/data',            #ManeFrame
                  '/cvmfs/data',                         #XSEDE
+                 '/data/datacat-data',                  #SNOLAB UG machines
                  '/data1/public_overflow/data'          #cdmsz3.fnal.gov
                 ]
     for path in testpaths:
