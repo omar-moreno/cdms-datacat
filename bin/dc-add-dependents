@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-# TO-DO: implement this functionality for groups
-
-import argparse
+import click
+import sys
 
 from typing import List
 from importlib.resources import files
@@ -39,7 +38,12 @@ def resolve_dependents(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
     return dependents
 
 
-def main() -> None:
+@click.command()
+@click.argument('dataset', type=str)
+@click.argument('dep_type', type=click.Choice(['predecessor', 'successor']))
+@click.option('--dependents', '-d', multiple=True, required=True,
+              help='A list of datasets to add to a target dataset in the Data Cat. Supports wildcards (*, ?).')
+def main(dataset: str, dep_type: str, dependents: tuple) -> None:
     """
     Add a list of dependent datasets to a dataset in the data catalog.
 
@@ -54,42 +58,28 @@ def main() -> None:
                 /CDMS/Scratch/TestBackground/test13.txt
     """
 
-    parser = argparse.ArgumentParser(
-        description="Adds a list of dependent datasets to a dataset in the data catalog.",
-        usage="dc-add-dependents dataset dep_type --dependents DEPENDENTS [DEPENDENTS ...]",
-    )
-    parser.add_argument(
-        "dataset", help="The main dataset to which dependents will be added."
-    )
-    parser.add_argument(
-        "dep_type",
-        choices=["predecessor", "successor"],
-        help="The type/category of the dependent datasets.",
-    )
-    parser.add_argument(
-        "--dependents",
-        required=True,
-        nargs="+",
-        help="One or more paths to the dependent datasets. Supports wildcards (*, ?).",
-    )
-    args = parser.parse_args()
-
     # Initialize the datacat client
     dc: CDMSDataCatalog = CDMSDataCatalog(
         str(files("CDMSDataCatalog").joinpath("cfg/prod.cfg"))
     )
 
     # Resolve dependent datasets
-    dep_datasets: List[Dataset] = resolve_dependents(dc, args.dependents)
+    dep_paths = list(dependents)
+    dep_datasets: List[Dataset] = resolve_dependents(dc, dep_paths)
 
     # Check if any datasets were resolved
     if not dep_datasets:
-        print(f"Error: No dependent datasets found matching the provided patterns: {args.dependents}")
-        return
+        click.echo(f"Error: No dependent datasets found matching: {dep_paths}", err=True)
+        sys.exit(1)
+
+    # Check if the target dataset exists
+    if not dc.exist(dataset):
+        click.echo(f"Error: Target dataset '{dataset}' does not exist.", err=True)
+        sys.exit(1)
 
     # Add dependents to the specified dataset
-    target_dataset: Dataset = dc.get(args.dataset)
-    dc.addDependents(target_dataset, args.dep_type, dep_datasets=dep_datasets)
+    target_dataset: Dataset = dc.get(dataset)
+    dc.addDependents(target_dataset, dep_type, dep_datasets=dep_datasets)
 
 
 if __name__ == "__main__":
