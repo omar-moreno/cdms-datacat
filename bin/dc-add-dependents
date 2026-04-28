@@ -82,6 +82,11 @@ def main() -> None:
     # Resolve dependent datasets
     dep_datasets: List[Dataset] = resolve_dependents(dc, args.dependents)
 
+    # Check if any datasets were resolved
+    if not dep_datasets:
+        print(f"Error: No dependent datasets found matching the provided patterns: {args.dependents}")
+        return
+
     # Add dependents to the specified dataset
     target_dataset: Dataset = dc.get(args.dataset)
     dc.addDependents(target_dataset, args.dep_type, dep_datasets=dep_datasets)
