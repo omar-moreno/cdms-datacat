@@ -32,9 +32,8 @@ def resolve_dependents(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
         else:
             # Path contains wildcards, perform a search
             head, _, tail = path.rpartition("/")
-            query_path = head + "/" if head else ""
             query = f"name=~'{tail}'"
-            results = dc.client.search(query_path, query=query)
+            results = dc.client.search(head, query=query)
             dependents.extend(results)
 
     return dependents
