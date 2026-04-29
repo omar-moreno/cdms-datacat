@@ -1,29 +1,88 @@
 #!/usr/bin/env python3
 
-# TO-DO: implement this functionality for groups
-
-import argparse
-
-from typing import List
+import sys
 from importlib.resources import files
 
+import click
 from datacat.model import Dataset
 
 from CDMSDataCatalog import CDMSDataCatalog
 
 
-def resolve_dependents(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
+def print_summary(dataset: str, dep_type: str, dep_datasets: list["Dataset"]) -> None:
+    """
+    Print a formatted success summary of the added dependent datasets.
+
+    Displays the target dataset, dependency type, total count, and a list of
+    added file paths. If the list exceeds 10 items, it truncates the display
+    to show the first and last 5 items.
+
+    Parameters
+    ----------
+    dataset : str
+        The data catalog path of the main dataset to which dependents were
+        added.
+    dep_type : str
+        The type of dependency relationship (e.g. 'predecessor' or 'successor').
+    added_datasets : list of Dataset
+        A list of Dataset objects that were successfully added. Each object is
+        expected to have a 'path', 'name', or string representation attribute.
+
+    """
+    click.echo("\n" + "=" * 40)
+    click.echo(click.style("SUCCESS: Dependents Added", fg="green", bold=True))
+    click.echo("=" * 40)
+    click.echo(f"Target Dataset: {dataset}")
+    click.echo(f"Dependency Type: {dep_type}")
+    click.echo(f"Total Added: {len(dep_datasets)}")
+
+    added_paths = [ds.path if hasattr(ds, "path") else str(ds) for ds in dep_datasets]
+
+    if len(added_paths) <= 10:
+        for p in added_paths:
+            click.echo(f"  • {p}")
+    else:
+        click.echo("  • " + "\n  • ".join(added_paths[:5]))
+        click.echo(f"  • ... ({len(added_paths) - 10} more) ...")
+        click.echo("  • " + "\n  • ".join(added_paths[-5:]))
+
+        click.echo("=" * 40 + "\n")
+
+
+def resolve_dependents(dc: CDMSDataCatalog, paths: list[str]) -> list[Dataset]:
     """
     Resolve dataset paths into dataset objects.
 
-    Args:
-        catalog (CDMSDataCatalog): The catalog to search for the dataset.
-        paths (list of str): A list of dependent dataset paths (can include wildcards).
+    Converts a list of dataset paths (with or without wildcards) into actual
+    Dataset objects by querying the data catalog. Direct paths are retrieved
+    individually, while paths containing wildcards are searched using the
+    catalog's search functionality.
 
-    Returns:
-        list: A list of resolved dependent dataset objects.
+    Parameters
+    ----------
+    dc : CDMSDataCatalog
+        The data catalog instance to search for the datasets. Used to retrieve
+        direct paths and perform wildcard searches.
+    paths: list of str
+        A list of dependent dataset paths. Each path can be:
+        - A direct path to a dataset (e.g. '/CDMS/data/file.txt')
+        - A path with wildcards (e.g. '/CDMS/data/*.txt' or
+          '/CDMS/data/test?.txt'). Wildcards supported: '*' (any characters),
+          '?' (single character).
+
+    Returns
+    -------
+    list of Dataset
+        A list of resolved Dataset objects. May be empty if no paths match.
+
+    Notes
+    -----
+    - Paths without wildcards are resolved via ``dc.get(path)``.
+    - Paths with wildcards are split at the last '/' to separate the directory
+      (head) from the filename pattern (tail).
+    - The search query uses the format ``name=~'pattern'`` for the tail portion.
     """
-    dependents: List[Dataset] = []
+    dependents: list[Dataset] = []
 
     for path in paths:
         if ("*" not in path) and ("?" not in path):
@@ -32,48 +91,46 @@ def resolve_dependents(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
         else:
             # Path contains wildcards, perform a search
             head, _, tail = path.rpartition("/")
-            query_path = head + "/" if head else ""
             query = f"name=~'{tail}'"
-            results = dc.client.search(query_path, query=query)
+            results = dc.client.search(head, query=query)
             dependents.extend(results)
 
     return dependents
 
 
-def main() -> None:
+@click.command()
+@click.argument("dataset", type=str)
+@click.argument("dep_type", type=click.Choice(["predecessor", "successor"]))
+@click.option(
+    "--dependents",
+    "-d",
+    multiple=True,
+    required=True,
+    help="A list of datasets to add to a target dataset in the Data Cat. Supports wildcards (*, ?).",
+)
+def main(dataset: str, dep_type: str, dependents: tuple) -> None:
     """
-    Add a list of dependent datasets to a dataset in the data catalog.
+    Add a list of dependent datasets to a target dataset in the data catalog.
 
-    Command-line Arguments:
-        dataset (str): Required. The main dataset to which dependents will be added to.
-        dep_type (str): Required. The type/category of the dependent datasets.
-        --dependents (list of str): One or more paths to the depedent datasets. Supports wildcards (*, ?)."
+    This command resolves  wildcard patterns to specific datasets, validates
+    the target dataset exists, and establishes the dependency relationship.
 
-    Example:
-        add_dependents.py /CDMS/Scratch/TestBackground/test1.txt predecessor \
-                --dependents /CDMS/Scratch/TestBackground/*2.txt \
-                /CDMS/Scratch/TestBackground/test13.txt
+    Parameters
+    ----------
+    dataset : str
+        The target dataset to which dependents will be added to.
+    dep_type : str
+        The category of the dependency. Must be either 'predecessor' or
+        'successor'.
+    dependents : tuple of str
+        One or more paths to the depedent datasets. Supports wildcards (*, ?).
+
+    Examples
+    --------
+    >>> add_dependents.py /CDMS/Scratch/TestBackground/test1.txt predecessor
+    ...     --dependents /CDMS/Scratch/TestBackground/*2.txt \
+    ...                  /CDMS/Scratch/TestBackground/test13.txt
     """
-
-    parser = argparse.ArgumentParser(
-        description="Adds a list of dependent datasets to a dataset in the data catalog.",
-        usage="dc-add-dependents dataset dep_type --dependents DEPENDENTS [DEPENDENTS ...]",
-    )
-    parser.add_argument(
-        "dataset", help="The main dataset to which dependents will be added."
-    )
-    parser.add_argument(
-        "dep_type",
-        choices=["predecessor", "successor"],
-        help="The type/category of the dependent datasets.",
-    )
-    parser.add_argument(
-        "--dependents",
-        required=True,
-        nargs="+",
-        help="One or more paths to the dependent datasets. Supports wildcards (*, ?).",
-    )
-    args = parser.parse_args()
 
     # Initialize the datacat client
     dc: CDMSDataCatalog = CDMSDataCatalog(
@@ -81,11 +138,26 @@ def main() -> None:
     )
 
     # Resolve dependent datasets
-    dep_datasets: List[Dataset] = resolve_dependents(dc, args.dependents)
+    dep_paths = list(dependents)
+    dep_datasets: list[Dataset] = resolve_dependents(dc, dep_paths)
+
+    # Check if any datasets were resolved
+    if not dep_datasets:
+        click.echo(
+            f"Error: No dependent datasets found matching: {dep_paths}", err=True
+        )
+        sys.exit(1)
+
+    # Check if the target dataset exists
+    if not dc.exist(dataset):
+        click.echo(f"Error: Target dataset '{dataset}' does not exist.", err=True)
+        sys.exit(1)
 
     # Add dependents to the specified dataset
-    target_dataset: Dataset = dc.get(args.dataset)
-    dc.addDependents(target_dataset, args.dep_type, dep_datasets=dep_datasets)
+    target_dataset: Dataset = dc.get(dataset)
+    dc.addDependents(target_dataset, dep_type, dep_datasets=dep_datasets)
+
+    print_summary(target_dataset, dep_type, dep_datasets)
 
 
 if __name__ == "__main__":
