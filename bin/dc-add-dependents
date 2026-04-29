@@ -10,7 +10,27 @@ from datacat.model import Dataset
 
 from CDMSDataCatalog import CDMSDataCatalog
 
-
+def print_summary(dataset: str, dep_type: str, dep_datasets: List['Dataset']) -> None:
+    
+    click.echo("\n" + "="*40)
+    click.echo(click.style("SUCCESS: Dependents Added", fg='green', bold=True))
+    click.echo("="*40)
+    click.echo(f"Target Dataset: {dataset}")
+    click.echo(f"Dependency Type: {dep_type}")
+    click.echo(f"Total Added: {len(dep_datasets)}")
+        
+    added_paths = [ds.path if hasattr(ds, 'path') else str(ds) for ds in dep_datasets]
+        
+    if len(added_paths) <= 10:
+        for p in added_paths:
+            click.echo(f"  • {p}")
+    else:
+        click.echo("  • " + "\n  • ".join(added_paths[:5]))
+        click.echo(f"  • ... ({len(added_paths) - 10} more) ...")
+        click.echo("  • " + "\n  • ".join(added_paths[-5:]))
+        
+        click.echo("="*40 + "\n")
+        
 def resolve_dependents(dc: CDMSDataCatalog, paths: List[str]) -> List[Dataset]:
     """
     Resolve dataset paths into dataset objects.
@@ -81,6 +101,7 @@ def main(dataset: str, dep_type: str, dependents: tuple) -> None:
     target_dataset: Dataset = dc.get(dataset)
     dc.addDependents(target_dataset, dep_type, dep_datasets=dep_datasets)
 
-
+    print_summary(target_dataset, dep_type, dep_datasets)
+        
 if __name__ == "__main__":
     main()
