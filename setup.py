@@ -4,10 +4,10 @@ from setuptools import setup
 from glob import glob
 
 setup(name='CDMSDataCatalog',
-      version='1.2.1',
+      version='1.2.2',
       packages=['CDMSDataCatalog'],
       install_requires=[
-          'datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git@0.6.9#subdirectory=client/python',
+          'datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git@0.7.0#subdirectory=client/python',
           'requests',
           'tqdm',
           'Click',
