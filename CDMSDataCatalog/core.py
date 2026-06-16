@@ -100,3 +100,45 @@ class CatalogCore:
             raise FileNotFoundError(f"Cannot access fetch directory: {fetchdir_path}")
 
         self.default_fetchdir = str(fetchdir_path)
+
+    def ls(self, path: str ="/CDMS") -> Optional[List[str]]:
+        """
+        Return contents of a data catalog path.
+
+        Parameters
+        ----------
+        path : str, default "/CDMS"
+            The path to list contents from.
+
+        Returns
+        -------
+        list of str or None
+            A list of containers (directories or datasets) if successful.
+
+        Raises
+        ------
+        TypeError
+            If a path refers to a dataset instead of a container.
+        FileNotFoundError
+            If the specified path doesn't exist or can't be accessed.
+
+        """
+        path = normalize_path(path)
+
+        try:
+            return [child.path for child in self.client.children(path)]
+
+        except TypeError as e:
+            # When the path points to a dataset, self.client.children returns
+            # a single DataSet object instead of a list. In this case, the
+            # above list comprehension fails and raises a TypeError exception.
+            error_msg = f"Cannot list path '{path}': it is a dataset, not a directory"
+            logger.error(error_msg)
+            raise TypeError(error_msg) from e
+
+        except NoSuchFileException as e:
+            error_msg = f"Path does not exist: {path}"
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg) from e
+
+
