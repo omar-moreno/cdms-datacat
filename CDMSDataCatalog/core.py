@@ -141,4 +141,45 @@ class CatalogCore:
             logger.error(error_msg)
             raise FileNotFoundError(error_msg) from e
 
+    def exist(self, path: str, version_id: Optional[str] = None, site: Optional[str] = None) -> bool:
+        """
+        Check if a dataset or path exists in the data catalog.
+
+        Queries the data catalog to verify the existence of a specific resource
+        at the given path, optionally filtered by version ID and site. This method
+        performs a direct lookup without raising exceptions for missing resources;
+        it returns ``False`` if the item is not found or the path is invalid.
+
+        Parameters
+        ----------
+        path : str
+            The canonical path to check. Must start with "/CDMS". Paths 
+            consisting only of whitespace or equal to "/" are considered
+            invalid and return "False" without querying the data catalog. 
+        version_id : str, optional
+            Specific version identifier to check. If provided, the check is 
+            performed against this specific version rather than the latest.
+        site : str, optional
+            Specific site (e.g. SLAC, SNOLAB) associated with a dataset. 
+
+        Returns
+        -------
+        bool
+            ``True`` if the resource exists at the specified path (and optional 
+            version/site), ``False`` otherwise.
+        """
+        
+        # All data catalog paths need to start with "/CDMS"
+        if not path or path == "/": return False
+
+        return self.client.exists(normalize_path(path), versionId, site)
+
+
+
+
+
+
+
+
+
 
