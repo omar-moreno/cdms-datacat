@@ -2,8 +2,11 @@
 import configparser as cp
 import logging
 
+from datacat import client_from_config
 from pathlib import Path
 from importlib.resources import files
+
+from .fetch import get_default_fetchdir
 
 logger = logging.getLogger(__name__)
 
@@ -15,14 +18,14 @@ class CatalogCore:
         """
         """
 
-        # If a user doesn't specify a configuration path, use the locally 
+        # If a user doesn't specify a configuration path, use the locally
         # defined config. If a file isn't found at a specified path, throw
         # an exception.
         if config_file_path is None:
-            config_path = files("CDMSDataCatalog").joinpath("cfg/default.cfg"))
+            config_path = files("CDMSDataCatalog").joinpath("cfg/default.cfg")
         else:
             config_path = Path(config_file_path).resolve()
-            
+
             if not config_path.exists():
                 logger.error(f"Configuration file not found: {config_path}")
                 raise FileNotFoundError(f"Config file not found: {config_path}")
