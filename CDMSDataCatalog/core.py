@@ -259,3 +259,88 @@ class CatalogCore:
         if isinstance(node, datacat.model.Group):
             return "group"
         return "folder"
+
+    def mkdir(self, path: str, parents: bool = False, metadata: Optional[Dict[str, str]] = None) -> None:  
+        """
+        Create a new directory in the data catalog.
+
+        Creates a directory at the specified path with optional parent directory
+        creation and custom metadata. This method supports hierarchical paths and
+        allows for associating metadata with the newly created directory.
+
+        Parameters
+        ----------
+        path : str
+            The full path were the directory should be created. Must start with
+            "/CDMS". 
+        parents : bool, default False
+            If "True", creates any missing parent directories along the path
+            (similar to "mkdir -p" in Unix). If "False" and any parent 
+            directory is missing, an "IOError" will be raised.
+        metadata : dict, optional
+            A dictionary of key-value pairs to associate with the new directory.
+        
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        TypeError
+            If "metadata" is provided but not a dict.
+        """
+        path = normalize_path(path)
+        logger.info(f"Creating directory: {path}")
+
+        # Validate metadata if provided
+        if metadata is not None:
+            if not isinstance(metadata, dict):
+                raise TypeError(f"metadata must be a dict or None, got {type(metadata).__name__}")
+        
+            if metadata:
+                logger.debug(f"Metadata provided: {len(metadata)} key(s)")
+
+
+        self.client.mkdir(path, parents=parents, metadata=metadata)  
+
+   def add_metadata(
+        self, path: str, metadata: Dict[str, str], replace: bool = False
+    ) -> bool:
+        """
+        Adds or updates metadata for the specified container (folder, group).
+
+        Args:
+            path (str): The path to the folder or group.
+            metadata (dict): The metadata to add or update.
+            replace (bool): Whether to replace existing metadata (default is False).
+
+        Returns:
+            bool: True if metadata was successfully added or updated, False otherwise.
+        """
+
+        # Normalize the group path
+        path = normalize_path(path)
+        logger.info(f"Attempting to add metadata to: {path}")
+
+        # Retrieve the container (folder, group) to add metadata to
+        container = self.client.path(path)
+        container_metadata = container.metadata
+
+        existing_entries = set(metadata.keys()) & set(
+            container_metadata.keys()
+        )
+
+        if existing_entries and not replace:
+            print(
+                f"The following metadata already exists: {existing_entries}. To override them, set 'replace=True'."
+            )
+            return False
+
+        # Update the containers metadata with the new metadata
+        container.metadata = metadata
+
+        # Commit the changes
+        self.client.patchdir(container.path, container)
+
+        return True
+
