@@ -174,12 +174,88 @@ class CatalogCore:
 
         return self.client.exists(normalize_path(path), versionId, site)
 
+    def rm(self, path: str, recursive: bool = False) -> None:
+        """
+        Remove an entry (dataset, group, or directory) from the data catalog.
+
+        WARNING::
+            This is a destructive operation. There is no "undo" functionality.
+            Ensure you have verified the target path before proceeding. 
+
+        Parameters
+        ----------
+        path : str
+            The full path of the entry to remove. Must start with ``/CDMS``. 
+        recursive : bool, default False
+            If ``True``, recursively deletes all contents within a directory 
+            before deleting the directory itself. If ``False`` and the path 
+            points to a non-empty container, an ``IOError`` will be raised.
+
+        Returns
+        -------
+
+        Raises
+        ------
+        ValueError
+            If an attempt is made to recursively delete the root path "/CDMS".
+        IOError
+            Raised when deletion fails due to expected reasons:
+                - Attempting to delete a non-empty directory without ``recursive=True``
+                - Permission denied by the catalog backend
+                - Path not found or inaccessible
+        """
+
+        path = normalize_path(path)
+
+        # --- SAFETY CHECK: Prevent deletion of root ---
+        if recursive and path == "/CDMS":
+            logger.critical(f"Safety Violation: Blocked recursive deletion of root path '/CDMS'")
+            raise ValueError("Cannot recursively delete the root path '/CDMS'. This would destroy the entire catalog.")
+        # ---------------------------------------------
+
+        try:
+            target = self.client.path(path)
+
+            if isinstance(target, datacat.model.Dataset):
+                # Case 1: It's a dataset
+                self.client.rmds(path)
+                logger.debug(f"Deleted dataset: {path}")
+                return
+
+            if not recursive:
+                # Case 2: It's a container (Group/Folder) but not recursive
+                if list(self.client.children(path)):
+                    raise IOError(f"Cannot delete non-empty directory '{path}' without recursive=True")
+
+                ctype = _determine_container_type(target)
+                self.client.rmdir(path, type=ctype)
+                logger.debug(f"Deleted {ctype}: {path}.")
+                return
+
+            # Case 3: Recursive deletion of a container
+            # First, delete children
+            children = list(self.client.children(path))
+            
+            for child in children:
+                # Recursively call rm on children (always recursive for children)
+                # We pass verbose=False for inner calls to avoid noise unless top-level is very verbose
+                # Or we can keep verbose=True if they want full logs
+                self.rm(child.path, recursive=True)
+ 
+            # Finally, delete the container itself
+            ctype = _determine_container_type(target_node)
+            self.client.rmdir(path, type=ctype)
+            logger.debug(f"Deleted {ctype} recursively: {path}")
+            return
+
+        except Exception as e:
+            # Catch-all for unexpected client errors
+            logger.exception(f"Unexpected error while deleting '{path}': {type(e).__name__}")
+            raise IOError(f"Couldn't delete {path}: {e}") from e
 
 
-
-
-
-
-
-
-
+    def _determine_container_type(node: object) -> str:
+        """Helper to determine if a node is a 'group' or 'folder'."""
+        if isinstance(node, datacat.model.Group):
+            return "group"
+        return "folder"
