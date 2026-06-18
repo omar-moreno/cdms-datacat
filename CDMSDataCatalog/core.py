@@ -178,7 +178,8 @@ class CatalogCore:
                 raise FileNotFoundError(f"Config file not found: {config_path}")
 
         # Load the config
-        config = cp.ConfigParser().read([config_path])
+        config = cp.ConfigParser()
+        config.read(config_path)
 
         # All settings should be in the [defaults] section
         if "defaults" not in config.sections():
