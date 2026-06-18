@@ -247,7 +247,7 @@ class CatalogCore:
             logger.error(error_msg)
             raise FileNotFoundError(error_msg) from e
 
-    def exist(
+    def exists(
         self, path: str, version_id: str | None = None, site: str | None = None
     ) -> bool:
         """Check if a dataset or path exists in the data catalog.
@@ -296,7 +296,9 @@ class CatalogCore:
         recursive : bool, default False
             If ``True``, recursively deletes all contents within a directory
             before deleting the directory itself. If ``False`` and the path
-            points to a non-empty container, an ``IOError`` will be raised.
+            points to a non-empty container, an ``OSError`` will be raised.
+            If the path refers to a dataset, the dataset is deleted directly and
+            the ``recursive`` argument is ignored.
 
         Returns
         -------
@@ -306,7 +308,7 @@ class CatalogCore:
         ------
         ValueError
             If an attempt is made to recursively delete the root path "/CDMS".
-        IOError
+        OSError
             Raised when deletion fails due to expected reasons:
                 - Attempting to delete a non-empty directory without ``recursive=True``
                 - Permission denied by the catalog backend
@@ -358,13 +360,24 @@ class CatalogCore:
 
         except Exception as e:
             # Catch-all for unexpected client errors
-            logger.error(
-                f"Unexpected error while deleting '{path}': {type(e).__name__}"
-            )
+            logger.exception(f"Unexpected error while deleting '{path}'")
             raise OSError(f"Couldn't delete {path}: {e}") from e
 
-    def _determine_container_type(self, node: object) -> str:
-        if isinstance(node, Group):
+    def _determine_container_type(self, container: object) -> str:
+        """Return the catalog container type for a specified container.
+
+        Parameters
+        ----------
+        container : object
+            Catalog object returned by the datacat client.
+
+        Returns
+        -------
+        str
+            Either ``"group"`` or ``"folder"``.
+
+        """
+        if isinstance(container, Group):
             return "group"
         return "folder"
 
@@ -399,7 +412,8 @@ class CatalogCore:
         Raises
         ------
         TypeError
-            If "metadata" is provided but not a dict.
+            If ``metadata`` is not a dictionary or contains non-string keys
+            or values.
 
         """
         path = normalize_path(path)
@@ -407,33 +421,79 @@ class CatalogCore:
 
         # Validate metadata if provided
         if metadata is not None:
+            logger.debug(f"Metadata provided: {len(metadata)} key(s)")
+
             if not isinstance(metadata, dict):
                 raise TypeError(
                     f"metadata must be a dict or None, got {type(metadata).__name__}"
                 )
 
-            if metadata:
-                logger.debug(f"Metadata provided: {len(metadata)} key(s)")
+            for key, value in metadata.items():
+                if not isinstance(key, str):
+                    raise TypeError(
+                        f"metadata keys must be strings, got {type(key).__name__}"
+                    )
+
+                if not isinstance(value, str):
+                    raise TypeError(
+                        f"metadata values must be strings, got {type(value).__name__}"
+                    )
 
         self.client.mkdir(path, parents=parents, metadata=metadata)
 
     def add_metadata(
         self, path: str, metadata: dict[str, str], replace: bool = False
     ) -> bool:
-        """Add or updates metadata for the specified container (folder, group).
+        """Add or update metadata for a catalog container.
 
-        Args:
-            path (str): The path to the folder or group.
-            metadata (dict): The metadata to add or update.
-            replace (bool): Whether to replace existing metadata (default is False).
+        Metadata can be attached to catalog folders or groups as key-value pairs.
+        If any of the provided keys already exist and ``replace`` is ``False``,
+        no changes are made and the method returns ``False``.
 
-        Returns:
-            bool: True if metadata was successfully added or updated, False otherwise.
+        Parameters
+        ----------
+        path : str
+            Path to the target folder or group.
+        metadata : dict of str to str
+            Metadata entries to add or update.
+        replace : bool, default False
+            If ``True``, existing metadata entries may be overwritten.
+            If any provided metadata key already exists and ``replace`` is``False``,
+            no metadata changes are applied.
+
+        Returns
+        -------
+        bool
+            ``True`` if the metadata was successfully added or updated,
+            ``False`` if the operation was skipped because one or more
+            metadata keys already exist and ``replace`` is ``False``.
+
+        Raises
+        ------
+        TypeError
+            If ``metadata`` is not a dictionary of string keys and values.
+        FileNotFoundError
+            If the specified path does not exist.
 
         """
         # Normalize the group path
         path = normalize_path(path)
         logger.info(f"Attempting to add metadata to: {path}")
+
+        # Validate metadata
+        if not isinstance(metadata, dict):
+            raise TypeError(f"metadata must be a dict, got {type(metadata).__name__}")
+
+        for key, value in metadata.items():
+            if not isinstance(key, str):
+                raise TypeError(
+                    f"metadata keys must be strings, got {type(key).__name__}"
+                )
+
+            if not isinstance(value, str):
+                raise TypeError(
+                    f"metadata values must be strings, got {type(value).__name__}"
+                )
 
         # Retrieve the container (folder, group) to add metadata to
         container = self.client.path(path)
