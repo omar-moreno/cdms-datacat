@@ -21,6 +21,7 @@ __all__ = ["CDMSDataCatalog"]
 
 log = logging.getLogger(__name__)
 
+
 class DepType(Enum):
     PREDECESSOR = "predecessor"
     SUCCESSOR = "successor"
@@ -43,7 +44,11 @@ class CDMSDataCatalog:
 
     """
 
-    def __init__(self, config_file: Optional[Path | str] = None, default_fetchdir: Optional[Path | str] = None) -> None:
+    def __init__(
+        self,
+        config_file: Optional[Path | str] = None,
+        default_fetchdir: Optional[Path | str] = None,
+    ) -> None:
         """
         Initialze the CDMSDataCatalog instance.
 
@@ -90,9 +95,7 @@ class CDMSDataCatalog:
             A list of resolved dependent dataset objects.
         """
         if not isinstance(paths, list):
-            raise TypeError(
-                f"'paths' must be a list, but got {type(paths).__name__}"
-            )
+            raise TypeError(f"'paths' must be a list, but got {type(paths).__name__}")
 
         dependents: List[Dataset] = []
 
@@ -116,16 +119,23 @@ class CDMSDataCatalog:
 
         return dependents
 
-    def ls(self, path: str ="/CDMS") -> Optional[List[str]]:
+    def ls(self, path: str = "/CDMS") -> Optional[List[str]]:
         self._core.ls(path)
 
-    def exist(self, path: str, version_id: Optional[str] = None, site: Optional[str] = None) -> bool:
+    def exist(
+        self, path: str, version_id: Optional[str] = None, site: Optional[str] = None
+    ) -> bool:
         return self._core.exists(path, version_id, site)
 
     def rm(self, path: str, recursive: bool = False) -> None:
         self._core.rm(path, recursive)
 
-    def mkdir(self, path: str, parents: bool = False, metadata: Optional[Dict[str, str]] = None) -> None:
+    def mkdir(
+        self,
+        path: str,
+        parents: bool = False,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> None:
         self._core.mkdir(path, parents, metadata)
 
     def add_metadata(
@@ -222,26 +232,18 @@ class CDMSDataCatalog:
                     print(f"ERROR: unrecognized CDMS path format: {file_path}")
                     return False
             except Exception:
-                print(
-                    f"ERROR: cannot find Data Catalog entry for file {file_path}"
-                )
+                print(f"ERROR: cannot find Data Catalog entry for file {file_path}")
                 return False
 
         # Add all datasets to the group as predecessors
-        self.addDependents(
-            group, DepType.PREDECESSOR.value, dep_datasets=datasets
-        )
+        self.addDependents(group, DepType.PREDECESSOR.value, dep_datasets=datasets)
 
         for dataset in datasets:
-            self.addDependents(
-                dataset, DepType.SUCCESSOR.value, dep_groups=[group]
-            )
+            self.addDependents(dataset, DepType.SUCCESSOR.value, dep_groups=[group])
 
         return True
 
-    def remove_files_from_group(
-        self, group_name: str, paths: List[str]
-    ) -> bool:
+    def remove_files_from_group(self, group_name: str, paths: List[str]) -> bool:
         """
         Removes datasets from the specified group in the CDMS Data Catalog.
 
@@ -320,9 +322,7 @@ class CDMSDataCatalog:
             # Retrieve dependents associated with this group
             return self.getDependents(group, "cdmsgroup", 1, num_datasets)
         except Exception as e:
-            print(
-                f"ERROR: Failed to retrieve datasets for group '{group.name}': {e}"
-            )
+            print(f"ERROR: Failed to retrieve datasets for group '{group.name}': {e}")
             return []
 
     def close_group(self, path: str):
@@ -536,9 +536,7 @@ class CDMSDataCatalog:
         kwargs.setdefault("dest", self.default_fetchdir)
         return fetchdata(self, path, **kwargs)
 
-    def getDependents(
-        self, dep_container, dep_type, max_depth, chunk_size, **kwargs
-    ):
+    def getDependents(self, dep_container, dep_type, max_depth, chunk_size, **kwargs):
         """
         Retrieves dependents up to the provided "chunk_size" at a time, subject to "max_depth".
 
@@ -560,9 +558,7 @@ class CDMSDataCatalog:
                             site="All",
                         )
             except Exception:
-                raise ValueError(
-                    "Unqualified dataset passed as dependency container"
-                )
+                raise ValueError("Unqualified dataset passed as dependency container")
         elif isinstance(dep_container, CDMSGroup):
             try:
                 container = dep_container.rawGroup
@@ -571,9 +567,7 @@ class CDMSDataCatalog:
                         # refresh container for latest
                         container = self.client.path(container.path)
             except Exception:
-                raise ValueError(
-                    "qualified group passed as dependency container"
-                )
+                raise ValueError("qualified group passed as dependency container")
         else:
             container = dep_container
         return self.client.get_dependents(
@@ -590,16 +584,12 @@ class CDMSDataCatalog:
             try:
                 container = dep_container.rawDataset
             except Exception:
-                raise ValueError(
-                    "Unqualified dataset passed as dependency container"
-                )
+                raise ValueError("Unqualified dataset passed as dependency container")
         elif isinstance(dep_container, CDMSGroup):
             try:
                 container = dep_container.rawGroup
             except Exception:
-                raise ValueError(
-                    "Unqualified group passed as dependency container"
-                )
+                raise ValueError("Unqualified group passed as dependency container")
         return self.client.get_next_dependents(container, **kwargs)
 
     def checkDependencyCycles(
@@ -645,9 +635,7 @@ class CDMSDataCatalog:
             try:
                 container = dep_container.rawGroup
             except Exception:
-                raise ValueError(
-                    "Unqualified CDMSGroup passed as dependency container"
-                )
+                raise ValueError("Unqualified CDMSGroup passed as dependency container")
         else:
             container = dep_container
         dep_grps = []
@@ -695,16 +683,12 @@ class CDMSDataCatalog:
             try:
                 container = dep_container.rawDataset
             except Exception:
-                raise ValueError(
-                    "Unqualified dataset passed as dependency container"
-                )
+                raise ValueError("Unqualified dataset passed as dependency container")
         elif isinstance(dep_container, CDMSGroup):
             try:
                 container = dep_container.rawGroup
             except Exception:
-                raise ValueError(
-                    "Unqualified group passed as dependency container"
-                )
+                raise ValueError("Unqualified group passed as dependency container")
         else:
             container = dep_container
         dep_grps = []
@@ -799,9 +783,7 @@ class CDMSDataCatalog:
 
         # handle special 'last' case for nFridgeRun
         if nFridgeRun == "last" or nFridgeRun == -1:
-            if not paths.is_simple_arg(
-                Facility, allowstar=False, allownone=False
-            ):
+            if not paths.is_simple_arg(Facility, allowstar=False, allownone=False):
                 raise ValueError("Can't find last fridge run without facility")
             nFridgeRun = self.getLastFridgeRunNumber(Facility)
 
@@ -811,9 +793,7 @@ class CDMSDataCatalog:
         ProdTag = checksimple(ProdTag, "ProdTag", query)
         nMergeLevel = checksimple(nMergeLevel, "nMergeLevel", query)
         Series = checksimple(Series, "Series", query, force=Series is not None)
-        ProdStep = checksimple(
-            ProdStep, "ProdStep", query, force=ProdStep is not None
-        )
+        ProdStep = checksimple(ProdStep, "ProdStep", query, force=ProdStep is not None)
 
         path = paths.getpath_data(
             Facility,
@@ -956,13 +936,10 @@ class CDMSDataCatalog:
         try:
             folder_list = self.client.children(datacatalog_path)
         except:
-            print(
-                "ERROR: Problem reading datacatalog path: " + datacatalog_path
-            )
+            print("ERROR: Problem reading datacatalog path: " + datacatalog_path)
             return output_dict
 
         for datacat_folder in folder_list:
-
             # get metadata
             prod_tag = datacat_folder.name
 
@@ -1084,16 +1061,13 @@ class CDMSDataCatalog:
         try:
             folder_list = self.client.children(datacatalog_path)
         except:
-            print(
-                "ERROR: Problem reading datacatalog path: " + datacatalog_path
-            )
+            print("ERROR: Problem reading datacatalog path: " + datacatalog_path)
             return
 
         # ====================
         # Loop and Filter
         # ====================
         for datacat_folder in folder_list:
-
             # series name and metadata
             series = datacat_folder.name
             series_metadata = dict()
@@ -1131,7 +1105,6 @@ class CDMSDataCatalog:
 
             # check date range
             if beginDateTime or endDateTime:
-
                 # remove underscore and facility id
                 pos_underscore = series.find("_")
                 series_time = series[pos_underscore - 6 :]
@@ -1146,12 +1119,8 @@ class CDMSDataCatalog:
                         for ii in range(0, 12 - len(start)):
                             start += "0"
                     if len(start) != len(series_time):
-                        print(
-                            '\nWARNING: Format of "beginDateTime" not understood...'
-                        )
-                        print(
-                            "It should be YYMMDD, YYMMDD_HHMM or YYMMDD_HHMMSS"
-                        )
+                        print('\nWARNING: Format of "beginDateTime" not understood...')
+                        print("It should be YYMMDD, YYMMDD_HHMM or YYMMDD_HHMMSS")
                         return output_dict
                     if int(series_time) < int(start):
                         continue
@@ -1163,12 +1132,8 @@ class CDMSDataCatalog:
                         for ii in range(0, 12 - len(end)):
                             end += "0"
                     if len(end) != len(series_time):
-                        print(
-                            '\nWARNING: Format of "endDateTime" not understood...'
-                        )
-                        print(
-                            "It should be YYMMDD, YYMMDD_HHMM or YYMMDD_HHMMSS"
-                        )
+                        print('\nWARNING: Format of "endDateTime" not understood...')
+                        print("It should be YYMMDD, YYMMDD_HHMM or YYMMDD_HHMMSS")
                         return output_dict
                     if int(series_time) > int(end):
                         continue
@@ -1269,11 +1234,7 @@ class CDMSDataCatalog:
             print("WARNING: No series found! Check arguments")
             return
 
-        print(
-            "Will search the file list for "
-            + str(len(series_list))
-            + " series!"
-        )
+        print("Will search the file list for " + str(len(series_list)) + " series!")
         print("Be patient! It may take a while...")
 
         # ======================
@@ -1282,17 +1243,12 @@ class CDMSDataCatalog:
 
         # loop and get files
         for series in series_list:
-
             # get files
-            datacatalog_path = (
-                "/CDMS/" + facility + "/" + run_name + "/Raw/" + series
-            )
+            datacatalog_path = "/CDMS/" + facility + "/" + run_name + "/Raw/" + series
             raw_datasets = []
 
             try:
-                raw_datasets = self.client.children(
-                    datacatalog_path, site=location
-                )
+                raw_datasets = self.client.children(datacatalog_path, site=location)
             except:
                 continue
 
@@ -1360,9 +1316,7 @@ class CDMSDataCatalog:
                 'ERROR: Required arguments = "facility", "fridgeRun", and "productionTag"'
             )
             if not productionTag:
-                print(
-                    'Use function "getProductionInfo" to get list of available tags!'
-                )
+                print('Use function "getProductionInfo" to get list of available tags!')
             return
 
         if not fileType:
@@ -1451,9 +1405,7 @@ class CDMSDataCatalog:
                 + productionTag
                 + '" found in the datacatalog!'
             )
-            print(
-                'Use function "getProductionInfo" to get list of available tags.'
-            )
+            print('Use function "getProductionInfo" to get list of available tags.')
             return
 
         if seriesList and not isinstance(seriesList, list):
@@ -1467,9 +1419,7 @@ class CDMSDataCatalog:
         # ======================
 
         # full path
-        base_path += (
-            "/" + productionType + "/" + productionTag + "/" + fileType
-        )
+        base_path += "/" + productionType + "/" + productionTag + "/" + fileType
         if fileType == "Unmerged":
             base_path += "/*"
 
@@ -1493,9 +1443,7 @@ class CDMSDataCatalog:
         show = ["Series"]
         dataset_list = []
         try:
-            dataset_list = self.search(
-                base_path, site=location, query=query, show=show
-            )
+            dataset_list = self.search(base_path, site=location, query=query, show=show)
         except:
             print("ERROR: Problem accessing data catalog!")
             print(
