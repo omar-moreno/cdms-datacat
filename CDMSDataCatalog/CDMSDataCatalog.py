@@ -15,6 +15,7 @@ from .CDMSDataset import CDMSDataset
 from .CDMSGroup import CDMSGroup
 from .fetch import fetchdata, get_default_fetchdir
 from .path_utils import normalize_path, getFileFormat
+from .core import CatalogCore
 
 __all__ = ["CDMSDataCatalog"]
 
@@ -42,44 +43,36 @@ class CDMSDataCatalog:
 
     """
 
-    def __init__(self, config_file=None, default_fetchdir=None):
-        """##Constructor
-        Args:
-            config_file (str): location of config file with client settings
-            default_fetchdir (str): root directory for downloading data
-
-        The file specified by `config_file` must follow
-        [configparser](https://docs.python.org/3/library/configparser.html)
-        syntax.  All settings should be in the `[defaults]` section.
-        Suggested approach is to copy `cfg/default.cfg` as a starting point.
-        Recognized heys are:
-
-        * url: base URL for accessing the catalog web interface
-        * auth_type: web authentication standard
-        * auth_key_id: authentication id
-        * auth_secret_key: authentication public key
-        * default_fetchdir: same as `default_fetchdir` argument
-
-
+    def __init__(self, config_file: Optional[Path | str] = None, default_fetchdir: Optional[Path | str] = None) -> None:
         """
+        Initialze the CDMSDataCatalog instance.
 
-        # load the configuration file
-        if config_file is None:
-            config_file = files("CDMSDataCatalog").joinpath("cfg/default.cfg")
+        Parameters
+        ----------
+        config_file_path : Path or str, optional
+            Absolute or relative path to the configuration file. Must contain
+            a [defaults] section with at least the 'url' key. If None, loads
+            from the package's embedded default configuration file.
 
-        config = config_from_file(config_file)
+        default_fetchdir : Path or str, optional
+            The root directory from where fetched data is retrieved. Priority order:
+            1. This argument value
+            2. Config file's 'default_fetchdir' setting
+            3. System default from get_default_fetchdir()
 
-        # determine default data fetchdir
-        self.default_fetchdir = default_fetchdir
-        if default_fetchdir is None:
-            self.default_fetchdir = get_default_fetchdir()
-            # see if it was specified in the config file
-            try:
-                self.default_fetchdir = config["defaults"]["default_fetchdir"]
-            except KeyError:  # this is not in the config file
-                pass
+        Returns
+        -------
+        None
 
-        self.client = client_from_config(config)
+        Notes
+        -----
+        The configuration file must follow Python's configparser syntax.
+        All settings including url, auth_type, auth_key_id, auth_secret_key, and
+        default_fetchdir should be placed in the [defaults] section.
+        """
+        self._core = CatalogCore(config_file, default_fetchdir)
+        self.client = self._core.client
+        self.default_fetchdir = self._core.default_fetchdir
 
     def resolve_datasets(self, paths: List[str]) -> List[Dataset]:
         """
@@ -123,78 +116,22 @@ class CDMSDataCatalog:
 
         return dependents
 
-    def ls(self, path="/CDMS/"):
-        """Return contents of a datacat path, by default look in /CDMS/"""
-        path = normalize_path(path)
-        try:
-            return list(
-                map(lambda child: child.path, self.client.children(path))
-            )
-            # for child in self.client.children(path):
-            # print( child.path)
-        except TypeError:
-            print("Cannot ls, %s is a dataset" % path)
-        except BaseException:
-            print("Path does not exist")
+    def ls(self, path: str ="/CDMS") -> Optional[List[str]]:
+        self._core.ls(path)
 
-    def exist(self, path, versionId=None, site=None):
-        """Test if the given path exists in the data catalog.
-        Note: This is NOT testing if the actual file exists on disk
-        """
-        path = normalize_path(path)
-        do_exist = self.client.exists(path, versionId, site)
-        return do_exist
+    def exist(self, path: str, version_id: Optional[str] = None, site: Optional[str] = None) -> bool:
+        return self._core.exists(path, version_id, site)
 
-    def rm(self, path, recursive=False, verbose=True):
-        """Remove an entry from the catalog. Obviously this should only be
-        used by experts with extreme caution!
+    def rm(self, path: str, recursive: bool = False) -> None:
+        self._core.rm(path, recursive)
 
-        Args:
-            path (str): The full data catalog entry path
-            recursive (bool): If the path is a directory, delete everything
-                below it.  You probably can't delete folders with subentrires
-                if this is False...
-            verbose (bool): provide more information about what's happening
-        """
-        path = normalize_path(path)
+    def mkdir(self, path: str, parents: bool = False, metadata: Optional[Dict[str, str]] = None) -> None:
+        self._core.mkdir(path, parents, metadata)
 
-        if verbose:
-            print(path)
-        if recursive:
-            try:
-                if type(self.client.path(path)) == datacat.model.Dataset:
-                    response = self.client.rmds(path)
-                    print(response)
-                    return
-            except Exception:
-                print("Couldn't delete %s" % path)
-                return
-
-            else:
-                for child in self.client.children(path):
-                    self.rm(child.path, recursive=True)
-
-                ctype = "folder"
-                if type(self.client.path(path)) == datacat.model.Group:
-                    ctype = "group"
-
-                if verbose:
-                    print(path)
-                try:
-                    response = self.client.rmdir(path, type=ctype)
-                    print(response)
-                except Exception:
-                    print("Couldn't delete %s" % path)
-                return
-        else:
-            try:
-                if type(self.client.path(path)) == datacat.model.Dataset:
-                    self.client.rmds(path)
-                else:
-                    self.client.rmdir(path)
-            except Exception as e:
-                print(e)
-                raise IOError("Couldn't delete " + path)
+    def add_metadata(
+        self, path: str, metadata: Dict[str, str], replace: bool = False
+    ) -> bool:
+        return self._core.add_metadata(path, metadata, replace)
 
     def mkgroup(
         self,
@@ -448,21 +385,6 @@ class CDMSDataCatalog:
         # If the group is open, return true.
         return group.metadata["State"] == "Open"
 
-    def mkdir(
-        self, path, parents=False, metadata=None
-    ):  ### ELA: modified this function to include metadata argument
-        """Create a new directory
-        Args:
-            path (str): full path to the new directory
-            parents (bool): create any missing higher-level directories on the
-                way (similar to `mkdir -p`)
-        """
-        path = normalize_path(path)
-        self.client.mkdir(
-            path, parents=parents, metadata=metadata
-        )  ### ELA: see above comment...
-        return
-
     def search(self, path, site="All", getallmetadata=False, **kwargs):
         """Call `client.search` and return sorted CDMSDatasets
 
@@ -606,46 +528,6 @@ class CDMSDataCatalog:
                 print("Could not add data location to Dataset")
             else:
                 raise
-
-    def add_metadata(
-        self, path: str, metadata: dict, replace: bool = False
-    ) -> bool:
-        """
-        Adds or updates metadata for the specified container (folder, group).
-
-        Args:
-            path (str): The path to the folder or group.
-            metadata (dict): The metadata to add or update.
-            replace (bool): Whether to replace existing metadata (default is False).
-
-        Returns:
-            bool: True if metadata was successfully added or updated, False otherwise.
-        """
-
-        # Normalize the group path
-        path = normalize_path(path)
-
-        # Retrieve the container (folder, group) to add metadata to
-        container = self.client.path(path)
-        container_metadata = container.metadata
-
-        existing_entries = set(metadata.keys()) & set(
-            container_metadata.keys()
-        )
-
-        if existing_entries and not replace:
-            print(
-                f"The following metadata already exists: {existing_entries}. To override them, set 'replace=True'."
-            )
-            return False
-
-        # Update the containers metadata with the new metadata
-        container.metadata = metadata
-
-        # Commit the changes
-        self.client.patchdir(container.path, container)
-
-        return True
 
     def fetch(self, path, **kwargs):
         """fetch (download) dataset at `path`.
