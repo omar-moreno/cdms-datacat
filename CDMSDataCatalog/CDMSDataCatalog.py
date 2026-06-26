@@ -3,17 +3,15 @@
 import logging
 from enum import Enum
 from collections.abc import Iterable
-from typing import Dict, List, Optional
 
-import datacat
-from datacat import client_from_config, config_from_file
 from datacat.model import Dataset
+from pathlib import Path
 
 from . import paths
 from .CDMSDataset import CDMSDataset
 from .CDMSGroup import CDMSGroup
-from .fetch import fetchdata, get_default_fetchdir
-from .path_utils import normalize_path, getFileFormat
+from .fetch import fetchdata
+from .path_utils import normalize_path
 from .core import CatalogCore
 from .groups import Groups
 
@@ -47,8 +45,8 @@ class CDMSDataCatalog:
 
     def __init__(
         self,
-        config_file: Optional[Path | str] = None,
-        default_fetchdir: Optional[Path | str] = None,
+        config_file: Path | str | None= None,
+        default_fetchdir: Path | str | None = None,
     ) -> None:
         """
         Initialze the CDMSDataCatalog instance.
@@ -82,25 +80,25 @@ class CDMSDataCatalog:
 
         self._groups = Groups(self.client)
 
-    def resolve_datasets(self, paths: List[str]) -> List[Dataset]:
+    def resolve_datasets(self, paths: list[str]) -> list[Dataset]:
         """
         Resolve dataset paths into dataset objects.
 
         Parameters
         ----------
-            paths : List[str]
+            paths : list[str]
                 A list of dependent dataset paths (can include wildcards). The
                 path can either be a datacat path or a path on disk.
 
         Returns
         -------
-        List[Dataset]
+        list[Dataset]
             A list of resolved dependent dataset objects.
         """
         if not isinstance(paths, list):
             raise TypeError(f"'paths' must be a list, but got {type(paths).__name__}")
 
-        dependents: List[Dataset] = []
+        dependents: list[Dataset] = []
 
         for path in paths:
             # Check if the path is a data catalog path or a path on disk. If it's
@@ -122,11 +120,11 @@ class CDMSDataCatalog:
 
         return dependents
 
-    def ls(self, path: str = "/CDMS") -> Optional[List[str]]:
+    def ls(self, path: str = "/CDMS") -> list[str] | None:
         self._core.ls(path)
 
     def exist(
-        self, path: str, version_id: Optional[str] = None, site: Optional[str] = None
+        self, path: str, version_id: str | None = None, site: str | None = None
     ) -> bool:
         return self._core.exists(path, version_id, site)
 
@@ -137,12 +135,12 @@ class CDMSDataCatalog:
         self,
         path: str,
         parents: bool = False,
-        metadata: Optional[Dict[str, str]] = None,
+        metadata: dict[str, str] | None = None,
     ) -> None:
         self._core.mkdir(path, parents, metadata)
 
     def add_metadata(
-        self, path: str, metadata: Dict[str, str], replace: bool = False
+        self, path: str, metadata: dict[str, str], replace: bool = False
     ) -> bool:
         return self._core.add_metadata(path, metadata, replace)
 
@@ -150,7 +148,7 @@ class CDMSDataCatalog:
         self,
         path: str,
         parents: bool = False,
-        metadata: Optional[Dict[str, str]] = None,
+        metadata: dict[str, str] | None = None,
     ) -> None:
         self._groups.create(path, parents, metadata)
 
@@ -161,12 +159,12 @@ class CDMSDataCatalog:
     def add_files_to_group(self, path: str, file_paths: Iterable[str]) -> None:
         self._groups.add_files(path, file_paths)
 
-    def remove_files_from_group(self, group_name: str, paths: List[str]) -> None:
+    def remove_files_from_group(self, group_name: str, paths: list[str]) -> None:
         self._groups.remove_files(group_name, paths)
 
     def retrieve_files_from_group(
         self, path: str, num_datasets: int = 1_000_000_000
-    ) -> List[CDMSDataset]:
+    ) -> list[CDMSDataset]:
        return self._groups.retrieve_files(path, num_datasets) 
 
     def close_group(self, path: str):
@@ -337,7 +335,7 @@ class CDMSDataCatalog:
         :param dep_type: Type of dependents to get.
         :param max_depth: Depth of dependency chain.
         :param chunk_size: Total amount of dependents retrieved.
-        :return: List of retrieved dependents.
+        :return: list of retrieved dependents.
         """
         if isinstance(dep_container, CDMSDataset):
             try:
@@ -371,7 +369,7 @@ class CDMSDataCatalog:
         """
          Retrieve next dependents attached to container object.
         :param dep_container: Parent container object you wish to get next dependents from
-        :return: List of dependent objects attached to container object
+        :return: list of dependent objects attached to container object
         """
         if isinstance(dep_container, CDMSDataset):
             try:
