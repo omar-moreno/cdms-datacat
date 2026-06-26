@@ -1,3 +1,10 @@
+"""Module used to manage group operations within the CDMS Data Catalog.
+
+This module provides the :class`Groups` class, which manages group operations
+within the CDMS Data Catalog. It handles the lifecycle of metadata groups,
+including creation, state management (open/closed), and the association of
+datasets (predecessors and successors) with specific groups.
+"""
 
 import logging
 from collections.abc import Iterable
@@ -12,36 +19,88 @@ from .path_utils import normalize_path
 
 logger = logging.getLogger(__name__)
 
+
 class Groups:
-    """
-    Manage group operations in the CDMS Data Catalog.
+    """Manage group operations in the CDMS Data Catalog.
 
     This class provides methods to create, retrieve, modify and manage the state
     of groups within the CDMS Data Catalog. It handles dependencies between groups
-    and datasets, including adding predecessors and successors.
+    and datasets, including adding predecessors and successors. The class assumes
+    a valid ``CatalogCore`` instance is provided during initialization.
+
+    Parameters
+    ----------
+    dc : CatalogCore
+        The core data catalog instance used to perform low-level client operations
+        such as fetching groups, managing metadata, and handling dependencies. This
+        instance should be properly configured and ready.
 
     Attributes
     ----------
     dc: CatalogCore
-        The core data catalog instance used for operations.
+        Reference to the core data catalog instance for all subsequent
+        operations. Stored as an instance attribute for access by all
+        methods in this class.
 
     """
-    def __init__(self, dc : CatalogCore) -> None:
+
+    def __init__(self, dc: CatalogCore) -> None:
+        """Initialize the Groups manager with a data catalog core instance.
+
+        This constructor sets up the `Groups` object to manage group operations
+        within the CDMS Data Catalog. It requires an initialized `CatalogCore`
+        instance that provides access to the underlying data catalog client.
+
+        Parameters
+        ----------
+        dc : CatalogCore
+            The core data catalog instance used to perform low-level client
+            operations such as fetching groups, managing metadata, and handling
+            dependencies. This instance should be properly configured and ready
+            for use before passing it to `Groups`.
+
+        Returns
+        -------
+        None
+
+        Attributes
+        ----------
+        dc : CatalogCore
+            Reference to the core data catalog instance for all subsequent
+            operations. Stored as an instance attribute for access by all
+            methods in this class.
+
+        """
         self.dc = dc
 
-    def create(self, path: str, parents: bool = False,
-               metadata: dict[str, str] | None = None) -> None:
+    def create(
+        self, path: str, parents: bool = False, metadata: dict[str, str] | None = None
+    ) -> None:
         """Create a new group at the specified path.
 
-        Args:
-            path (str): Full path to the new group.
-            parents (bool): If True, create any missing higher-level groups.
-            metadata (dict, optional): Additional metadata to associate with
-                the group.
+        Initializes a new group with a default "State" of "Open". If additional
+        metadata is provided, it is merged with the default state.
 
-        Returns:
-            bool: True is the group was successfully created, False if it
-                  already exists.
+        Parameters
+        ----------
+        path : str
+            Full path to the new group (e.g., "/CDMS/Facility/Run/Group").
+        parents : bool, optional
+            If True, create any missing higher-level groups automatically.
+            Default is False.
+        metadata : dict[str, str], optional
+            Additional metadata key-value pairs to associate with the group.
+            These will be merged with the initial "State": "Open" metadata.
+            Default is None.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        FileExistsError
+            If a group already exists at the specified path.
 
         """
         # Normalize the group path before using it
@@ -62,8 +121,27 @@ class Groups:
             logger.exception(f"WARNING: group {path} already exists")
             raise FileExistsError(f"Group {path} already exists")
 
-    def get(self, path: str, site: str = "All"):
-        """Convert a path (string) to a full CDMSGroup object"""
+    def get(self, path: str, site: str = "All") -> CDMSGroup:
+        """Retrieve a fully populated CDMSGroup object.
+
+        Converts a string path into a full `CDMSGroup` object by fetching
+        details from the data catalog.
+
+        Parameters
+        ----------
+        path : str
+            Path to the group to retrieve
+        site : str, optional
+            Site filter (e.g. "SLAC", "SNOLAB"). Use "All" (default) to query
+            all sites.
+
+        Returns
+        -------
+        CDMSGroup
+            A `CDMSGroup` object representing the requested group, containing
+            metadata and relationship information.
+
+        """
         path = normalize_path(path)
         rawgroup = self.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
@@ -71,18 +149,30 @@ class Groups:
     def add_files(self, path: str, file_paths: Iterable[str]) -> None:
         """Add one or more dataset files to an open group.
 
+        Links existing datasets to the group as predecessors. The group must be
+        in an "Open" state to accept new files. Files can be specified as direct
+        data catalog paths ("/CDMS/...") or filesystem paths containing exactly
+        one "/CDMS/" segment.
+
         Parameters
         ----------
-        path : str Path to the group that should receive the files.
-        file_paths : Iterable[str] A sequence of file paths. Paths may be:
+        path : str
+            Path to target group.
+        file_paths : itereable of str
+            A sequence of file paths to add. Each path may be:
             - A Data Catalog path starting with "/CDMS/"
             - A filesystem path containing exactly one "/CDMS/", which will be
               converted to a Data Catalog path.
 
         Returns
         -------
-        bool
-            True if all files were added successfully, False otherwise.
+        None
+
+        Raises
+        ------
+            Exception
+                If the group is in a closed state or a file path doesn't contain
+                exactly one "/CDMS".
 
         """
         # Normalize the group path before using it
@@ -94,7 +184,9 @@ class Groups:
         # Check that the group can be modified.
         if not self.group_is_open(group):
             logger.exception(f"The group {group.name} is closed and can't be modified.")
-            return False
+            raise Exception(
+                f"Group '{path}' is in a 'Closed' state and cannot be modified."
+            )
 
         datasets = []
         for file_path in file_paths:
@@ -109,10 +201,9 @@ class Groups:
                     datasets.append(self.get(catalog_path))
                 else:
                     print(f"ERROR: unrecognized CDMS path format: {file_path}")
-                    return False
+                    raise Exception(f"Unrecognized CDMS path format: {file_path}")
             except Exception:
-                print(f"ERROR: cannot find Data Catalog entry for file {file_path}")
-                return False
+                raise
 
         # Add all datasets to the group as predecessors
         self.addDependents(group, DepType.PREDECESSOR.value, dep_datasets=datasets)
@@ -120,28 +211,24 @@ class Groups:
         for dataset in datasets:
             self.addDependents(dataset, DepType.SUCCESSOR.value, dep_groups=[group])
 
-        return True
+    def remove_files(self, group_name: str, paths: list[str]) -> None:
+        """Remove datasets from a specified group.
 
-    def remove_files(self, group_name: str, paths: list[str]) -> bool:
-        """Removes datasets from the specified group in the CDMS Data Catalog.
+        Removes the relationship between the group and the listed datasets.
+        Supports wildcards in paths via `resolve_datasets`.
 
         Parameters
         ----------
-        group_name : (str)
-            The name of the group from which datasets will be removed.
-        paths : List[str]
-            A list of file paths corresponding to the datasets that should be
-            removed. The paths can either be paths on disk or data catalog paths.
-            Both can include wildcards.
+        group_name : str
+            The full path to the group from which datasets will be removed.
+        paths : list of str
+            List of file paths corresponding to the datasets to remove.
+            Paths can be on disk or in the data catalog and may include
+            wildcards (e.g. "/CDMS/Test/data*.txt").
 
         Returns
         -------
-        bool
-            Returns `True` if the operation was successful, otherwise `False`.
-
-        Examples
-        --------
-        >>> remove_files_from_group("/CDMS/Test/TestGroup", ["/CDMS/Scratch/TestBackground/test1*.txt"])
+        None
 
         """
         try:
@@ -160,14 +247,16 @@ class Groups:
                     dataset, DepType.SUCCESSOR.value, dep_groups=[group]
                 )
 
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            return False
+        except Exception:
+            raise
 
-        return True
+    def retrieve_files(
+        self, path: str, num_datasets: int = DEFAULT_MAX_DATASETS
+    ) -> list[CDMSDataset]:
+        """Retrieve CDMSDataset objects associated with a group.
 
-    def retrieve_files(self, path: str, num_datasets: int = DEFAULT_MAX_DATASETS) -> list[CDMSDataset]:
-        """Retrieve CDMSDataset objects associated with the given group.
+        Fetches the list of datasets linked to the specified group as predecessors.
+        Defaults to returning all datasets unless a limit is set.
 
         Parameters
         ----------
@@ -175,13 +264,13 @@ class Groups:
             The path to the group whose datasets should be retrieved.
         num_datasets : int, optional
             The maximum number of datasets to return. Defaults to a very large
-            value, effectively returning all dependents.
+            value (1 billion), effectively returning all dependents.
 
         Returns
         -------
-        List[CDMSDataset]
-            A list of CDMSDataset objects associated with the specified group.
-            Returns an empty list if the group does not exist or retrieval fails
+        list of CDMSDataset
+            A list of `CDMSDataset` objects associated with the group.
+            Returns an empty list if the group does not exist or retrieval fails.
 
         """
         # Normalize the group path before using it
@@ -201,14 +290,20 @@ class Groups:
             print(f"ERROR: Failed to retrieve datasets for group '{group.name}': {e}")
             return []
 
-    def close(self, path: str):
+    def close(self, path: str) -> None:
         """Close a metadata group at the specified path.
+
+        Updates the group's metadata to set the "State" to "Closed", preventing
+        further additions of files until reopened.
 
         Parameters
         ----------
         path : str
-            The path to the group that should be closed. The path will be
-            normalized before being used.
+            The path to the group that should be closed.
+
+        Returns
+        -------
+        None
 
         """
         # Normalize the group path before using it
@@ -217,14 +312,20 @@ class Groups:
         # Close the group
         self.add_metadata(path, {"State": "Closed"}, replace=True)
 
-    def open(self, path: str):
+    def open(self, path: str) -> None:
         """Open a metadata group at the specified path.
+
+        Updates the group's metadata to set the "State" to "Open", allowing
+        new files to be added.
 
         Parameters
         ----------
         path : str
-            The path to the group that should be opened. The path will be
-            normalized before being used.
+            The path to the group that should be opened.
+
+        Returns
+        -------
+        None
 
         """
         # Normalize the group path before using it
@@ -236,8 +337,8 @@ class Groups:
     def group_is_open(self, group: CDMSGroup) -> bool:
         """Determine whether a metadata group is currently open.
 
-        This method inspects the group's metadata and returns ``True`` if the
-        value associated with the ``"State"`` key is ``"Open"``. If the key is
+        Inspects the group's metadata and returns ``True`` if the value
+        associated with the ``"State"`` key is ``"Open"``. If the key is
         missing or has any other value, the method returns ``False``.
 
         Parameters
@@ -247,15 +348,14 @@ class Groups:
 
         Returns
         -------
-        bool ``True`` if the group is marked as open, ``False`` otherwise.
+        bool
+            ``True`` if the group is marked as open, ``False`` otherwise.
 
         Notes
         -----
         A group's state is tracked via its ``"State"`` metadata field. Other
-        methods in this class (e.g., `open_group` or `close_group`) are expected
-        to update this field accordingly
+        methods (e.g. `open`, `close`) update this field accordingly.
 
         """
         # If the group is open, return true.
         return group.metadata["State"] == "Open"
-
