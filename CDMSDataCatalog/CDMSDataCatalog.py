@@ -14,7 +14,9 @@ from .fetch import fetchdata
 from .path_utils import normalize_path
 from .core import CatalogCore
 from .groups import Groups
-
+from .datasets import Datasets
+from .dependents import Dependents
+from .facilities import facility_name
 
 __all__ = ["CDMSDataCatalog"]
 
@@ -79,46 +81,8 @@ class CDMSDataCatalog:
         self.default_fetchdir = self._core.default_fetchdir
 
         self._groups = Groups(self.client)
-
-    def resolve_datasets(self, paths: list[str]) -> list[Dataset]:
-        """
-        Resolve dataset paths into dataset objects.
-
-        Parameters
-        ----------
-            paths : list[str]
-                A list of dependent dataset paths (can include wildcards). The
-                path can either be a datacat path or a path on disk.
-
-        Returns
-        -------
-        list[Dataset]
-            A list of resolved dependent dataset objects.
-        """
-        if not isinstance(paths, list):
-            raise TypeError(f"'paths' must be a list, but got {type(paths).__name__}")
-
-        dependents: list[Dataset] = []
-
-        for path in paths:
-            # Check if the path is a data catalog path or a path on disk. If it's
-            # a path on disk, convert it to a data catalog path.
-            if path.count("/CDMS/") == 1:
-                path_after_cdms = path.split("/CDMS/")[1]
-                path = f"/CDMS/{path_after_cdms}"
-
-            if ("*" not in path) and ("?" not in path):
-                # Direct path to a dataset (no wildcards)
-                dependents.append(self.get(path))
-            else:
-                # Path contains wildcards, perform a search
-                head, _, tail = path.rpartition("/")
-                query_path = head + "/" if head else ""
-                query = f"name=~'{tail}'"
-                results = self.client.search(query_path, query=query)
-                dependents.extend(results)
-
-        return dependents
+        self._datasets = Datasets(self.client)
+        self._dependents = Dependents(self.client)
 
     def ls(self, path: str = "/CDMS") -> list[str] | None:
         self._core.ls(path)
@@ -177,158 +141,22 @@ class CDMSDataCatalog:
         return self._groups.is_open(group)
 
     def search(self, path, site="All", getallmetadata=False, **kwargs):
-        """Call `client.search` and return sorted CDMSDatasets
-
-        See https://github.com/slaclab/datacat/wiki/Search-Syntax for the
-        nominal syntax for path wildcards and query operators. (NB: the syntax
-        for returning folders rather than datasets doesn't seem to work!)
-
-        Normally search results don't contain metadata unless specified by the
-        `show` optional argument.  if `getallmetadata` is True, call `get` on
-        each hit returned to get it's full metadata list.  This results in a
-        separate round-trip query for each hit, so don't enable unless you
-        need it; giving `show` is MUCH more efficient.
-
-        Args:
-            path (str): full or partial path to data, can include wildcards
-            site (str): restrict results to site if given, else get all
-            getallmetadata (bool): If True, call `get` after searching so that
-                all metadata is attached to the resulting dataset
-            **kwargs: all other arguments are passed to
-                `datacat.client.Client.search`.
-
-        Examples:
-            Find all the merged processed data for CUTE run 14
-            >>> dc.search('/CDMS/CUTE/R14/Processed/Releases/**',
-            ...           query='nMergeLevel == 2')
-        """
-        path = normalize_path(path)
-        results = self.client.search(path, site=site, **kwargs)
-        # results come back unsorted, which is not what we want
-        results.sort(key=lambda res: res.path)
-        if getallmetadata:
-            results = [self.get(res.path, site=site) for res in results]
-        else:
-            results = [CDMSDataset.fromDataset(res) for res in results]
-        return results
+        return self._datasets.search(path, site, getallmetadata, kwargs)
 
     def get(self, path, site="All"):
-        """Convert a path (string) to a full CDMSDataset object"""
-        path = normalize_path(path)
-        rawds = self.client.path(path, site=site)
-        return CDMSDataset.fromDataset(rawds)
+        return self._datasets.get(path, site)
 
     def add(self, CDMSds, replace=True, catch_errors=True):
-        """Add a new CDMSDataset entry to the catalog
-        Args:
-            CDMSds (CDMSDataset): The new dataset to add
-            replace (bool):  If true, overwrite an existing entry at that path
-            catch_errors (bool): If False, allow errors to propagate
-        """
-        if CDMSds.dataType == "DatacatQuery":
-            raise ValueError(
-                'Cannot commit dataset with type "DatacatQuery", invalid type'
-            )
-        try:
-            path = normalize_path(CDMSds.relativePath)
-            if not self.client.exists(path):
-                self.mkdir(path, parents=True)
-            DSexists = self.client.exists(path + "/" + CDMSds.datasetName)
-            if DSexists:
-                if replace:
-                    print(
-                        "Replacing existing dataset:",
-                        path,
-                        "/",
-                        CDMSds.datasetName,
-                    )
-                    self.rm(path + "/" + CDMSds.datasetName)
-                else:
-                    print(
-                        "Skipping existing dataset:",
-                        path,
-                        "/",
-                        CDMSds.datasetName,
-                    )
-
-            #####################
-            # This is to try and get size and checksum for files that are not at SLAC (as metadata)
-
-            if not DSexists or replace:
-                # Maybe a Cleaner way to implement if Crawler is before this (which I do not think it is)
-                # if(scan_result =! {"scanStatus": "MISSING"}):
-                if CDMSds.site == "SLAC":
-                    ds = self.client.mkds(
-                        path,
-                        CDMSds.datasetName,
-                        CDMSds.fileType,
-                        CDMSds.fileFormat,
-                        versionMetadata=CDMSds.metadata,
-                        resource=CDMSds.filePath,
-                        site=CDMSds.site,
-                    )
-                else:
-                    ds = self.client.mkds(
-                        path,
-                        CDMSds.datasetName,
-                        CDMSds.fileType,
-                        CDMSds.fileFormat,
-                        versionMetadata=CDMSds.metadata,
-                        resource=CDMSds.filePath,
-                        site=CDMSds.site,
-                        size=CDMSds.filesize,
-                        checksum=CDMSds.crcchecksum,
-                    )
-                CDMSds.rawDataset = ds
-        except Exception as e:
-            if catch_errors:
-                print(e)
-                print("Could not create dataset")
-            else:
-                raise
+        self._datasets.add(CDMSds, replace, catch_errors)
 
     def addLoc(self, path, site, resource, catch_errors=True):
-        """Add a new dataset location to an existing registered dataset
-        Args:
-            path (str): Target Dataset path in the DataCatalog
-            site (str): The site where the dataset physically resides (OSN, SLAC, ...)
-            resource (str): The file resource path at the given site
-        Return:
-            A representation of the dataset that was just created.
-        """
-        try:
-            DSexists = self.client.exists(path)
-            if DSexists:
-                ds_check = self.client.path(path, versionId="current")
-                dsaddLoc = self.client.mkloc(path, site, resource)
-                ds_return = self.client.path(path, versionId="current")
-                try:
-                    for loc in ds_return.locations:
-                        print(
-                            "Dataset site: %s at location %s "
-                            % (loc.site, loc.resource)
-                        )
-                except:
-                    print("Dataset location cannot be found")
-            else:
-                print("Dataset does not exist")
-
-        except Exception as e:
-            if catch_errors:
-                print(e)
-                print("Could not add data location to Dataset")
-            else:
-                raise
+        self._datasets.add_loc(path, site, resource, catch_errors)
 
     def fetch(self, path, **kwargs):
-        """fetch (download) dataset at `path`.
-        See `CDMSDataCatalog.fetch.fetchdata` for
-        different possible forms for `path` and additional arguments"""
-        kwargs.setdefault("dest", self.default_fetchdir)
-        return fetchdata(self, path, **kwargs)
+        return self._datasets.fetch(path, kwargs)
 
     def getDependents(self, dep_container, dep_type, max_depth, chunk_size, **kwargs):
-        return self.dependents.get(dep_container, dep_type, max_depth, chunk_size, kwargs)
+        return self._dependents.get(dep_container, dep_type, max_depth, chunk_size, kwargs)
 
     def getNextDependents(self, dep_container, **kwargs):
         """
@@ -336,7 +164,7 @@ class CDMSDataCatalog:
         :param dep_container: Parent container object you wish to get next dependents from
         :return: list of dependent objects attached to container object
         """
-        return self.dependents.get_next(dep_container, **kwargs)
+        return self._dependents.get_next(dep_container, **kwargs)
 
     def checkDependencyCycles(
         self, dep_container, dep_type, dep_dss=None, dep_grps=None
@@ -350,7 +178,7 @@ class CDMSDataCatalog:
             :param dep_grps: The groups we wish to use as children of the parent container
             :return ts: the topological sorter object in graphlib
         """
-        return self.dependents.check_cycles(dep_container, dep_type, dep_dss, dep_grps)
+        return self._dependents.check_cycles(dep_container, dep_type, dep_dss, dep_grps)
 
     def addDependents(
         self,
@@ -368,7 +196,7 @@ class CDMSDataCatalog:
         VersionPKs are required for each dependent dataset.
         :param dep_groups: The groups we wish to use as children of the parent container
         """
-        self.dependents.add(dep_container, dep_type, dep_dataset, dep_groups, kwargs)
+        self._dependents.add(dep_container, dep_type, dep_dataset, dep_groups, kwargs)
 
     def removeDependents(
         self,
@@ -385,7 +213,7 @@ class CDMSDataCatalog:
         :param dep_datasets: The datasets we wish to remove from the parent container
         :param dep_groups: The groups we wish to remove from the parent container
         """
-        self.dependents.remove(dep_container, dep_type, dep_datasets, dep_groups, kwargs)
+        self._dependents.remove(dep_container, dep_type, dep_datasets, dep_groups, kwargs)
 
     def buildDataSearch(
         self,
@@ -400,141 +228,10 @@ class CDMSDataCatalog:
         query=None,
         **kwargs,
     ):
-        """Construct the data catalog path and query string for CDMS
-        datasets. Arguments starting with a capital are generally directly
-        equivalent to metadata arguments.  Arguments can take the following
-        forms:
-
-        * string, number: search for a single exact match
-        * string containing `*`: do a wildcard search
-        * list: search for all items in list
-        * slice: search for all items between slice.start and slice.stop
-
-        Users will rarely call this function directly.  For examples, see
-        `CDMSDataCatalog.findData`
-
-        Args:
-            Facility (str): name of data-taking facility
-            nFridgeRun (int): numerical fridge run or 'last' for most recent
-            ProdType (str): one of 'raw', 'test', 'release'. `None` = 'raw'
-                            '*' = 'test' or 'release'
-            ProdTag (str): production tag for 'test' or 'release' data
-            nMergeLevel (int): 0 for 'Unmerged',
-                               1 for 'Submerged',
-                               2 for 'Merged'
-            Series (str): series number as a string (including underscore)
-            ProdStep (str): One of 'BatDIDV', 'BatNoise', 'BatRoot', 'BatCalib', 'Cut', 'PyNoise', 'PyTemplate', 'PyPkl', 'PyPklRRQ'
-            filename (str): the name of the actual file
-            query (str): additional `datacat.client.Client.search` query.
-                         See [here](https://github.com/slaclab/datacat/wiki/Search-Syntax)
-                         for the syntax.
-            **kwargs: additional metadata selectors. See the documentation
-                      for the relevant `CDMSDataset` class for the list of
-                      metadata
-
-        Returns:
-            tuple: Data Catalog search path and query as a `(str, str)` tuple
-
-        TODO:
-            * Convert data type string ('ba', cf', etc) to number
-        """
-        if query:
-            query = [query]
-        else:
-            query = []
-
-        # for each parameter, if it is a special query argument, replace
-        # with '*' in the path
-        def checksimple(param_, name_, query_, force=False):
-            if force or not paths.is_simple_arg(param_):
-                query.append(paths.build_query_phrase(name_, param_))
-                return "*"
-            return param_
-
-        # handle special 'last' case for nFridgeRun
-        if nFridgeRun == "last" or nFridgeRun == -1:
-            if not paths.is_simple_arg(Facility, allowstar=False, allownone=False):
-                raise ValueError("Can't find last fridge run without facility")
-            nFridgeRun = self.getLastFridgeRunNumber(Facility)
-
-        Facility = checksimple(Facility, "Facility", query)
-        nFridgeRun = checksimple(nFridgeRun, "nFridgeRun", query)
-        ProdType = checksimple(ProdType, "ProdType", query)
-        ProdTag = checksimple(ProdTag, "ProdTag", query)
-        nMergeLevel = checksimple(nMergeLevel, "nMergeLevel", query)
-        Series = checksimple(Series, "Series", query, force=Series is not None)
-        ProdStep = checksimple(ProdStep, "ProdStep", query, force=ProdStep is not None)
-
-        path = paths.getpath_data(
-            Facility,
-            nFridgeRun,
-            ProdType,
-            ProdTag,
-            nMergeLevel,
-            Series,
-            ProdStep,
-            filename,
-        )
-        if path.endswith("*") and not path.endswith("**"):
-            path += "*"
-
-        # handle additional query args from kwargs, convert to string
-        # todo: handle nDataType here
-        for k, v in kwargs.items():
-            query.append(paths.build_query_phrase(k, v))
-        query = " and ".join(query)
-
-        return path, query
+        return self._datasets.build_data_search(Facility, nFridgeRun, ProdType, ProdTag, nMergeLevel, Series, ProdStep, filename, query, kwargs)
 
     def findData(self, query=None, dofetch=False, fetchargs={}, **kwargs):
-        """Run a query to find data against the data catalog
-        Args:
-          query (str):  The datacat client query (filter) to run. Can be blank,
-                        in which case it will be entirely built from kwargs.
-          dofetch (bool): If True, call fetch on all the result data (i.e.,
-                          find the corresponding files on local disk)
-          fetchargs (dict): keyword arguments to be passed to `fetch.fetchdata`
-          **kwargs:  Additional keyword arguments are interpreted as metadata
-                     query parameters. See `CDMSDataCatalog.buildDataSearch`
-
-        Returns:
-            A list of CDMSDatasets matching the query
-
-        Examples:
-           Find all noise files for a given facility and fridge run:
-           >>> dc.findData(Facility='CUTE', nFridgeRun=14, ProdStep='BatNoise')
-
-           The same, but restricted to 'release' level data
-           >>> dc.findData(Facility='CUTE', nFridgeRun=14, ProdStep='BatNoise',
-           ...             ProdType='release')
-
-           Find raw data entries for a series range:
-           >>> dc.findData(Series=slice('23200300_000000', '23200305_000000'),
-           ...             ProdType='raw')
-
-           Get all submerged data entries from a release production:
-           >>> dc.findData(ProdTag='v5.9.3', nMergeLevel=1)
-
-           The same, but restrict to science data
-           >>> dc.findData(ProdTag='v5.9.3', nMergeLevel=1, nDataType=0)
-
-           Now download it to local disk (using default paths)
-           >>> dc.findData(ProdTag='v5.9.3', nMergeLevel=1, nDataType=0,
-           ...             dofetch=True)
-
-           Download everything to the current working directory instead
-           >>> dc.findData(ProdTag='v5.9.3', nMergeLevel=1, nDataType=0,
-           ...             dofetch=True,
-           ...             fetchargs=dict(dest='.', destRelative=False))
-        """
-        site = kwargs.pop("site", "All")
-        path, query = self.buildDataSearch(**kwargs)
-        # should we catch exceptions here, or let them bubble?
-        log.debug("Searching path %s with additional query '%s'", path, query)
-        datasets = self.search(path, site=site, query=query)
-        if dofetch:
-            datasets = self.fetch(datasets, **fetchargs)
-        return datasets
+        return self._datasets(query, dofetch, fetchargs, kwargs)
 
     def getProductionInfo(
         self,
@@ -1146,72 +843,7 @@ class CDMSDataCatalog:
             return output_list
 
     def getFacilityName(self, facility_id):
-        """Convert numeric facility ID (series name 2-digit prefix) to string
-        Args:
-            facility_id (int): the ID to convert
-        Returns:
-            string: name of facility or empty string if not found.
-        """
-
-        facility = str()
-
-        # list of facilities
-        facilities_dict = {
-            1: "Soudan",
-            2: "UCB",
-            3: "CWRU",
-            4: "UFL",
-            5: "TAMU",
-            6: "Queens",
-            7: "UMN",
-            8: "Denver",
-            9: "SLAC",
-            21: "TRIUMF",
-            22: "FNAL",
-            23: "CUTE",
-            24: "SNOLAB",
-            25: "NEXUS",
-            26: "TUNL",
-            51: "DMC",
-            99: "DAQTesting",
-        }
-
-        if facility_id in facilities_dict:
-            facility = facilities_dict[facility_id]
-
-        return facility
+        return facilitiy_name(facility_id)
 
     def getLastFridgeRunNumber(self, facility="CUTE"):
-        """Get the number for the most recent fridge run for `facility`.
-        If any error is encountered, return -999999
-        Args:
-            facility (str): facility name
-        Returns:
-            int: most recent fridge run number or -999999
-        """
-
-        last_run = -999999
-
-        # base path
-        base_path = "/CDMS/" + facility
-
-        # run list
-        folder_list = list()
-        try:
-            folder_list = self.client.children(base_path)
-        except:
-            print(f'ERROR: Unable to read datacatalog path "{base_path}"!')
-            return last_run
-
-        if not folder_list:
-            print(f"ERROR: No fridge run found in {datacat_path}")
-            return last_run
-
-        for datacat_folder in folder_list:
-            run = datacat_folder.name
-            try:
-                last_run = max(last_run, int(run[1:]))
-            except ValueError:  # run is not a number?
-                pass
-
-        return last_run
+        return last_fridge_number(self._core, facility)
