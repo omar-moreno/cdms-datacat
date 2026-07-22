@@ -6,12 +6,13 @@ adding dataset locations, resolving path patterns to dataset objects, building
 CDMS-specific queries, and fetching datasets to local disk.
 """
 
+from datacat.model import Dataset
 from .CDMSDataset import CDMSDataset
 from .core import CatalogCore
 from .path_utils import normalize_path
 from . import paths
 from . import facilities
-from fetch import fetchdata
+from .fetch import fetchdata
 
 class Datasets:
     def __init__(self, dc) -> None:
@@ -90,7 +91,7 @@ class Datasets:
         TypeError
             If ``paths`` is not a list. 
         """
-       if not isinstance(paths, list):
+        if not isinstance(paths, list):
             raise TypeError(f"'paths' must be a list, but got {type(paths).__name__}")
 
         dependents: list = []
@@ -221,7 +222,7 @@ class Datasets:
         kwargs.setdefault("dest", self.dc.default_fetchdir)
         return fetchdata(self.dc, path, **kwargs)
 
-  def build_data_search(
+    def build_data_search(
         self,
         Facility="*",
         nFridgeRun="*",
