@@ -6,7 +6,7 @@ ensuring they always start with '/CDMS/' and have no trailing slashes.
 
 import pathlib
 
-from .constants import DEFAULT_PATH_PREFIX
+from .constants import CDMS_ROOT
 
 
 def normalize_path(path: str) -> str:
@@ -56,14 +56,14 @@ def normalize_path(path: str) -> str:
 
     # If the path is empty, return "/CDMS" as a default
     if not path:
-        return DEFAULT_PATH_PREFIX
+        return CDMS_ROOT
 
     # Ensure it starts with a single slash
     path = "/" + path.lstrip("/")
 
     # Enforce /CDMS prefix
-    if not path.startswith(DEFAULT_PATH_PREFIX):
-        path = DEFAULT_PATH_PREFIX + "/" + path.lstrip("/")
+    if not path.startswith(CDMS_ROOT):
+        path = CDMS_ROOT + "/" + path.lstrip("/")
 
     return path.rstrip("/")
 
