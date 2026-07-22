@@ -13,7 +13,7 @@ from datacat.model import Dataset
 
 from .CDMSDataset import CDMSDataset
 from .CDMSGroup import CDMSGroup
-from .contants import DEFAULT_MAX_DATASETS, DepType
+from .constants import DEFAULT_MAX_DATASETS, DepType
 from .core import CatalogCore
 from .path_utils import normalize_path
 
