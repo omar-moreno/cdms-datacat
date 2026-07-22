@@ -1,14 +1,18 @@
 """Core interface for interacting with the CDMS data catalog.
 
-This module provides the :class:`CatalogCore` class, which serves as the
-primary high-level API for browsing, querying, and modifying containers in
-the CDMS data catalog. It encapsulates configuration loading, client
-initialization, path normalization, and common catalog operations behind
-a simplified interface.
+This module provides the [CatalogCore][CDMSDataCatalog.core.CatalogCore]
+class, the foundational low-level API for browsing, querying and modifying
+containers in the CDMS data catalog. It encapsulates configuration loading,
+client initialization, and common catalog operations behind a simplified 
+interface.
+
+Higher-level components (datasets, groups, dependents, discovery) are built on
+top of a single `CatalogCore` instance, which owns the authenticated client
+connection and the shared low-level operations they all rely on.
 
 The catalog connection is configured through a configuration file or
-package-provided defaults. Authentication and connection settings are
-passed directly to the underlying ``datacat`` client implementation.
+package-provided defaults. Authentication and connection settings are passed
+directly to the underlying `datacat` client implementation.
 
 Features
 --------
@@ -22,14 +26,10 @@ Features
 Notes
 -----
 All catalog paths are normalized before being sent to the backend and are
-expected to be rooted at ``/CDMS``. Destructive operations such as deletion
-include safeguards to prevent accidental removal of the catalog root.
-
-Classes
--------
-CatalogCore
-    Main interface for interacting with the CDMS data catalog.
-
+expected to be rooted at `/CDMS` (see 
+[`normalize_path`][CDMSDataCatalog.path_utils.normalize_path]). 
+Destructive operations such as deletion include safeguards to prevent 
+accidental removal of the catalog root.
 """
 
 import configparser as cp
@@ -47,24 +47,36 @@ logger = logging.getLogger(__name__)
 
 
 class CatalogCore:
-    """Primary interface for interacting with the CDMS data catalog.
+    """Foundational interface for interacting with the CDMS data catalog.
 
-    ``CatalogCore`` provides a high-level API for connecting to, browsing,
-    querying, and modifying resources stored in the CDMS data catalog. The
-    class manages configuration loading, client initialization, path
+    `CatalogCore` provides a low-level API for connecting to, browsing,
+    querying, and modifying resources stored in the CDMS data catalog. It
+    manages configuration loading, client initialization, path
     normalization, and common catalog operations such as creating directories,
-    listing contents, checking dataset existence, updating metadata, and
+    listing contents, checking existence, updating metadata and
     removing catalog entries.
 
     Parameters
     ----------
-    config_file_path : Path or str, optional
+    config_file_path : pathlib.Path or str, optional
         Path to a configuration file containing catalog connection settings.
-        If not provided, the package's default configuration is used.
-    default_fetchdir : Path or str, optional
-        Default local directory used for retrieving fetched datasets. If not
-        specified, the value is determined from the configuration file or
-        system defaults.
+        The file must follow Python's `configparser` syntax, with all settings
+        in a `[defaults]` section and at least a `url` key. If `None`, the
+        package's bundled default configuration is used.
+    default_fetchdir : pathlib.Path or str, optional
+        Default local directory used for retrieving fetched datasets. 
+        Resolution priority: (1) this argument, (2) the config file's 
+        `default_fetchdir` setting, (3) a system default from 
+        [`get_default_fetchdir`][CDMSDataCatalog.fetch.get_default_fetchdir].
+
+
+    Raises
+    ------
+    FileNotFoundError
+        If a specified config or the resolved fetch directory does not exist.
+    ValueError
+        If the configuration file is missing the `[defaults]` section or the 
+        `url` key.
 
     Attributes
     ----------
@@ -76,7 +88,7 @@ class CatalogCore:
     Notes
     -----
     All catalog paths are normalized before being passed to the underlying
-    client. Most operations expect paths rooted at ``/CDMS``. Destructive
+    client. Most operations expect paths rooted at `/CDMS`. Destructive
     operations, such as recursive deletion, include safeguards to prevent
     accidental removal of critical catalog resources.
 
@@ -111,14 +123,9 @@ class CatalogCore:
     ...     {"description": "Example directory"},
     ... )
 
-    Remove an empty directory:
-
-    >>> catalog.rm("/CDMS/test/example")
-
     Recursively remove a directory and all of its contents:
 
     >>> catalog.rm("/CDMS/test", recursive=True)
-
     """
 
     def __init__(
@@ -126,45 +133,7 @@ class CatalogCore:
         config_file_path: Path | str | None = None,
         default_fetchdir: Path | str | None = None,
     ) -> None:
-        """Initialize the CatalogCore instance.
-
-        Loads configuration from file or package defaults, validates required
-        settings, instantiates the client, and determines the data fetch directory
-        based on argument priority rules.
-
-        Parameters
-        ----------
-        config_file_path : Path or str, optional
-            Absolute or relative path to the configuration file. Must contain
-            a [defaults] section with at least the 'url' key. If None, loads
-            from the package's embedded default configuration file.
-
-        default_fetchdir : Path or str, optional
-            The root directory from where fetched data is retrieved. Priority order:
-            1. This argument value
-            2. Config file's 'default_fetchdir' setting
-            3. System default from get_default_fetchdir()
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        FileNotFoundError
-            If a specified config file does not exist, or if the specified
-            fetch directory cannot be accessed or does not exist.
-        ValueError
-            If the configuration file is missing the required [defaults] section
-            or if the 'url' key is not found within it.
-
-        Notes
-        -----
-        The configuration file must follow Python's configparser syntax.
-        All settings including url, auth_type, auth_key_id, auth_secret_key, and
-        default_fetchdir should be placed in the [defaults] section.
-
-        """
+        
         # If a user doesn't specify a configuration path, use the locally
         # defined config. If a file isn't found at a specified path, throw
         # an exception.
@@ -209,7 +178,7 @@ class CatalogCore:
         self.default_fetchdir = str(fetchdir_path)
 
     def ls(self, path: str = "/CDMS") -> list[str] | None:
-        """Return contents of a data catalog path.
+        """List the contents of a catalog path.
 
         Parameters
         ----------
@@ -224,10 +193,14 @@ class CatalogCore:
         Raises
         ------
         TypeError
-            If a path refers to a dataset instead of a container.
+            If `path` refers to a dataset rather than a directory.
         FileNotFoundError
-            If the specified path doesn't exist or can't be accessed.
+            If `path` does not exist or cannot be accessed.
 
+        Examples
+        --------
+        >>> core.ls("/CDMS/CUTE")
+        ['/CDMS/CUTE/R10', '/CDMS/CUTE/R11', ...]
         """
         path = normalize_path(path)
 
@@ -250,30 +223,32 @@ class CatalogCore:
     def exists(
         self, path: str, version_id: str | None = None, site: str | None = None
     ) -> bool:
-        """Check if a dataset or path exists in the data catalog.
+        """Check whether a dataset or path exists in the catalog.
 
-        Queries the data catalog to verify the existence of a specific resource
-        at the given path, optionally filtered by version ID and site. This method
-        performs a direct lookup without raising exceptions for missing resources;
-        it returns ``False`` if the item is not found or the path is invalid.
+        Queries the catalog to verify the existence of a resource at the given
+        path, optionally narrowed by version and site. This performs a direct 
+        lookup and does not raise for a missing resource; it returns `False`
+        when the item is absent or the path is invalid. 
+
+        This tests for the existence of a catalog *entry*, not a file on disk.
 
         Parameters
         ----------
         path : str
-            The canonical path to check. Must start with "/CDMS". Paths
-            consisting only of whitespace or equal to "/" are considered
-            invalid and return "False" without querying the data catalog.
+            The canonical path to check. Must best rooted at `/CDMS`. A path
+            that is empty or exactly `/` is treated as invalid and returns 
+            `False` without querying the backend.
         version_id : str, optional
-            Specific version identifier to check. If provided, the check is
-            performed against this specific version rather than the latest.
+            Specific version identifier to check against. If given, the check 
+            is performed against this version rather than the latest. 
         site : str, optional
-            Specific site (e.g. SLAC, SNOLAB) associated with a dataset.
+            Specific site (e.g. `"SLAC"`, `"SNOLAB"`) to check against. 
 
         Returns
         -------
         bool
-            ``True`` if the resource exists at the specified path (and optional
-            version/site), ``False`` otherwise.
+            `True` if the resource exists at the specified path (and optional
+            version/site), `False` otherwise.
 
         """
         # All data catalog paths need to start with "/CDMS"
@@ -283,37 +258,44 @@ class CatalogCore:
         return self.client.exists(normalize_path(path), version_id, site)
 
     def rm(self, path: str, recursive: bool = False) -> None:
-        """Remove an entry (dataset, group, or directory) from the data catalog.
-
-        WARNING::
-            This is a destructive operation. There is no "undo" functionality.
-            Ensure you have verified the target path before proceeding.
+        """Remove an entry (dataset, group, or directory) from the catalog.
 
         Parameters
         ----------
         path : str
-            The full path of the entry to remove. Must start with ``/CDMS``.
+            The full path of the entry to remove. Must be rooted at `/CDMS`.
         recursive : bool, default False
-            If ``True``, recursively deletes all contents within a directory
-            before deleting the directory itself. If ``False`` and the path
-            points to a non-empty container, an ``OSError`` will be raised.
-            If the path refers to a dataset, the dataset is deleted directly and
-            the ``recursive`` argument is ignored.
-
-        Returns
-        -------
-        None
+            If `True`, recursively deletes all contents within a directory
+            before deleting the directory itself. If `False` and the path
+            points to a non-empty container, an `OSError` is raised.
+            Ignored when `path` refers to a dataset (the dataset is deleted 
+            directly).
 
         Raises
         ------
         ValueError
-            If an attempt is made to recursively delete the root path "/CDMS".
+            If a recursive deletion of the root path `/CDMS` is attempted. 
         OSError
-            Raised when deletion fails due to expected reasons:
-                - Attempting to delete a non-empty directory without ``recursive=True``
-                - Permission denied by the catalog backend
-                - Path not found or inaccessible
+            If deletion fails, including:
 
+                - deleting a non-empty directory without `recursive=True`,
+                - permission denied by catalog backend,
+                - the path not found or otherwise inaccessible.
+
+        Warning
+        -------
+        This is a destructive operation with no undo. Verify the target path
+        before proceeding, especially when using `recursive=True`.
+
+        Examples
+        --------
+        Remove a single dataset:
+
+        >>> core.rm("/CDMS/test/example/data.mid.gz")
+
+        Recursively remove a directory and everything beneath it:
+
+        >>> core.rm("/CDMS/test", recursive=True)
         """
         path = normalize_path(path)
 
@@ -369,12 +351,12 @@ class CatalogCore:
         Parameters
         ----------
         container : object
-            Catalog object returned by the datacat client.
+            A catalog object returned by the `datacat` client.
 
         Returns
         -------
         str
-            Either ``"group"`` or ``"folder"``.
+            `"group"` if the container is a group, otherwise `"folder"`.
 
         """
         if isinstance(container, Group):
@@ -387,32 +369,28 @@ class CatalogCore:
         parents: bool = False,
         metadata: dict[str, str] | None = None,
     ) -> None:
-        """Create a new directory in the data catalog.
+        """Create a new directory in the catalog.
 
-        Creates a directory at the specified path with optional parent directory
-        creation and custom metadata. This method supports hierarchical paths and
-        allows for associating metadata with the newly created directory.
+        Creates a directory at the given path, optionally creating any missing
+        parents and attaching metadata. 
 
         Parameters
         ----------
         path : str
-            The full path were the directory should be created. Must start with
-            "/CDMS".
+            Full path where the directory should be created. Must be rooted at
+            `/CDMS`.
         parents : bool, default False
-            If "True", creates any missing parent directories along the path
-            (similar to "mkdir -p" in Unix). If "False" and any parent
-            directory is missing, an "IOError" will be raised.
-        metadata : dict, optional
-            A dictionary of key-value pairs to associate with the new directory.
-
-        Returns
-        -------
-        None
+            If `True`, create any missing parent directories along the path
+            (like `mkdir -p`). If `False` and a parent is missing, the backend 
+            raises an error.
+        metadata : dict of str, optional
+            Metadata key-value pairs to associate with the new directory. All
+            keys and values must be strings.
 
         Raises
         ------
         TypeError
-            If ``metadata`` is not a dictionary or contains non-string keys
+            If `metadata` is not a dictionary or contains non-string keys
             or values.
 
         """
@@ -444,37 +422,36 @@ class CatalogCore:
     def add_metadata(
         self, path: str, metadata: dict[str, str], replace: bool = False
     ) -> bool:
-        """Add or update metadata for a catalog container.
+        """Add or update metadata on a catalog container.
 
-        Metadata can be attached to catalog folders or groups as key-value pairs.
-        If any of the provided keys already exist and ``replace`` is ``False``,
-        no changes are made and the method returns ``False``.
+        Metadata is attached to catalog folders or groups as key-value pairs.
+        If any of the provided keys already exist and `replace` is `False`,
+        no changes are made and the method returns `False`.
 
         Parameters
         ----------
         path : str
             Path to the target folder or group.
         metadata : dict of str to str
-            Metadata entries to add or update.
+            Metadata entries to add or update. All keys and values must be 
+            strings.
         replace : bool, default False
-            If ``True``, existing metadata entries may be overwritten.
-            If any provided metadata key already exists and ``replace`` is``False``,
-            no metadata changes are applied.
+            If `True`, existing entries may be overwritten. If any provided key
+            already exists and `replace` is `False`, no changes are applied.
 
         Returns
         -------
         bool
-            ``True`` if the metadata was successfully added or updated,
-            ``False`` if the operation was skipped because one or more
-            metadata keys already exist and ``replace`` is ``False``.
+            `True` if the metadata was successfully added or updated,
+            `False` if the operation was skipped because one or more
+            metadata keys already exist and `replace` is `False`.
 
         Raises
         ------
         TypeError
-            If ``metadata`` is not a dictionary of string keys and values.
+            If `metadata` is not a dictionary of string keys and values.
         FileNotFoundError
-            If the specified path does not exist.
-
+            If `path` does not exist.
         """
         # Normalize the group path
         path = normalize_path(path)
