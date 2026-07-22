@@ -1,47 +1,115 @@
-"""Primary data catalog user interface"""
+"""Primary data catalog user interface.
+
+This module provides [CDMSDataCatalog][CDMSDataCatalog.CDMSDataCatalog], 
+the top-level facade that CDMS users interact with. It composes several focused 
+sub-components (core catalog operations, dataset operations, group management, 
+dependency handling, and data discovery) behind a single, stable public API.
+
+The facade doesn't implement any logic but instead delegates to one of the 
+composed sub-objects.  This keeps the public surface stable while the 
+underlying implementation is free to evolve.
+
+Architecture
+------------
+
+The facade wires the following components together in dependency order::
+
+    CatalogCore (client + config + paths)
+        │
+        ├── Dependents  (dependency operations)
+        ├── Datasets    (get/search/add/fetch; depends on paths + facilities)
+        │       │
+        │       └── used by ──┐
+        ├── Groups      (group lifecycle; depends on Dependents + Datasets)
+        └── Discovery   (CDMS-specific queries; depends on Datasets)
+
+Notes
+-----
+All catalog paths are normalized (rooted as ``/CDMS``) before being sent to the
+backend.  See :func:`.path_utils.normalize_path`.
+
+Examples
+--------
+>>> dc = CDMSDataCatalog()
+>>> dc.ls("/CDMS/CUTE")
+['/CDMS/CUTE/R10', '/CDMS/CUTE/R11', ...]
+>>> datasets = dc.findData(Facility="CUTE", nFridgeRun=14, ProdStep="BatNoise")
+"""
 
 import logging
-from enum import Enum
 from collections.abc import Iterable
-
-from datacat.model import Dataset
 from pathlib import Path
 
-from . import paths
+from . import facilities, paths
 from .CDMSDataset import CDMSDataset
 from .CDMSGroup import CDMSGroup
-from .fetch import fetchdata
-from .path_utils import normalize_path
+from .constants import DEFAULT_MAX_DATASETS
 from .core import CatalogCore
-from .groups import Groups
 from .datasets import Datasets
 from .dependents import Dependents
-from .facilities import facility_name
+from .discovery import Discovery
+from .fetch import fetchdata
+from .groups import Groups
 
 __all__ = ["CDMSDataCatalog"]
 
 log = logging.getLogger(__name__)
 
 
-class DepType(Enum):
-    PREDECESSOR = "predecessor"
-    SUCCESSOR = "successor"
-
-
 class CDMSDataCatalog:
-    """Data catalog client class.
-    This is the primary class that users will interact with in the analysis
-    environment.  The most useful methods are:
+    """Primary client for interacting with the CDMS data catalog.
 
-    * `ls`: list the contents of a directory
-    * `get`: Get a `CDMSDataCatalog.CDMSDataset.CDMSDataset` for a fully qualified path
-    * `search`: Search for matching datasets with a query syntax
-    * `fetch`: Download datsets to local disk
-    * `findData`: Search for datasets using pre-defined keywords.
+    This is the main entry point for users. It provides a stable, 
+    high-level API for browsing, searching, retrieving, registering and
+    managing datasets and groups in the CDMS data catalog.
 
-    Attributes:
-        default_fetchdir (str): local download top-level directory
-        client (datacat.client.Client): Lower-level default SLAC client
+    The most commonly used methods are:
+
+    - `ls` : list the contents of a directory.
+    - `get`: retrieve a 
+    [`CDMSDataset`][CDMSDataCatalog.CDMSDataset.CDMSDataset] by path.
+    * `search`: search for datasets using query syntax
+    * `fetch`: download datsets to local disk
+    * `findData`: search using pre-defined CDMS keywords.
+
+
+    Parameters
+    ----------
+    config_file_path : pathlib.Path or str, optional
+        Path to a configuration file containing catalog connection settings.
+        The file must follow Python's `configparser` syntax, with all settings
+        in a `[defaults]` section and at least a `url` key. If `None`, the
+        package's bundled default configuration is used.
+    default_fetchdir : pathlib.Path or str, optional
+        Default local directory for retrieving fetched datasets. Resolution
+        priority: (1) this argument, (2) the config file's `default_fetchdir`
+        setting, (3) a system default determined at runtime.
+    
+    Raises
+    ------
+    FileNotFoundError
+        If a specified config file or the resolved fetch directory does not
+        exist.
+    ValueError
+        If the configuration is missing the `[defaults]` section or the
+        required `url` key.
+
+    Attributes
+    ----------
+    client : datacat.client.Client
+        The underlying data catalog client used for all backend operations.
+    default_fetchdir : str
+        Absolute path to the default local fetch directory.
+
+    Notes
+    -----
+    Recognized configuration keys (all in the `[defaults]` section):
+
+    - `url` : base URL for the catalog web interface (required).
+    - `auth_type` : web authentication standard.
+    - `auth_key_id` : authentication id.
+    - `auth_secret_key` : authentication public key.
+    - `default_fetchdir` : same as the `default_fetchdir` argument.
 
     """
 
@@ -50,32 +118,7 @@ class CDMSDataCatalog:
         config_file: Path | str | None= None,
         default_fetchdir: Path | str | None = None,
     ) -> None:
-        """
-        Initialze the CDMSDataCatalog instance.
 
-        Parameters
-        ----------
-        config_file_path : Path or str, optional
-            Absolute or relative path to the configuration file. Must contain
-            a [defaults] section with at least the 'url' key. If None, loads
-            from the package's embedded default configuration file.
-
-        default_fetchdir : Path or str, optional
-            The root directory from where fetched data is retrieved. Priority order:
-            1. This argument value
-            2. Config file's 'default_fetchdir' setting
-            3. System default from get_default_fetchdir()
-
-        Returns
-        -------
-        None
-
-        Notes
-        -----
-        The configuration file must follow Python's configparser syntax.
-        All settings including url, auth_type, auth_key_id, auth_secret_key, and
-        default_fetchdir should be placed in the [defaults] section.
-        """
         self._core = CatalogCore(config_file, default_fetchdir)
         self.client = self._core.client
         self.default_fetchdir = self._core.default_fetchdir
@@ -84,15 +127,83 @@ class CDMSDataCatalog:
         self._datasets = Datasets(self.client)
         self._dependents = Dependents(self.client)
 
+    
+    # ==================================================================
+    # Core catalog operations
+    # ==================================================================
     def ls(self, path: str = "/CDMS") -> list[str] | None:
+        """List the contents of a catalog directory.
+
+        Parameters
+        ----------
+        path : str, default "/CDMS"
+            The catalog path to list.
+
+        Returns
+        -------
+        list of str or None
+            The paths of the child containers (directories or datasets).
+
+        Raises
+        ------
+        TypeError
+            If `path` refers to a dataset rather than a directory.
+        FileNotFoundError
+            If `path` does not exist.
+
+        Examples
+        --------
+        >>> dc.ls("/CDMS/CUTE")
+        ['/CDMS/CUTE/R10', '/CDMS/CUTE/R11', ...]
+        """
         self._core.ls(path)
 
     def exist(
         self, path: str, version_id: str | None = None, site: str | None = None
     ) -> bool:
+        """Check whether a path exists in the catalog.
+
+        Tests for the existence of a catalog *entry*, not a file on disk.
+
+        Parameters
+        ----------
+        path : str
+            The catalog path to check. Must be rooted at `/CDMS`.
+        version_id : str, optional
+            Specific version identifier to check against.
+        site : str, optional
+            Specific site (e.g. `"SLAC"`, `"SNOLAB"`) to check against.
+
+        Returns
+        -------
+        bool
+            `True` if the entry exists, `False` otherwise.
+        """
         return self._core.exists(path, version_id, site)
 
     def rm(self, path: str, recursive: bool = False) -> None:
+        """Remove an entry (dataset, group, or directory) from the catalog.
+
+        Parameters
+        ----------
+        path : str
+            The full catalog path to remove.
+        recursive : bool, default False
+            If `True`, recursively delete a directory's contents before deleting
+            the directory itself. Ignored for datasets.
+
+        Raises
+        ------
+        ValueError
+            If a recursive deletion of the root path `/CDMS` is attempted.
+        OSError
+            If deletion fails (e.g. a non-empty directory without `recursive`).
+
+        Warnings
+        --------
+        This is a destructive operation with no undo. Verify the target path
+        before proceeding.
+        """
         self._core.rm(path, recursive)
 
     def mkdir(
@@ -101,749 +212,708 @@ class CDMSDataCatalog:
         parents: bool = False,
         metadata: dict[str, str] | None = None,
     ) -> None:
+        """Create a new directory in the catalog.
+
+        Parameters
+        ----------
+        path : str
+            Full path where the directory should be created.
+        parents : bool, default False
+            If `True`, create any missing parent directories (like `mkdir -p`).
+        metadata : dict of str to str, optional
+            Metadata key-value pairs to associate with the new directory.
+
+        Raises
+        ------
+        TypeError
+            If `metadata` is not a dict of string keys and values.
+        """
         self._core.mkdir(path, parents, metadata)
 
     def add_metadata(
         self, path: str, metadata: dict[str, str], replace: bool = False
     ) -> bool:
+        """Add or update metadata on a catalog container.
+
+        Parameters
+        ----------
+        path : str
+            Path to the target folder or group.
+        metadata : dict of str to str
+            Metadata entries to add or update.
+        replace : bool, default False
+            If `True`, existing entries may be overwritten. If any provided key
+            already exists and `replace` is `False`, no changes are applied.
+
+        Returns
+        -------
+        bool
+            `True` if metadata was applied, `False` if skipped due to existing
+            keys with `replace=False`.
+
+        Raises
+        ------
+        TypeError
+            If `metadata` is not a dict of string keys and values.
+        FileNotFoundError
+            If `path` does not exist.
+        """
         return self._core.add_metadata(path, metadata, replace)
 
+    # ==================================================================
+    # Dataset operations
+    # ==================================================================
+    def get(self, path: str, site: str = "All") -> CDMSDataset:
+        """Retrieve a fully populated dataset by path.
+
+        Parameters
+        ----------
+        path : str
+            Path to the dataset.
+        site : str, default "All"
+            Site filter (e.g. `"SLAC"`, `"SNOLAB"`). `"All"` queries every site.
+
+        Returns
+        -------
+        CDMSDataset
+            The dataset wrapper for the requested path.
+        """
+        return self._datasets.get(path, site)
+
+    def search(self, path: str, site: str = "All", getallmetadata: bool = False, **kwargs) -> list[CDMSDataset]:
+        """Search the catalog and return datasets sorted by path.
+
+        See 
+        [Search Syntax](https://github.com/slaclab/datacat/wiki/Search-Syntax) 
+        for the nominal syntax for path wildcards and query operators.
+
+        Search results do not include full metadata unless requested via the
+        `show` keyword. If `getallmetadata` is `True`, each hit is re-fetched
+        to attach its full metadata — this incurs a separate round trip per 
+        dataset, so prefer `show` when possible.
+
+        Parameters
+        ----------
+        path : str
+            Full or partial path; may include wildcards.
+        site : str, default "All"
+            Restrict results to a site if given.
+        getallmetadata : bool, default False
+            If `True`, re-fetch each hit for full metadata.
+        **kwargs
+            Additional arguments forwarded to the client's search (e.g. `query`,
+            `show`).
+
+        Returns
+        -------
+        list of CDMSDataset
+            Matching datasets, sorted by path.
+
+        Examples
+        --------
+        Find all merged processed data for CUTE run 14:
+
+        >>> dc.search('/CDMS/CUTE/R14/Processed/Releases/**',
+        ...           query='nMergeLevel == 2')
+        """
+        return self._datasets.search(path, site, getallmetadata, kwargs)
+
+    def add(self, ds: CDMSDataset, replace: bool = True, catch_errors: bool = True) -> None:
+        """Register a new dataset entry in the catalog.
+
+        Parameters
+        ----------
+        ds : CDMSDataset
+            The dataset to add.
+        replace : bool, default True
+            If `True`, overwrite an existing entry at the same path.
+        catch_errors : bool, default True
+            If `False`, allow errors to propagate instead of being reported.
+        """
+        self._datasets.add(ds, replace, catch_errors)
+
+
+    def addLoc(self, path: str, site: str, resource: str, catch_errors: str = True) -> None:
+        """Add a new physical location to an existing registered dataset.
+
+        Parameters
+        ----------
+        path : str
+            Target dataset path in the catalog.
+        site : str
+            Site where the dataset physically resides (e.g. `"OSN"`, `"SLAC"`).
+        resource : str
+            The file resource path at the given site.
+        catch_errors : bool, default True
+            If `False`, allow errors to propagate.
+        """
+        self._datasets.add_loc(path, site, resource, catch_errors)
+
+    def fetch(self, path: str, **kwargs) -> list[CDMSDataset]:
+        """Download the dataset(s) at `path` to local disk.
+
+        Only files not already present locally are downloaded. See
+        [`fetchdata`][CDMSDataCatalog.fetch.fetchdata] for the accepted forms of
+        `path` and the full set of keyword arguments.
+
+        Parameters
+        ----------
+        path : str or CDMSDataset or list
+            The file(s) to download. May be a catalog path, a wildcard query
+            string, a [`CDMSDataset`][CDMSDataCatalog.CDMSDataset.CDMSDataset],
+            or a list of these.
+        **kwargs
+            Additional arguments forwarded to
+            [`fetchdata`][CDMSDataCatalog.fetch.fetchdata] (e.g. `dest`,
+            `destRelative`, `maxthreads`, `force`).
+
+        Returns
+        -------
+        list of CDMSDataset
+            The retrieved datasets. Each successful dataset has its `filePath`
+            set; failures carry a `fetchError`.
+        """
+        return self._datasets.fetch(path, kwargs)
+
+    def buildDataSearch(
+        self,
+        **kwargs,
+    ) -> tuple(str, str):
+        """Construct the catalog paths and query string used to search for CDMS
+        datasets. Arguments can take the following forms: 
+         - string, number: search for a single exact match
+         - string containing `*`: do a wildcard search
+         - list: search for all items in the list
+         - slice: search for all items between slice.start and slice.stop
+
+        Users rarely call this directly; see 
+        [findData][CDMSDataCatalog.CDMSDataCatalog.findData] for examples.
+
+        Parameters
+        ----------
+        **kwargs
+            CDMS metadata selectors (e.g. `Facility`, `nFridgeRun`, `ProdType`,
+            `ProdTag`, `nMergeLevel`, `Series`, `ProdStep`, `filename`, `query`)
+            plus additional metadata query parameters.
+
+        Returns
+        -------
+        tuple of (str, str)
+            The search path and the query string.
+        """
+        return self._datasets.build_data_search(**kwargs) 
+
+    def findData(self, query: str = None, dofetch: bool = False, fetchargs: dict[str, str] = {}, **kwargs) -> list[CDMSDataset]:
+        """Find datasets using predefined CDMS keyword selectors.
+
+        Parameters
+        ----------
+        query : str, optional
+            An explicit datacat query. If omitted, the query is built entirely
+            from `**kwargs`.
+        dofetch : bool, default False
+            If `True`, fetch all resulting datasets to local disk.
+        fetchargs : dict, optional
+            Keyword arguments forwarded to `fetch` when `dofetch` is `True`.
+        **kwargs
+            CDMS metadata selectors; see `buildDataSearch`.
+
+        Returns
+        -------
+        list of CDMSDataset
+            Datasets matching the query.
+
+        Examples
+        --------
+        Find all noise files for a facility and fridge run:
+
+        >>> dc.findData(Facility='CUTE', nFridgeRun=14, ProdStep='BatNoise')
+
+        Get all submerged science data from a release and download it:
+
+        >>> dc.findData(ProdTag='v5.9.3', nMergeLevel=1, nDataType=0,
+        ...             dofetch=True)
+        """
+        return self._datasets(query, dofetch, fetchargs, kwargs)
+
+    # ==================================================================
+    # Group operations
+    # ==================================================================
     def mkgroup(
         self,
         path: str,
         parents: bool = False,
         metadata: dict[str, str] | None = None,
     ) -> None:
+        """Create a new group.
+
+        The group is created with a default `{"State": "Open"}` metadata entry,
+        merged with any provided `metadata`.
+
+        Parameters
+        ----------
+        path : str
+            Full path to the new group.
+        parents : bool, default False
+            If `True`, create any missing higher-level groups.
+        metadata : dict of str to str, optional
+            Additional metadata to associate with the group.
+
+        Raises
+        ------
+        FileExistsError
+            If a group already exists at `path`.
+        """
         self._groups.create(path, parents, metadata)
 
+    def getgroup(self, path: str, site: str = "All") -> CDMSGroup:
+        """Retrieve a fully populated group by path.
 
-    def getgroup(self, path, site="All"):
+        Parameters
+        ----------
+        path : str
+            Path to the group.
+        site : str, default "All"
+            Site filter.
+
+        Returns
+        -------
+        CDMSGroup
+            The group wrapper for the requested path.
+        """
         return self._groups.get(path, site)
 
     def add_files_to_group(self, path: str, file_paths: Iterable[str]) -> None:
+        """Add one or more dataset files to an open group.
+
+        Parameters
+        ----------
+        path : str
+            Path to the target group. Must be in an "Open" state.
+        file_paths : iterable of str
+            Dataset paths to add. Each may be a catalog path or a disk path
+            containing exactly one `/CDMS/` segment.
+
+        Raises
+        ------
+        ValueError
+            If the group is closed or a path has an unrecognized format.
+        """
         self._groups.add_files(path, file_paths)
 
     def remove_files_from_group(self, group_name: str, paths: list[str]) -> None:
+        """Remove datasets from a group.
+
+        Parameters
+        ----------
+        group_name : str
+            Full path to the group to modify.
+        paths : list of str
+            Dataset paths to remove. May be catalog or disk paths, and may
+            include wildcards.
+        """
         self._groups.remove_files(group_name, paths)
 
     def retrieve_files_from_group(
         self, path: str, num_datasets: int = 1_000_000_000
     ) -> list[CDMSDataset]:
-       return self._groups.retrieve_files(path, num_datasets) 
+        """Retrieve the datasets associated with a group.
 
-    def close_group(self, path: str):
+        Parameters
+        ----------
+        path : str
+            Path to the group.
+        num_datasets : int, optional
+            Maximum number of datasets to return. Defaults to
+            [`DEFAULT_MAX_DATASETS`][CDMSDataCatalog.constants.DEFAULT_MAX_DATASETS].
+
+        Returns
+        -------
+        list of CDMSDataset
+            The datasets linked to the group, or an empty list on failure.
+        """
+        return self._groups.retrieve_files(path, num_datasets) 
+
+    def close_group(self, path: str) -> None:
+        """Close a group, preventing further file additions.
+
+        Parameters
+        ----------
+        path : str
+            Path to the group to close.
+        """
         self._groups.close(path)
 
-    def open_group(self, path: str):
+    def open_group(self, path: str) -> None:
+        """Open a group, allowing files to be added.
+
+        Parameters
+        ----------
+        path : str
+            Path to the group to open.
+        """
         self._groups.open(path)
 
     def group_is_open(self, group: CDMSGroup) -> bool:
+        """Determine whether a group is currently open.
+
+        Parameters
+        ----------
+        group : CDMSGroup
+            The group to inspect.
+
+        Returns
+        -------
+        bool
+            `True` if the group's `"State"` metadata is `"Open"`.
+        """
         return self._groups.is_open(group)
 
-    def search(self, path, site="All", getallmetadata=False, **kwargs):
-        return self._datasets.search(path, site, getallmetadata, kwargs)
+    # ==================================================================
+    # Dependency operations
+    # ==================================================================
+    def getDependents(self, dep_container: CDMSDataset | CDMSGroup, dep_type: str, max_depth: int, chunk_size: int, **kwargs) -> list:
+        """Retrieve dependents of a container, subject to depth and chunk size.
 
-    def get(self, path, site="All"):
-        return self._datasets.get(path, site)
+        Parameters
+        ----------
+        dep_container : CDMSDataset or CDMSGroup or object
+            The parent container to retrieve dependents from.
+        dep_type : str
+            The type of dependents to retrieve.
+        max_depth : int
+            Maximum depth of the dependency chain to traverse.
+        chunk_size : int
+            Number of dependents to retrieve per request.
+        **kwargs
+            Additional arguments forwarded to the client.
 
-    def add(self, CDMSds, replace=True, catch_errors=True):
-        self._datasets.add(CDMSds, replace, catch_errors)
-
-    def addLoc(self, path, site, resource, catch_errors=True):
-        self._datasets.add_loc(path, site, resource, catch_errors)
-
-    def fetch(self, path, **kwargs):
-        return self._datasets.fetch(path, kwargs)
-
-    def getDependents(self, dep_container, dep_type, max_depth, chunk_size, **kwargs):
+        Returns
+        -------
+        list
+            The retrieved dependents.
+        """
         return self._dependents.get(dep_container, dep_type, max_depth, chunk_size, kwargs)
 
-    def getNextDependents(self, dep_container, **kwargs):
-        """
-         Retrieve next dependents attached to container object.
-        :param dep_container: Parent container object you wish to get next dependents from
-        :return: list of dependent objects attached to container object
+    def getNextDependents(self, dep_container: CDMSDataset | CDMSGroup, **kwargs) -> list:
+        """Retrieve the next page of dependents for a container.
+
+        Parameters
+        ----------
+        dep_container : CDMSDataset or CDMSGroup
+            The parent container.
+        **kwargs
+            Additional arguments forwarded to the client.
+
+        Returns
+        -------
+        list
+            The next set of dependents.
         """
         return self._dependents.get_next(dep_container, **kwargs)
 
     def checkDependencyCycles(
-        self, dep_container, dep_type, dep_dss=None, dep_grps=None
+            self, dep_container: CDMSDataset | CDMSGroup, dep_type: str, dep_dss: list = None, dep_grps: list = None
     ):
-        """
-        Check existing cycles in dep_container and if dependents are to be added.
-            :param dep_container: Parent container object to add dependents to
-            :param dep_type: Type of dependents to add
-            :param dep_dss: The datasets we wish to use as children of the parent container
-                VersionPKs are required for each dependent dataset.
-            :param dep_grps: The groups we wish to use as children of the parent container
-            :return ts: the topological sorter object in graphlib
+        """Check for dependency cycles that would result from an addition.
+
+        Parameters
+        ----------
+        dep_container : CDMSDataset or CDMSGroup
+            The parent container to check.
+        dep_type : str
+            The type of dependents to be added.
+        dep_dss : list, optional
+            Candidate dependent datasets (version PKs required).
+        dep_grps : list, optional
+            Candidate dependent groups.
+
+        Returns
+        -------
+        graphlib.TopologicalSorter
+            The topological sorter representing the dependency graph.
         """
         return self._dependents.check_cycles(dep_container, dep_type, dep_dss, dep_grps)
 
     def addDependents(
         self,
-        dep_container,
-        dep_type,
-        dep_datasets=None,
-        dep_groups=None,
+        dep_container: CDMSDataset | CDMSGroup,
+        dep_type: str,
+        dep_datasets: list = None,
+        dep_groups: list = None,
         **kwargs,
-    ):
-        """
-         Attach new dependents to container object.
-        :param dep_container: Parent container object to add dependents to
-        :param dep_type: Type of dependents to add
-        :param dep_datasets: The datasets we wish to use as children of the parent container
-        VersionPKs are required for each dependent dataset.
-        :param dep_groups: The groups we wish to use as children of the parent container
+    ) -> None:
+        """Attach new dependents to a container.
+
+        Parameters
+        ----------
+        dep_container : CDMSDataset or CDMSGroup or object
+            The parent container to add dependents to.
+        dep_type : str
+            The type of dependents to add.
+        dep_datasets : list, optional
+            Datasets to attach as children (version PKs required).
+        dep_groups : list, optional
+            Groups to attach as children.
+        **kwargs
+            Additional arguments forwarded to the client.
         """
         self._dependents.add(dep_container, dep_type, dep_dataset, dep_groups, kwargs)
 
     def removeDependents(
         self,
-        dep_container,
-        dep_type,
-        dep_datasets=None,
-        dep_groups=None,
+        dep_container: CDMSDataset | CDMSGroup,
+        dep_type: str,
+        dep_datasets: list = None,
+        dep_groups: list = None,
         **kwargs,
-    ):
-        """
-        Remove dependents from container object provided
-        :param dep_container: Parent container object to remove dependents from
-        :param dep_type: Type of dependents to remove
-        :param dep_datasets: The datasets we wish to remove from the parent container
-        :param dep_groups: The groups we wish to remove from the parent container
+    ) -> None:
+        """Remove dependents from a container.
+
+        Parameters
+        ----------
+        dep_container : CDMSDataset or CDMSGroup or object
+            The parent container to remove dependents from.
+        dep_type : str
+            The type of dependents to remove.
+        dep_datasets : list, optional
+            Datasets to detach.
+        dep_groups : list, optional
+            Groups to detach.
+        **kwargs
+            Additional arguments forwarded to the client.
         """
         self._dependents.remove(dep_container, dep_type, dep_datasets, dep_groups, kwargs)
 
-    def buildDataSearch(
-        self,
-        Facility="*",
-        nFridgeRun="*",
-        ProdType="*",
-        ProdTag="*",
-        nMergeLevel=None,
-        Series="*",
-        ProdStep=None,
-        filename=None,
-        query=None,
-        **kwargs,
-    ):
-        return self._datasets.build_data_search(Facility, nFridgeRun, ProdType, ProdTag, nMergeLevel, Series, ProdStep, filename, query, kwargs)
-
-    def findData(self, query=None, dofetch=False, fetchargs={}, **kwargs):
-        return self._datasets(query, dofetch, fetchargs, kwargs)
-
+    # ==================================================================
+    # CDMS-specific discovery
+    # ==================================================================
     def getProductionInfo(
         self,
-        facility="",
-        fridgeRun="",
-        processingType="",
-        productionTagList=[],
-        verbose=True,
+        facility: str = "",
+        fridgeRun: str = "",
+        processingType: str = "",
+        productionTagList: list | None = None,
+        verbose: bool = True,
     ):
-        """Get production tag list and metadata
+        """Get production tags and their metadata.
 
-        Args:
-            facility (str): 'CUTE', 'SLAC', 'NEXUS', etc.   (required)
-            fridgeRun (int): 10, 11, etc  OR 'last (required)
-            processingType (str): 'release' or 'test' (default: 'release')
-            productionTagList (list of str): list of production tag such as
-                Prodv9.5.3' (default: return all tags)
-            verbose (bool): default: True
+        Parameters
+        ----------
+        facility : str
+            Facility name, e.g. `"CUTE"` (required).
+        fridgeRun : int or str
+            Fridge run number, or `"last"` for the most recent (required).
+        processingType : str, default "release"
+            Either `"release"` or `"test"`.
+        productionTagList : list of str, optional
+            Restrict results to these tags. If `None`, all tags are returned.
+        verbose : bool, default True
 
-        Returns:
-            dictionary of {production tag: metadata}
+        Returns
+        -------
+        dict
+            Mapping of `{production_tag: metadata}`.
 
-        Examples:
-            Find all release tags for CUTE latest run
-            >>> dc.getProductionInfo('CUTE', 'last', 'release')
+        Examples
+        --------
+        >>> dc.getProductionInfo('CUTE', 'last', 'release')
         """
-        # check arguments
-        if not facility or not fridgeRun:
-            print('Required arguments: "facility" and "fridgeRun"')
-            return
 
-        if not processingType:
-            if verbose:
-                print('No "processingType" provided. Will use "release"!')
-            processingType = "release"
-
-        output_dict = dict()
-
-        # ====================
-        # Build path
-        # ====================
-
-        # fridge run
-        run_name = str(fridgeRun)
-        if run_name == "last":
-            run_number = self.getLastFridgeRunNumber(facility)
-            if run_number == -999999:
-                print("ERROR: unable to find last fridge run number!")
-                return
-            run_name = "R" + str(run_number)
-            if verbose:
-                print("Last Run: " + run_name)
-        elif run_name[0] != "R":
-            run_name = "R" + str(fridgeRun)
-
-        datacatalog_path = "/CDMS/" + facility + "/" + run_name + "/Processed/"
-        if processingType == "release":
-            datacatalog_path = datacatalog_path + "Releases"
-        elif processingType == "test":
-            datacatalog_path = datacatalog_path + "Tests"
-        else:
-            print('ERROR: processingType should be either "release" or "test"')
-            return output_dict
-
-        # ====================
-        # Get tags
-        # ====================
-
-        try:
-            folder_list = self.client.children(datacatalog_path)
-        except:
-            print("ERROR: Problem reading datacatalog path: " + datacatalog_path)
-            return output_dict
-
-        for datacat_folder in folder_list:
-            # get metadata
-            prod_tag = datacat_folder.name
-
-            # filter
-            if productionTagList:
-                if prod_tag not in productionTagList:
-                    continue
-
-            folder_metadata = dict()
-            if hasattr(datacat_folder, "metadata"):
-                folder_metadata = dict(datacat_folder.metadata)
-
-            # output
-            output_dict[prod_tag] = folder_metadata
-
-        return output_dict
+        return self._discovery.get_production_info(
+                facility,
+                fridgeRun, 
+                processingType, 
+                productionTagList if productionTagList is not None else [],
+                verbose
+        )
 
     def getSeriesInfo(
         self,
-        facility,
-        fridgeRun,
-        seriesList=[],
-        isInSLAC=True,
-        dataTypeList=[],
-        beginDateTime=[],
-        endDateTime=[],
-        includeMetadata=True,
-        verbose=True,
-    ):
-        """Get Series list and  metadata
+        facility: str,
+        fridgeRun: int | str,
+        seriesList: list[str] = [],
+        isInSLAC: bool = True,
+        dataTypeList: list[int] = [],
+        beginDateTime: str = "",
+        endDateTime: str = "",
+        includeMetadata: bool = True,
+        verbose: bool = True,
+    ) -> dict | list:
+        """Get the series list and metadata for a facility/run.
 
-        Args:
-            facility (str): 'CUTE', 'SLAC', 'NEXUS', etc.   (required)
-            fridgeRun (int): 10, 11, etc or 'last' (required)
-            seriesList (list of str): [231217_1200, 231224_1010,etc]
-                (default: return all series if empty)
-            isInSLAC (bool): return only series at SLAC, based on nIsSLAC
-                folder metadata (default: True)
-            dataTypeList (list of int): [-1,0,1,2,..]
-                (Default if emoty:  return all data types except test data -1)
-            beginDateTime (str): YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS
-            endDateTime (str): same as begin
-            includeMetadata (bool): If True (default), return a dictionary,
-                if False return a list of series numbers
+        Parameters
+        ----------
+        facility : str
+            Facility name (required).
+        fridgeRun : int or str
+            Fridge run number, or `"last"` (required).
+        seriesList : list of str, optional
+            Restrict to these series. If `None`, all series are returned.
+        isInSLAC : bool, default True
+            Return only series present at SLAC (per `nIsInSLAC` metadata).
+        dataTypeList : list of int, optional
+            Restrict to these data types.
+        beginDateTime : str, optional
+            Lower time bound: `YYMMDD`, `YYMMDD_HHMM`, or `YYMMDD_HHMMSS`.
+        endDateTime : str, optional
+            Upper time bound, same format as `beginDateTime`.
+        includeMetadata : bool, default True
+            If `True` return `{series: metadata}`; otherwise a list of series
+            numbers.
+        verbose : bool, default True
 
-        Returns:
-            dict: if `includeMetadata` is True, map series to metadata
-            list: if `includeMetadata` is False, list of series
-
-        Todo:
-            * refactor this function to use `paths`
+        Returns
+        -------
+        dict or list
+            A dict if `includeMetadata` is `True`, otherwise a list.
         """
-
-        output_dict = dict()
-        output_list = list()  # if not metadata included, just list of series
-
-        # =====================
-        # Check arguments
-        # =====================
-        if not facility or not fridgeRun:
-            print('Required arguments: "facility" and "fridgeRun"')
-            return
-
-        if dataTypeList and not isInSLAC:
-            print(
-                'ERROR: DataType can only be check if data in SLAC, please set "isInSLAC=True"!'
-            )
-            return
-
-        if beginDateTime:
-            beginDateTime = str(beginDateTime)
-            if (
-                len(beginDateTime) != 6
-                and len(beginDateTime) != 11
-                and len(beginDateTime) != 13
-            ):
-                print(
-                    "ERROR: Format of beginDateTime available: YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS"
-                )
-
-        if endDateTime:
-            endDateTime = str(endDateTime)
-            if (
-                len(endDateTime) != 6
-                and len(endDateTime) != 11
-                and len(endDateTime) != 13
-            ):
-                print(
-                    "ERROR: Format of endDateTime available: YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS"
-                )
-
-        if dataTypeList and type(dataTypeList) != list:
-            dataTypeList = [dataTypeList]
-
-        if seriesList and type(seriesList) != list:
-            seriesList = [seriesList]
-
-        # =====================
-        # Get Series folders
-        # from data catalog
-        # =====================
-
-        # fridge run
-        run_name = str(fridgeRun)
-        if run_name == "last":
-            run_number = self.getLastFridgeRunNumber(facility)
-            if run_number == -999999:
-                print("ERROR: unable to find last fridge run number!")
-                return
-            run_name = "R" + str(run_number)
-            if verbose:
-                print("Last Run: " + run_name)
-        elif run_name[0] != "R":
-            run_name = "R" + str(fridgeRun)
-
-        # list of series
-        datacatalog_path = "/CDMS/" + facility + "/" + run_name + "/Raw"
-        folder_list = list()
-        try:
-            folder_list = self.client.children(datacatalog_path)
-        except:
-            print("ERROR: Problem reading datacatalog path: " + datacatalog_path)
-            return
-
-        # ====================
-        # Loop and Filter
-        # ====================
-        for datacat_folder in folder_list:
-            # series name and metadata
-            series = datacat_folder.name
-            series_metadata = dict()
-            if hasattr(datacat_folder, "metadata"):
-                series_metadata = dict(datacat_folder.metadata)
-
-            # check series name
-            if len(series) != 13 and len(series) != 15:
-                continue
-
-            # check facility
-            facility_id = int(series[0:2])
-            facility_name = self.getFacilityName(facility_id)
-            if facility_name != facility:
-                continue
-
-            # check if in series list
-            if seriesList:
-                if series not in seriesList:
-                    continue
-
-            # check in SLAC
-            if isInSLAC:
-                if ("nIsInSLAC" not in series_metadata) or (
-                    "nIsInSLAC" in series_metadata
-                    and int(series_metadata["nIsInSLAC"]) == 0
-                ):
-                    continue
-
-            # check data type
-            if dataTypeList and type(dataTypeList) != list:
-                data_type = int(series_metadata["nDataType"])
-                if data_type not in dataTypeList:
-                    continue
-
-            # check date range
-            if beginDateTime or endDateTime:
-                # remove underscore and facility id
-                pos_underscore = series.find("_")
-                series_time = series[pos_underscore - 6 :]
-                series_time = series_time.replace("_", "")
-                if len(series_time) == 10:
-                    series_time += "00"
-
-                # begin date
-                if beginDateTime:
-                    start = beginDateTime.replace("_", "")
-                    if len(start) < 12:
-                        for ii in range(0, 12 - len(start)):
-                            start += "0"
-                    if len(start) != len(series_time):
-                        print('\nWARNING: Format of "beginDateTime" not understood...')
-                        print("It should be YYMMDD, YYMMDD_HHMM or YYMMDD_HHMMSS")
-                        return output_dict
-                    if int(series_time) < int(start):
-                        continue
-
-                # end date
-                if endDateTime:
-                    end = endDateTime.replace("_", "")
-                    if len(end) < 12:
-                        for ii in range(0, 12 - len(end)):
-                            end += "0"
-                    if len(end) != len(series_time):
-                        print('\nWARNING: Format of "endDateTime" not understood...')
-                        print("It should be YYMMDD, YYMMDD_HHMM or YYMMDD_HHMMSS")
-                        return output_dict
-                    if int(series_time) > int(end):
-                        continue
-
-            # output
-            if includeMetadata:
-                output_dict[series] = series_metadata
-            else:
-                output_list.append(series)
-
-        if includeMetadata:
-            return output_dict
-        else:
-            return output_list
+        return self._discovery.get_series_info(
+                facility,
+                fridgeRun,
+                seriesList if seriesList is not None else [],
+                isInSLAC,
+                dataTypeList if dataTypeList is not None else [],
+                beginDateTime,
+                endDateTime,
+                includeMetadata,
+                verbose,
+        )
 
     def getRawDataList(
         self,
-        facility,
-        fridgeRun,
-        location="SLAC",
-        seriesList=[],
-        dataTypeList=[],
-        beginDateTime=[],
-        endDateTime=[],
-        verbose=True,
+        facility: str,
+        fridgeRun: int | str,
+        location: str = "SLAC",
+        seriesList: list | None = None,
+        dataTypeList: list | None = None,
+        beginDateTime: str = "",
+        endDateTime: str = "",
+        verbose: bool = True,
     ):
-        """Get raw data file list
+        """Get the raw data file list for a facility/run.
 
-        Args:
-            facility (str): 'CUTE', 'SLAC', 'NEXUS', etc.   (required)
-            fridgeRun (int): 'last OR 10, 11, etc   (required)
-            location (str): 'SLAC','SNOLAB', etc. [default: data files located at 'SLAC')
-            seriesList (list of str): ['231217_1200', '231224_1010', ...]
-                (default: return all series if empty)
-            dataTypeList (list of int): [-1,0,1,2,..]
-                (Default if empty:  return all data types except test data -1)
-            beginDateTime (str): YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS
-            endDateTime (str): same as begin
+        Parameters
+        ----------
+        facility : str
+            Facility name (required).
+        fridgeRun : int or str
+            Fridge run number, or `"last"` (required).
+        location : str, default "SLAC"
+            Site where the data files reside.
+        seriesList : list of str, optional
+            Restrict to these series. If `None`, all series are returned.
+        dataTypeList : list of int, optional
+            Restrict to these data types.
+        beginDateTime : str, optional
+            Lower time bound.
+        endDateTime : str, optional
+            Upper time bound.
+        verbose : bool, default True
 
-        Returns:
-            dictionary of {series: [list of raw files in series]}
-
-        Todo:
-            * Have this function return list of datasets rather than SLAC paths
-            * refactor to call `findData`
+        Returns
+        -------
+        dict
+            Mapping of `{series: [raw file resources]}`.
         """
-
-        # initialize output
-        output_dict = dict()
-
-        # ======================
-        # Check Input arguments
-        # ======================
-        if not facility or not fridgeRun:
-            print('Required arguments: "facility" and "fridgeRun"')
-            return
-
-        # fridge run
-        run_name = str(fridgeRun)
-        if run_name == "last":
-            run_number = self.getLastFridgeRunNumber(facility)
-            if run_number == -999999:
-                print("ERROR: unable to find last fridge run number!")
-                return
-            run_name = "R" + str(run_number)
-        elif run_name[0] != "R":
-            run_name = "R" + str(fridgeRun)
-
-        if dataTypeList and type(dataTypeList) != list:
-            dataTypeList = [dataTypeList]
-
-        if seriesList and type(seriesList) != list:
-            seriesList = [seriesList]
-
-        # get list of series
-
-        # if location is SLAC, then filter based on folder metadata
-        isInSLAC = True
-        if location != "SLAC":
-            isInSLAC = False
-
-        # ======================
-        # Get list of series
-        # ======================
-
-        series_list = self.getSeriesInfo(
-            facility=facility,
-            fridgeRun=fridgeRun,
-            seriesList=seriesList,
-            isInSLAC=isInSLAC,
-            dataTypeList=dataTypeList,
-            beginDateTime=beginDateTime,
-            endDateTime=endDateTime,
-            includeMetadata=False,
+        return self._discovery.get_raw_data_list(
+            facility,
+            fridgeRun,
+            location,
+            seriesList if seriesList is not None else [],
+            dataTypeList if dataTypeList is not None else [],
+            beginDateTime,
+            endDateTime,
+            verbose,
         )
-
-        if not series_list:
-            print("WARNING: No series found! Check arguments")
-            return
-
-        print("Will search the file list for " + str(len(series_list)) + " series!")
-        print("Be patient! It may take a while...")
-
-        # ======================
-        # Get files
-        # ======================
-
-        # loop and get files
-        for series in series_list:
-            # get files
-            datacatalog_path = "/CDMS/" + facility + "/" + run_name + "/Raw/" + series
-            raw_datasets = []
-
-            try:
-                raw_datasets = self.client.children(datacatalog_path, site=location)
-            except:
-                continue
-
-            if not raw_datasets:
-                continue
-
-            file_list = []
-            for dataset in raw_datasets:
-                file_list.append(dataset.resource)
-
-            output_dict[series] = file_list
-
-        return output_dict
 
     def getProcessedDataList(
         self,
-        facility,
-        fridgeRun,
-        productionTag,
-        fileType="submerged",
-        location="SLAC",
-        seriesList=[],
-        dataTypeList=[],
-        beginDateTime="",
-        endDateTime="",
-        outputSeriesDictFormat=False,
-        verbose=True,
+        facility: str,
+        fridgeRun: int | str,
+        productionTag: str,
+        fileType: str = "submerged",
+        location: str = "SLAC",
+        seriesList: list[str] = [],
+        dataTypeList: list[int] = [],
+        beginDateTime: str = "",
+        endDateTime: str = "",
+        outputSeriesDictFormat: bool = False,
+        verbose: bool = True,
     ):
-        """Get processed data file list
+        """Get the processed data file list for a production tag.
 
-        Args:
-            facility (str): 'CUTE', 'SLAC', 'NEXUS', etc.   (required)
-            fridgeRun (int): 'last',or  10, 11, etc  (required)
-            productionTag (str): production tag, example 'Prodv5.9.3' (required)
-            fileType (str): 'unmerged', 'submerged','merged','noise'
-                            (default: 'submerged')
-            location (str): 'SLAC','SNOLAB', etc.
-                            [default: data files located at 'SLAC')
-            seriesList (list of str): e.g. ['231217_1200', '231224_1010', ...]
-                                      (default: return all series if empty)
-            dataTypeList (list of int): [-1,0,1,2,..]
-                (Default if empty:  return all data types except test data -1)
-            beginDateTime (str): YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS
-            endDateTime (str): same format as begin
-            outputSeriesDictFormat (bool): if True return a dictionary with
-                key=Series number, value: list of files
+        Parameters
+        ----------
+        facility : str
+            Facility name (required).
+        fridgeRun : int or str
+            Fridge run number, or `"last"` (required).
+        productionTag : str
+            Production tag, e.g. `"Prodv5.9.3"` (required).
+        fileType : str, default "submerged"
+            One of `"unmerged"`, `"submerged"`, `"merged"`, or `"noise"`.
+        location : str, default "SLAC"
+            Site where the data files reside.
+        seriesList : list of str, optional
+            Restrict to these series. If `None`, all series are returned.
+        dataTypeList : list of int, optional
+            Restrict to these data types.
+        beginDateTime : str, optional
+            Lower time bound.
+        endDateTime : str, optional
+            Upper time bound.
+        outputSeriesDictFormat : bool, default False
+            If `True` return `{series: [files]}`; otherwise a flat list.
+        verbose : bool, default True
 
-        Returns:
-            dict: if outputSeriesDictFormat is True
-            list: if outputSeriesDictFormat is False
-
-        Todo:
-            * refactor to use `findData`
+        Returns
+        -------
+        dict or list
+            A dict if `outputSeriesDictFormat` is `True`, otherwise a list.
         """
+        return self._discovery.get_processed_data_list(
+            facility,
+            fridgeRun,
+            productionTag,
+            fileType,
+            location,
+            seriesList if seriesList is not None else [],
+            dataTypeList if dataTypeList is not None else [],
+            beginDateTime,
+            endDateTime,
+            outputSeriesDictFormat,
+            verbose,
+        )
 
-        # initlize ouput
-        output_dict = dict()  # outputSeriesDictFormat=True
-        output_list = list()  # outputSeriesDictFormat=False
+    def getFacilityName(self, facility_id: int) -> str:
+        """Convert a numeric facility ID to its facility name.
 
-        # ======================
-        # Check Input arguments
-        # ======================
-        if not facility or not fridgeRun or not productionTag:
-            print(
-                'ERROR: Required arguments = "facility", "fridgeRun", and "productionTag"'
-            )
-            if not productionTag:
-                print('Use function "getProductionInfo" to get list of available tags!')
-            return
+        Parameters
+        ----------
+        facility_id : int
+            The 2-digit series-name prefix identifying the facility.
 
-        if not fileType:
-            if verbose:
-                print('No file type provided! Will use "submerged')
-            fileType = "Submerged"
+        Returns
+        -------
+        str
+            The facility name, or an empty string if not recognized.
+        """
+        return facilities.facilitiy_name(facility_id)
 
-        if dataTypeList and type(dataTypeList) != list:
-            dataTypeList = [dataTypeList]
+    def getLastFridgeRunNumber(self, facility: str = "CUTE"):
+        """Get the most recent fridge run number for a facility.
 
-        if seriesList and type(seriesList) != list:
-            seriesList = [seriesList]
+        Parameters
+        ----------
+        facility : str, default "CUTE"
+            The facility to inspect.
 
-        fileType = fileType[0].capitalize() + fileType[1:]
-        if (
-            fileType != "Submerged"
-            and fileType != "Merged"
-            and fileType != "Unmerged"
-            and fileType != "Noise"
-        ):
-            print(
-                'ERROR: "fileType" argument should be "noise","merged", "submerged", or "unmerged"'
-            )
-            return
-
-        if beginDateTime:
-            beginDateTime = str(beginDateTime)
-            if (
-                len(beginDateTime) != 6
-                and len(beginDateTime) != 11
-                and len(beginDateTime) != 13
-            ):
-                print(
-                    'ERROR: Format available for  "beginDateTime": YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS'
-                )
-                return
-            beginDateTime = beginDateTime.replace("_", "")
-            if len(beginDateTime) < 12:
-                for ii in range(0, 12 - len(beginDateTime)):
-                    beginDateTime += "0"
-
-        if endDateTime:
-            endDateTime = str(endDateTime)
-            if (
-                len(endDateTime) != 6
-                and len(endDateTime) != 11
-                and len(endDateTime) != 13
-            ):
-                print(
-                    'ERROR: Format available for "endDateTime": YYMMDD, YYMMDD_HHMM, YYMMDD_HHMMSS'
-                )
-                return
-            endDateTime = endDateTime.replace("_", "")
-            if len(endDateTime) < 12:
-                for ii in range(0, 12 - len(endDateTime)):
-                    endDateTime += "0"
-
-        # get fridge run
-        run_name = str(fridgeRun)
-        if run_name == "last":
-            run_number = self.getLastFridgeRunNumber(facility)
-            if run_number == -999999:
-                print("ERROR: unable to find last fridge run number!")
-                return
-            run_name = "R" + str(run_number)
-            if verbose:
-                print("Last Run: " + run_name)
-        elif run_name[0] != "R":
-            run_name = "R" + str(fridgeRun)
-
-        # check if release or tests
-        base_path = "/CDMS/" + facility + "/" + run_name + "/Processed"
-        productionType = str()
-        try:
-            if self.exist(base_path + "/Releases/" + productionTag):
-                productionType = "Releases"
-            elif self.exist(base_path + "/Tests/" + productionTag):
-                productionType = "Tests"
-        except:
-            print("ERROR: Problem accessing data catalog!")
-            return
-
-        if not productionType:
-            print(
-                'ERROR: No data with tag "'
-                + productionTag
-                + '" found in the datacatalog!'
-            )
-            print('Use function "getProductionInfo" to get list of available tags.')
-            return
-
-        if seriesList and not isinstance(seriesList, list):
-            seriesList = [seriesList]
-
-        if dataTypeList and not isinstance(dataTypeList, list):
-            dataTypeList = [dataTypeList]
-
-        # ======================
-        # Get datasets
-        # ======================
-
-        # full path
-        base_path += "/" + productionType + "/" + productionTag + "/" + fileType
-        if fileType == "Unmerged":
-            base_path += "/*"
-
-        # build filter string
-        query = "nIsJunk==0"
-        if seriesList:
-            query += ' and (Series=="{}"'.format(seriesList[0])
-            for series in seriesList[1:]:
-                query += ' or Series=="{}"'.format(series)
-            query += ")"
-        if dataTypeList:
-            query += " and (nDataType==" + str(dataTypeList[0])
-            for data_type in dataTypeList[1:]:
-                query += " or nDataType==" + str(data_type)
-            query += ")"
-        if beginDateTime:
-            query += " and nSeriesDateTime>=" + str(beginDateTime)
-        if endDateTime:
-            query += " and nSeriesDateTime<=" + str(endDateTime)
-
-        show = ["Series"]
-        dataset_list = []
-        try:
-            dataset_list = self.search(base_path, site=location, query=query, show=show)
-        except:
-            print("ERROR: Problem accessing data catalog!")
-            print(
-                "Perhaps the files were produced prior January 2020 and do not have the proper metadata?"
-            )
-            return
-
-        if not dataset_list:
-            print(
-                'WARNING: No processed file found for "'
-                + productionTag
-                + '". Check data catalog!'
-            )
-            return
-
-        # loop datasets
-        for dataset in dataset_list:
-            series = dataset.metadata["Series"]
-            file_name = dataset.filePath
-            if outputSeriesDictFormat:
-                if series not in output_dict:
-                    output_dict[series] = []
-                output_dict[series].append(file_name)
-            else:
-                output_list.append(file_name)
-
-        if outputSeriesDictFormat:
-            return output_dict
-        else:
-            return output_list
-
-    def getFacilityName(self, facility_id):
-        return facilitiy_name(facility_id)
-
-    def getLastFridgeRunNumber(self, facility="CUTE"):
-        return last_fridge_number(self._core, facility)
+        Returns
+        -------
+        int
+            The most recent fridge run number, or
+            [`RUN_NOT_FOUND`][CDMSDataCatalog.facilities.RUN_NOT_FOUND] if none
+            is found.
+        """
+        return facilities.last_fridge_number(self._core, facility)
