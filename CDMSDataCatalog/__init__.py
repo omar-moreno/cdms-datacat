@@ -1,19 +1,17 @@
-""" Client for interacting with the CDMS Data Catalog server.
+"""CDMS Data Catalog — high-level Python client for the CDMS data catalog.
 
-## Python API
- * For searching the catalog and downloading datasets, use the
-   `CDMSDataCatalog` client class
- * To register new data, you will also need to use classes in `CDMSDataset`.
+The primary entry point is
+[`CDMSDataCatalog`][CDMSDataCatalog.catalog.CDMSDataCatalog], which provides a
+stable, task-oriented API for browsing, searching, retrieving, and managing
+catalog data.
 
-## Command-line interface
- * `dc-ls`: list contents of a data catalog directory path
- * `dc-info`: print info on a single dataset
- * `dc-fetch`: Find the file for a dataset on disk or download it
- * `dc-mkdir`: create a new directory in the catalong
- * `dc-rm`: remove a catalog entry
-
+Examples
+--------
+>>> from CDMSDataCatalog import CDMSDataCatalog
+>>> dc = CDMSDataCatalog()
+>>> dc.ls("/CDMS/CUTE")
 """
-### ELA: proposing to only include here cdms_datacat_tools, and comment the other imports, in order to not expose the SLAC python client
-from .CDMSDataCatalog import CDMSDataCatalog, getFileFormat
-from .CDMSDataset import *
-from .cdms_datacat_tools import *
+
+from CDMSDataCatalog import CDMSDataCatalog
+
+__all__ = ["CDMSDataCatalog"]
