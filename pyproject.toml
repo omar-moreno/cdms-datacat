@@ -1,40 +1,73 @@
-[tool.ruff]
-# Target Python version
-target-version = "py310"
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
 
-# Line length
+[project]
+name = "CDMSDataCatalog"
+version = "1.2.2"
+description = "High-level Python client for the SCDMS data catalog."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Omar Moreno", email = "omoreno@slac.stanford.edu" }
+]
+
+dependencies = [
+    "datacat @ git+https://gitlab.com/supercdms/slaclab-datacat.git@0.7.0#subdirectory=client/python",
+    "requests",
+    "tqdm",
+    "Click",
+    "boto3",
+    "globus_cli>=3.30.1",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",      # keep only if you wire up coverage config
+]
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.0",
+    "mkdocstrings[python]>=0.24",
+]
+dev = [
+    "CDMSDataCatalog[test,docs]",
+    "pre-commit>=3.5",
+    "ruff==0.8.*",          # pinned minor for consistent lint results
+]
+
+[tool.setuptools]
+packages = ["CDMSDataCatalog"]
+
+[tool.setuptools.package-data]
+CDMSDataCatalog = ["cfg/default.cfg", "cfg/prod.cfg"]
+
+[tool.ruff]
+target-version = "py310"
 line-length = 88
 
-# Select specific rules
-lint.select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # Pyflakes
-    "I",  # isort (imports)
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade (modernize syntax)
-    "D",  # pydocstyle (Docstrings)
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort (import sorting)
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "E501",  # line length is handled by the formatter
 ]
 
-# Ignore specific rules (optional)
-lint.ignore = [
-    "D203", # 1 blank line required before class docstring (conflicts with D211)
-    "D213", # Multi-line docstring summary should start at second line (conflicts with D212)
-]
+[tool.ruff.lint.per-file-ignores]
+# Tests can use assert-heavy style and don't need every lint.
+"tests/*" = ["B011"]
 
-src = ["CDMSDataCatalog"]
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.ruff.format]
-# Use Black-compatible formatting
-quote-style = "double"
-indent-style = "space"
-
-[tool.mypy]
-python_version = "3.10"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-strict = true
+docstring-code-format = true    # format code inside docstrings too
