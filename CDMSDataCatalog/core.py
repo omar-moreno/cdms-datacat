@@ -474,7 +474,10 @@ class CatalogCore:
 
         # Retrieve the container (folder, group) to add metadata to
         container = self.client.path(path)
-        container_metadata = container.metadata
+
+        # If the container doesn't contain metadata, create an empty
+        # dictionary to hold it.
+        container_metadata = getattr(container, 'metadata', {})
 
         existing_entries = set(metadata.keys()) & set(container_metadata.keys())
 
