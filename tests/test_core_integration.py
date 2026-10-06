@@ -136,3 +136,95 @@ class TestMkdir:
         assert core.exists(new_dir) is True
         # Metadata round-trip is verified in the add_metadata tests below.
 
+# --- Tests: add_metadata -----------------------------------------------------
+
+
+class TestAddMetadata:
+    def test_add_new_metadata_persists(self, core, scratch_dir):
+        target = f"{scratch_dir}/meta-target"
+        core.mkdir(target)
+
+        result = core.add_metadata(target, {"owner": "pytest"})
+
+        assert result is True
+        # Read it back through the client to confirm it actually persisted.
+        container = core.client.path(target)
+        assert container.metadata.get("owner") == "pytest"
+
+    def test_add_existing_key_without_replace_is_skipped(self, core, scratch_dir):
+        target = f"{scratch_dir}/meta-skip"
+        core.mkdir(target, metadata={"status": "initial"})
+
+        result = core.add_metadata(target, {"status": "changed"}, replace=False)
+
+        assert result is False
+        container = core.client.path(target)
+        assert container.metadata.get("status") == "initial"
+
+    def test_add_existing_key_with_replace_overwrites(self, core, scratch_dir):
+        target = f"{scratch_dir}/meta-replace"
+        core.mkdir(target, metadata={"status": "initial"})
+
+        result = core.add_metadata(target, {"status": "changed"}, replace=True)
+
+        assert result is True
+        container = core.client.path(target)
+        assert container.metadata.get("status") == "changed"
+
+    def test_replace_preserves_untouched_keys(self, core, scratch_dir):
+        """Documents the real backend's replace semantics.
+
+        This is the behavior we could NOT verify with mocks: does replacing one
+        key drop the others? This test pins down what the live backend actually
+        does.
+        """
+        target = f"{scratch_dir}/meta-merge"
+        core.mkdir(target, metadata={"keep": "yes", "change": "before"})
+
+        core.add_metadata(target, {"change": "after"}, replace=True)
+
+        container = core.client.path(target)
+        # EXPECTATION: the untouched key survives. If this fails, the backend
+        # (or add_metadata) is dropping keys — a real bug to fix, now proven.
+        assert container.metadata.get("keep") == "yes"
+        assert container.metadata.get("change") == "after"
+
+# --- Tests: rm ---------------------------------------------------------------
+
+
+class TestRm:
+    def test_rm_empty_directory(self, core, scratch_dir):
+        target = f"{scratch_dir}/to-delete"
+        core.mkdir(target)
+        assert core.exists(target) is True
+
+        core.rm(target)
+
+        assert core.exists(target) is False
+
+    def test_rm_nonempty_without_recursive_raises(self, core, scratch_dir):
+        parent = f"{scratch_dir}/nonempty"
+        core.mkdir(parent)
+        core.mkdir(f"{parent}/child")
+
+        with pytest.raises(OSError):
+            core.rm(parent, recursive=False)
+
+        # The parent must still exist — the failed rm should not have deleted it.
+        assert core.exists(parent) is True
+
+    def test_rm_recursive_deletes_tree(self, core, scratch_dir):
+        parent = f"{scratch_dir}/tree"
+        core.mkdir(f"{parent}/a/b", parents=True)
+        core.mkdir(f"{parent}/c")
+        assert core.exists(parent) is True
+
+        core.rm(parent, recursive=True)
+
+        assert core.exists(parent) is False
+
+    def test_rm_of_missing_path_raises_oserror(self, core, scratch_dir):
+        missing = f"{scratch_dir}/never-existed"
+        with pytest.raises(OSError):
+            core.rm(missing)
+
