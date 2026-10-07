@@ -77,7 +77,6 @@ def scratch_dir(core):
         _assert_in_scratch(path)
         try:
             if core.exists(path):
-                print("It exists")
                 core.rm(path, recursive=True)
         except Exception as e:  # pragma: no cover - teardown diagnostics
             print(f"WARNING: failed to clean up scratch dir {path}: {e}")
