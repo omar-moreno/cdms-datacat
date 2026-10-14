@@ -8,7 +8,7 @@ class Dependents:
         self.dc = dc
 
     @staticmethod
-    def _resolve_container(dep_container, *, refresh_client = None):
+    def _unwrap_container(dep_container, *, refresh_client = None):
         if isinstance(dep_container, CDMSDataset):
             try:
                 container = dep_container.rawDataset
@@ -17,7 +17,7 @@ class Dependents:
             if refresh_client and getattr(container, "versionMetadata", None):
                 if container.versionMetadata.get("dependencyName"):
                     container = refresh_client.path(
-                            container.path, versionId=contaier.versionId, site="All"
+                            container.path, versionId=container.versionId, site="All"
                     )
             return container
         if isinstance(dep_container, CDMSGroup):
@@ -65,11 +65,11 @@ class Dependents:
             dep_container.rawGroup = ret
 
     def get(self, dep_container, dep_type, max_depth, chunk_size, **kwargs):
-        container = self._resolve_container(dep_container, refresh_client=self.dc.client)
+        container = self._unwrap_container(dep_container, refresh_client=self.dc.client)
         return self.dc.client.get_dependents(container, dep_type, max_depth, chunk_size, **kwargs)
 
     def get_next(self, dep_container, **kwargs):
-        container = self._resolve_container(dep_container)
+        container = self._unwrap_container(dep_container)
         return self.dc.client.get_next_dependents(container, **kwargs)
 
     def check_cycles(self, dep_container, dep_type, dep_dss=None, dep_grps=None):
@@ -77,7 +77,7 @@ class Dependents:
                 dep_container, dep_type, dep_dss, dep_grps)
 
     def add(self, dep_container, dep_type, dep_datasets=None, dep_groups=None, **kwargs):
-        container = self._resolve_container(dep_container)
+        container = self._unwrap_container(dep_container)
         ret = self.dc.client.add_dependents(
             container, dep_type,
             self._unwrap_datasets(dep_datasets),
