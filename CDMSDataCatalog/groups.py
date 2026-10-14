@@ -15,6 +15,8 @@ from .CDMSDataset import CDMSDataset
 from .CDMSGroup import CDMSGroup
 from .constants import DEFAULT_MAX_DATASETS, DepType
 from .core import CatalogCore
+from .datasets import Datasets
+from .dependents import Dependents
 from .path_utils import normalize_path
 
 logger = logging.getLogger(__name__)
@@ -34,6 +36,12 @@ class Groups:
         The core data catalog instance used to perform low-level client operations
         such as fetching groups, managing metadata, and handling dependencies. This
         instance should be properly configured and ready.
+    datasets : Datasets
+        Datasets component used to resolve dataset paths into dataset objects.
+    dependents : Dependents
+        Dependents component used to add/remove/retrieve group<->dataset
+        dependency relationships.
+
 
     Attributes
     ----------
@@ -41,10 +49,14 @@ class Groups:
         Reference to the core data catalog instance for all subsequent
         operations. Stored as an instance attribute for access by all
         methods in this class.
+    datasets : Datasets
+        The injected datasets component.
+    dependents : Dependents
+        The injected dependents component.
 
     """
 
-    def __init__(self, dc: CatalogCore) -> None:
+    def __init__(self, dc: CatalogCore, datasets: Datasets, dependents: Dependents) -> None:
         """Initialize the Groups manager with a data catalog core instance.
 
         This constructor sets up the `Groups` object to manage group operations
@@ -58,6 +70,12 @@ class Groups:
             operations such as fetching groups, managing metadata, and handling
             dependencies. This instance should be properly configured and ready
             for use before passing it to `Groups`.
+        datasets : Datasets
+            Datasets component used to resolve dataset paths into dataset objects.
+        dependents : Dependents
+            Dependents component used to add/remove/retrieve group<->dataset
+            dependency relationships.
+
 
         Returns
         -------
@@ -69,9 +87,15 @@ class Groups:
             Reference to the core data catalog instance for all subsequent
             operations. Stored as an instance attribute for access by all
             methods in this class.
+        datasets : Datasets
+            The injected datasets component.
+        dependents : Dependents
+            The injected dependents component.
 
         """
         self.dc = dc
+        self.dependents = datasets
+        self.datasets = dependents
 
     def create(
         self, path: str, parents: bool = False, metadata: dict[str, str] | None = None
@@ -114,11 +138,11 @@ class Groups:
             init_metadata = init_metadata | metadata
 
         # Attempt to create the group, handle the case where it already exists
-        if not self.exist(path):
-            self.client.mkgroup(path, parents=parents, metadata=init_metadata)
+        if not self.dc.exists(path):
+            self.dc.client.mkgroup(path, parents=parents, metadata=init_metadata)
             logger.info(f"Group {path} has been created successfully.")
         else:
-            logger.exception(f"WARNING: group {path} already exists")
+            logger.warning(f"Group {path} already exists")
             raise FileExistsError(f"Group {path} already exists")
 
     def get(self, path: str, site: str = "All") -> CDMSGroup:
@@ -143,7 +167,7 @@ class Groups:
 
         """
         path = normalize_path(path)
-        rawgroup = self.client.path(path, site=site)
+        rawgroup = self.dc.client.path(path, site=site)
         return CDMSGroup.fromGroup(rawgroup)
 
     def add_files(self, path: str, file_paths: Iterable[str]) -> None:
@@ -183,33 +207,30 @@ class Groups:
 
         # Check that the group can be modified.
         if not self.group_is_open(group):
-            logger.exception(f"The group {group.name} is closed and can't be modified.")
-            raise Exception(
-                f"Group '{path}' is in a 'Closed' state and cannot be modified."
-            )
+            msg = f"Group '{path}' is in a 'Closed' state and can't be modified."
+            logger.error(msg)
+            raise ValueError(msg)
 
-        datasets = []
+        data = []
         for file_path in file_paths:
-            try:
-                # Case 1: Already a data catalog path
-                if file_path.startswith("/CDMS/"):
-                    datasets.append(self.get(file_path))
+            # Case 1: Already a data catalog path
+            if file_path.startswith("/CDMS/"):
+                data.append(self.datasets.get(file_path))
                 # Case 2: A disk path containing exactly one "/CDMS/"
-                elif file_path.count("/CDMS/") == 1:
-                    _, subpath = file_path.split("/CDMS/", 1)
-                    catalog_path = "/CDMS/" + subpath
-                    datasets.append(self.get(catalog_path))
-                else:
-                    print(f"ERROR: unrecognized CDMS path format: {file_path}")
-                    raise Exception(f"Unrecognized CDMS path format: {file_path}")
-            except Exception:
-                raise
+            elif file_path.count("/CDMS/") == 1:
+                _, subpath = file_path.split("/CDMS/", 1)
+                catalog_path = "/CDMS/" + subpath
+                data.append(self.datasets.get(catalog_path))
+            else:
+                msg = f"Unrecognized CDMS path format: {file_path}"
+                logger.error(msg)
+                raise ValueError(msg)
 
         # Add all datasets to the group as predecessors
-        self.addDependents(group, DepType.PREDECESSOR.value, dep_datasets=datasets)
+        self.dependents.add(group, DepType.PREDECESSOR.value, dep_datasets=data)
 
-        for dataset in datasets:
-            self.addDependents(dataset, DepType.SUCCESSOR.value, dep_groups=[group])
+        for datum in data:
+            self.dependents.add(datum, DepType.SUCCESSOR.value, dep_groups=[group])
 
     def remove_files(self, group_name: str, paths: list[str]) -> None:
         """Remove datasets from a specified group.
@@ -231,24 +252,20 @@ class Groups:
         None
 
         """
-        try:
-            # Retrieve the group container that will be modified.
-            group = self.getgroup(normalize_path(group_name))
+        # Retrieve the group container that will be modified.
+        group = self.get(normalize_path(group_name))
 
-            # Convert the list of paths to datasets.
-            datasets: list[Dataset] = self.resolve_datasets(paths)
+        # Convert the list of paths to datasets.
+        datasets = self.datasets.resolve_datasets(paths)
 
-            # Remove the datasets from the groups.
-            self.removeDependents(
-                group, DepType.PREDECESSOR.value, dep_datasets=datasets
+        # Remove the datasets from the groups.
+        self.dependents.remove(
+            group, DepType.PREDECESSOR.value, dep_datasets=datasets
+        )
+        for dataset in datasets:
+            self.dependents.remove(
+                dataset, DepType.SUCCESSOR.value, dep_groups=[group]
             )
-            for dataset in datasets:
-                self.removeDependents(
-                    dataset, DepType.SUCCESSOR.value, dep_groups=[group]
-                )
-
-        except Exception:
-            raise
 
     def retrieve_files(
         self, path: str, num_datasets: int = DEFAULT_MAX_DATASETS
@@ -278,20 +295,20 @@ class Groups:
 
         try:
             # Get the group associated with the given path.
-            group = self.getgroup(path)
-        except Exception as e:
-            print(f"ERROR: Could not retrieve group at path '{path}': {e}")
+            group = self.get(path)
+        except Exception:
+            logger.error(f"Could not retrieve group at path '{path}'")
             return []
 
         try:
             # Retrieve dependents associated with this group
-            return self.getDependents(group, "cdmsgroup", 1, num_datasets)
-        except Exception as e:
-            print(f"ERROR: Failed to retrieve datasets for group '{group.name}': {e}")
+            return self.dependents.get(group, DepType.PREDECESSOR.value, 1, num_datasets)
+        except Exception:
+            logger.error(f"Failed to retrieve datasets for group '{path}'")
             return []
 
     def close(self, path: str) -> None:
-        """Close a metadata group at the specified path.
+        """Close a group at the specified path.
 
         Updates the group's metadata to set the "State" to "Closed", preventing
         further additions of files until reopened.
@@ -310,10 +327,10 @@ class Groups:
         path = normalize_path(path)
 
         # Close the group
-        self.add_metadata(path, {"State": "Closed"}, replace=True)
+        self.dc.add_metadata(path, {"State": "Closed"}, replace=True)
 
     def open(self, path: str) -> None:
-        """Open a metadata group at the specified path.
+        """Open the group at the specified path.
 
         Updates the group's metadata to set the "State" to "Open", allowing
         new files to be added.
@@ -332,7 +349,7 @@ class Groups:
         path = normalize_path(path)
 
         # Close the group
-        self.add_metadata(path, {"State": "Open"}, replace=True)
+        self.dc.add_metadata(path, {"State": "Open"}, replace=True)
 
     def group_is_open(self, group: CDMSGroup) -> bool:
         """Determine whether a metadata group is currently open.
@@ -358,4 +375,4 @@ class Groups:
 
         """
         # If the group is open, return true.
-        return group.metadata["State"] == "Open"
+        return group.metadata.get("State") == "Open"
